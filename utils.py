@@ -1,6 +1,7 @@
 import numpy as np
 import time
 import pandas as pd
+from multiprocessing import Pool
 
 
 from sklearn.multioutput import MultiOutputRegressor
@@ -144,12 +145,12 @@ class Surrogate(Simulation):
         self.X = self.get_random_x(n)
         self.X_df = pd.DataFrame(self.X).astype(object)
         
-        ## y
-        self.y = []
+        ## y, run simulation in parallel
+        inputs = [input.to_dict() for input in self.X_df.iloc]
+
         start = time.time() 
-        for row in self.X_df.iloc:
-            x = row.to_dict()
-            self.y.append( self.run_sim(x) )
+        with Pool() as pool:
+            self.y = pool.map(self.run_sim, inputs)
         self.sim_time += time.time() - start
 
         # build model
@@ -244,9 +245,3 @@ def surrogate_optimize(s :Surrogate, MAXITER=1000, epsilon=1e-2, verbose=False):
             break
 
     if verbose: print('Optimization finished.')
-
-
-if __name__ == '__main__':
-    
-    s = Surrogate(main.simulation_cd,A,n=20,brute=0)
-    surrogate_optimize(s,5,verbose=True)
