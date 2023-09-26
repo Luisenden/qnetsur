@@ -1,0 +1,22 @@
+# macOS system files
+.DS_Store
+
+# User-specific files
+*.swp
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Logs and databases
+*.log
+*.sql
+*.sqlite
+
+# Virtual environments
+venv/
+env/
+.env/
+
+# Compiled Python files
+__pycache__/
+.ipynb_checkpoints
