@@ -14,8 +14,8 @@ vals = {
         'p_swap':1,  
         'return_data':'avg', 
         'progress_bar': None,
-        'cutoff': 2,
-        'total_time': 10,
+        'cutoff': 50,
+        'total_time': 1000,
         'N_samples' : 10,
         }
 
