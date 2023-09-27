@@ -2,6 +2,7 @@ import numpy as np
 import time
 import pandas as pd
 from multiprocessing import Pool
+from specifications import postprocess
 
 
 from sklearn.multioutput import MultiOutputRegressor
@@ -10,7 +11,6 @@ from sklearn.tree import ExtraTreeRegressor
 from gower import gower_matrix
 
 
-from main_cd import main_cd as main
 from SA_optimize import simulated_annealing
 from brute_optimize import brute_optimize
 
@@ -47,7 +47,8 @@ class Simulation:
 
         # simulation function handler
         self.func = func
-    
+
+    @postprocess
     def run_sim(self,x :dict) -> list:
         """
         Runs the simulation with the provided parameters.
@@ -58,8 +59,9 @@ class Simulation:
         Returns:
             list: Results of the simulation.
         """
-        result = self.func(**x, **self.vals)
-        return [node[-1] for node in result[1]]
+        xrun = {**x, **self.vals}
+        res = self.func(**xrun)
+        return res
     
     def get_random_x(self,n, use_list=False) -> dict:
         """
@@ -133,7 +135,10 @@ class Surrogate(Simulation):
         ## y, run simulation in parallel
         inputs = [input.to_dict() for input in self.X_df.iloc]
 
+        # self.y = []
         start = time.time() 
+        # for input in inputs:
+        #     self.y.append(self.run_sim(input))
         with Pool() as pool:
             self.y = pool.map(self.run_sim, inputs)
         self.sim_time += time.time() - start

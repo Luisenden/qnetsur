@@ -3,4 +3,4 @@ numpy
 pandas
 scikit_learn
 scipy
-main-cd @ git+https://gitlab.tudelft.nl/inesta/optimizing-cd-protocols@1d7b4becf148f28583d87710d6d1e11d360c27a1
+git+https://github.com/AlvaroGI/optimizing-cd-protocols.git@package
