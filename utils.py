@@ -38,27 +38,12 @@ class Simulation:
             Computes the gower difference between a point x and all other observed points in sample.
     """
 
-    def __init__(self, func, A):
+    def __init__(self, func, vals, vars):
         # specify fixed parameters
-        self.vals = {
-            'A': A,
-            'protocol':'srs', 
-            'p_cons': 0.225, 
-            'p_gen': 0.9, 
-            'p_swap':1,  
-            'return_data':'avg', 
-            'progress_bar': None,
-            'cutoff': 50,
-            'total_time': 1000,
-            'N_samples' : 10,
-            } 
+        self.vals = vals 
         
         # specify variable parameters
-        self.vars = {
-            'M': [1, 10],
-            'qbits_per_channel': [3,50],
-            'q_swap': [0., 1.],
-            } 
+        self.vars = vars
 
         # simulation function handler
         self.func = func
@@ -128,8 +113,8 @@ class Surrogate(Simulation):
         update(x):
             Updates the model with new data.
     """
-    def __init__(self, func, A, n, brute = 1):
-        super().__init__(func, A)
+    def __init__(self, func, vals, vars, n, brute = 1):
+        super().__init__(func, vals, vars)
         np.random.seed(42)
     
         # timing storage

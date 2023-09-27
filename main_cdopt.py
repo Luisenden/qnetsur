@@ -18,11 +18,28 @@ if __name__ == '__main__':
     n = 50 # size of initial training set
     nref = n+MAXITER # reference model
 
+    vals = {
+            'A': A,
+            'protocol':'srs', 
+            'p_cons': 0.225, 
+            'p_gen': 0.9, 
+            'p_swap':1,  
+            'return_data':'avg', 
+            'progress_bar': None,
+            'cutoff': 50,
+            'total_time': 1000,
+            'N_samples' : 10,
+            }
+    vars = {
+            'M': [1, 10],
+            'qbits_per_channel': [3,50],
+            'q_swap': [0., 1.],
+            } 
     
-    s = Surrogate(main.simulation_cd, A=A, n=n)
+    s = Surrogate(main.simulation_cd, A=A, vals=vals, vars=vars, n=n)
     surrogate_optimize(s, MAXITER=MAXITER, verbose=True)
 
-    sref = Surrogate(main.simulation_cd, A=A, n=nref)
+    sref = Surrogate(main.simulation_cd, A=A, vals=vals, vars=vars, n=nref)
 
     with open('../surdata/'+topo+vv.replace(',','')+'_iter-'+str(MAXITER)+'_objective-meanopt.pkl', 'wb') as file:
         pickle.dump([s,sref], file)
