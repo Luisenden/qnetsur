@@ -210,7 +210,7 @@ class Surrogate(Simulation):
 
         start = time.time()
         eval_sim = self.run_sim(x)
-        self.sim_time = time.time() - start
+        self.sim_time += time.time() - start
 
         self.y.append(eval_sim)
 

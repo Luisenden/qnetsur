@@ -1,9 +1,10 @@
 import numpy as np
 import pandas as pd
+from multiprocessing import Pool
 
 def objective(s, X) -> tuple:
     y = s.mmodel.predict(X.values)
-    y_mean = np.array(list(map(np.mean, y)))
+    y_mean = np.array([np.mean(y_i) for y_i in y])
     y_max = y_mean.max()
     index = np.where(y_mean == y_max)
     imax = index[0][0]
@@ -28,7 +29,7 @@ def get_candidates(s,n) -> dict:
     return x 
 
 def brute_optimize(s):
-    X_rand = get_candidates(s,1000000)
+    X_rand = get_candidates(s,1000000) # used 1M sample points for S settings (2,3)tree and 3lattice
     X_rand_df = pd.DataFrame(X_rand).astype(object)
     x,y = objective(s,X_rand_df)
     return x,y
