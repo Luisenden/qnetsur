@@ -1,6 +1,7 @@
 import numpy as np
 import time
 import pandas as pd
+
 from multiprocessing import Pool
 from specifications import postprocess
 
@@ -186,7 +187,6 @@ class Surrogate(Simulation):
         if diff < 0.5:
             opt = 1
             x, y = self.suggest_new_x()
-            #print('x_new: The model is %.2f. away from reality.' % (y+np.mean( self.run_sim(x_dict) )))
         else:
             opt = 0
             x = x_rand
@@ -221,7 +221,9 @@ class Surrogate(Simulation):
         self.X_df = pd.DataFrame(self.X)
         
         self.mmodel = MultiOutputRegressor(self.model())
+        start = time.time()
         self.mmodel.fit(self.X_df.values, self.y)
+        self.build_time += time.time()-start
 
 def surrogate_optimize(s :Surrogate, MAXITER=1000, epsilon=1e-2, verbose=False):
 

@@ -1,6 +1,7 @@
 import sys
 import pickle
 from utils import *
+from datetime import datetime
 
 from optimizingcd import main_cd
 from specifications import vars,vals
@@ -20,7 +21,7 @@ if __name__ == '__main__':
         # number of maximum iterations during optimiztion
         MAXITER = int(sys.argv[2]) 
 
-        n = 50 # size of initial training set
+        n = 20 # size of initial training set
         nref = n+MAXITER # reference model
 
     
@@ -29,5 +30,5 @@ if __name__ == '__main__':
 
         sref = Surrogate(main_cd.simulation_cd, vals=vals, vars=vars, n=nref)
 
-        with open('../surdata/'+topo+vv.replace(',','')+'_iter-'+str(MAXITER)+'_objective-meanopt.pkl', 'wb') as file:
+        with open('../surdata/'+topo+vv.replace(',','')+'_iter-'+str(MAXITER)+'_objective-meanopt'+datetime.now().strftime("%m-%d-%Y_%H:%M")+'.pkl', 'wb') as file:
                 pickle.dump([s,sref], file)
