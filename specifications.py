@@ -20,7 +20,7 @@ vals = {
         }
 
 vars = {
-        'M': [1, 10],
-        'qbits_per_channel': [3,100],
+        'M': [1, 100],
+        'qbits_per_channel': [3,500],
         'q_swap': [0., 1.],
         } 

@@ -181,10 +181,10 @@ class Surrogate(Simulation):
             tuple: Suggested parameters and corresponding value.
         """
         x_rand = self.get_random_x(1)
-        diff = np.mean(gower_matrix(pd.DataFrame(x_rand, index=[0]), self.X_df)[0])
+        distance = np.mean(gower_matrix(pd.DataFrame(x_rand, index=[0]), self.X_df)[0])
 
         y = None
-        if diff < 0.5:
+        if distance < 0.5:
             opt = 1
             x, y = self.suggest_new_x()
         else:
