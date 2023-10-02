@@ -59,7 +59,9 @@ class Simulation:
         self.func = func
 
         # multiprocessing
-        self.procs = max(mp.cpu_count(),50)
+        self.procs = mp.cpu_count()
+        if self.procs > 50:
+            self.procs = 50
 
     @simwrap
     def run_sim(self,x :dict) -> list:
