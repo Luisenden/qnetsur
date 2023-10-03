@@ -44,13 +44,15 @@ def simulated_annealing(s, temp :int = 10, beta_schedule :int = 1, MAXITER = 5, 
 
     np.random.seed(seed)
     temp_init = temp
+
+    y = []
     
     # generate an initial point
     current = s.get_random_x(1)
 
     # evaluate the initial point
     current_eval = objective(s,current)
-    print('initial value %.2f' % current_eval)
+    # print('initial value %.2f' % current_eval)
 
     # optimize
     count = 0
@@ -59,7 +61,7 @@ def simulated_annealing(s, temp :int = 10, beta_schedule :int = 1, MAXITER = 5, 
 
         # cooling 
         t = temp / (count + 1)
-
+        y.append(current_eval)
         # repeat
         for _ in range(beta_schedule):
 
@@ -81,9 +83,9 @@ def simulated_annealing(s, temp :int = 10, beta_schedule :int = 1, MAXITER = 5, 
                 current, current_eval = candidate, candidate_eval
         
         count += 1 
-    
-    print('result value %.2f' % current_eval)
-    return current, current_eval
+    y.append(current_eval)
+    # print('result value %.2f' % current_eval)
+    return current, y
 
 if __name__ == '__main__':
 
