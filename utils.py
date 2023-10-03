@@ -60,8 +60,8 @@ class Simulation:
 
         # multiprocessing
         self.procs = mp.cpu_count()
-        if self.procs > 50:
-            self.procs = 50
+        if self.procs > 30:
+            self.procs = 30
 
     @simwrap
     def run_sim(self,x :dict) -> list:
@@ -136,10 +136,10 @@ class Surrogate(Simulation):
         np.random.seed(42)
     
         # profiling storage
-        self.sim_time = 0
-        self.build_time = 0
-        self.predict_time = 0
-        self.findmax_time = 0
+        self.sim_time = []
+        self.build_time = []
+        self.predict_time = []
+        self.findmax_time = []
 
         # generate initial training set 
         ## X
@@ -158,11 +158,11 @@ class Surrogate(Simulation):
             self.y.append(y_i[0])
             self.y_std.append(y_i[1])
 
-        self.sim_time += time.time() - start
+        self.sim_time.append(time.time() - start)
 
         # build model
         start = time.time()
-        self.model = SVR
+        self.model = GradientBoostingRegressor
         self.mmodel = MultiOutputRegressor(self.model())
         self.mmodel_std = MultiOutputRegressor(self.model())
 
@@ -171,7 +171,7 @@ class Surrogate(Simulation):
         
         self.mmodel.fit(data, self.y)
         self.mmodel_std.fit(data, self.y_std)
-        self.build_time += time.time()-start
+        self.build_time.append(time.time()-start)
 
         # storage
         self.improvement = []
@@ -211,8 +211,10 @@ class Surrogate(Simulation):
 
         flag = np.zeros(len(distances)-nsuggested+1) # keep track of suggested point
         if nsuggested > 0:
+            start = time.time()
             suggested_x = random_optimize(self)
             flag[-1] = 1 # add flags
+            print('time optimization: ', time.time()-start)
 
         self.flag_vec = np.append(self.flag_vec, flag)
 
@@ -233,7 +235,7 @@ class Surrogate(Simulation):
         start = time.time() 
         with Pool(processes=self.procs) as pool:
             y_temp = pool.map(self.run_sim, self.current_points.iloc)
-        self.sim_time += time.time() - start
+        self.sim_time.append(time.time() - start)
 
         # calculate improvement of new data point to previous best observed point
         impr = np.max([np.mean(y_i[0]) for y_i in y_temp])-np.max([np.mean(y_i) for y_i in self.y])
@@ -253,7 +255,7 @@ class Surrogate(Simulation):
         
         self.mmodel.fit(data, self.y)
         self.mmodel_std.fit(data, self.y_std)
-        self.build_time += time.time()-start
+        self.build_time.append(time.time()-start)
 
     def optimize(self, solver='random', MAXITER=1000, epsilon=1e-2, verbose=False) -> None:
 

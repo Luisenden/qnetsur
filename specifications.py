@@ -13,14 +13,15 @@ def objective(s, X) -> tuple:
 
     start = time.time()
     y = s.mmodel.predict(X)
-    s.predict_time = time.time()-start
+    s.predict_time.append(time.time()-start)
+    # print('predict ', s.predict_time)
 
     start = time.time()
     y = np.array(y)
     y_mean = y.mean(axis=1)
     y_mean = np.array(y_mean)
     index = y_mean.argmax()
-    s.findmax_time = time.time()-start
+    s.findmax_time.append(time.time()-start)
 
     return X[index]
 
@@ -31,7 +32,7 @@ vals = { # define fixed parameters for your simulation function
         'p_swap':1,  
         'return_data':'avg', 
         'progress_bar': None,
-        'total_time': 1000,
+        'total_time': 500,
         'N_samples' : 10,
         }
 

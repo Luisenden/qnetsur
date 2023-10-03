@@ -24,10 +24,22 @@ def get_candidates(s,n) -> dict: # get points to evaluate current surrogate mode
     return x 
 
 def random_optimize(s):
+    # t = time.time()
     X_rand = get_candidates(s,1000000) # used 1M sample points for S settings (2,3)tree and 3lattice
+    # print('get candidates', time.time()-t)
+    # t = time.time()
     X_rand_df = pd.DataFrame(X_rand).astype(object)
+    # print('make df', time.time()-t)
+    # t = time.time()
     data_scaled = s.scaler.fit_transform(X_rand_df)
+    # print('transform', time.time()-t)
+    # t = time.time()
     x = objective(s,data_scaled)
+    # # print('find max', time.time()-t)
+    # t = time.time()
     x_rescaled = s.scaler.inverse_transform([x])
+    # print('scale back', time.time()-t)
+    # t = time.time()
     newx = pd.DataFrame(columns=s.X_df.columns, index=[0], data=np.array(x_rescaled)).astype(s.dtypes).astype(object)
+    # print('make df', time.time()-t)
     return newx
