@@ -25,6 +25,11 @@ def objective(s, X) -> tuple:
 
     return X[index]
 
+class NetworkTopology:
+    def __init__(self, size: tuple, name: str):
+            self.size = size
+            self.name = name
+
 vals = { # define fixed parameters for your simulation function
         'protocol':'srs', 
         'p_cons': 0.1, 
@@ -32,7 +37,7 @@ vals = { # define fixed parameters for your simulation function
         'p_swap':1,  
         'return_data':'avg', 
         'progress_bar': None,
-        'total_time': 500,
+        'total_time': 1000,
         'N_samples' : 10,
         }
 
@@ -45,4 +50,4 @@ vars = { # define variables and bounds for your simulation function
         } 
 
 nodes_to_optimize = [] # specify nodes for objective, use [] in case all nodes
-initial_model_size = 20
+initial_model_size = 30

@@ -1,7 +1,7 @@
 import numpy as np
 import time
 import pandas as pd
-from optimizingcd import main_cd as simulation
+from gower import gower_matrix
 
 import multiprocessing as mp
 from multiprocessing import Pool
@@ -14,10 +14,7 @@ from sklearn.svm import SVR
 from sklearn.linear_model import SGDRegressor
 from sklearn.ensemble import GradientBoostingRegressor
 
-from gower import gower_matrix
-
-
-from SA_optimize import simulated_annealing
+from optimizingcd import main_cd as simulation
 from random_optimize import random_optimize
 
 
@@ -154,6 +151,10 @@ class Surrogate(Simulation):
         with Pool(processes=self.procs) as pool:
             y_temp = pool.map(self.run_sim, self.X_df.iloc)
 
+        # y_temp = [] # in serial
+        # for x in self.X_df.iloc:
+        #     y_temp.append(self.run_sim(x))
+
         for y_i in y_temp:
             self.y.append(y_i[0])
             self.y_std.append(y_i[1])
@@ -177,23 +178,6 @@ class Surrogate(Simulation):
         self.improvement = []
         self.flag_vec = np.zeros(initial_model_size)
 
-    # def suggest_new_x(self) -> dict:
-    #     """
-    #     Suggests a new set of parameters using acquisition optimization.
-
-    #     Args:
-    #         temp (int, optional): Initial temperature. Defaults to 10.
-    #         beta_schedule (int, optional): Beta schedule parameter. Defaults to 5.
-    #         MAXITER (float, optional): Maximum number of iterations. Defaults to 1e3.
-    #         seed (int, optional): Random seed. Defaults to 42.
-
-    #     Returns:
-    #         tuple: Suggested parameters and corresponding value.
-    #     """
-    #     start = time.time()
-    #     x_opt =  random_optimize(self) 
-    #     self.optimize_time += time.time()-start
-    #     return x_opt
         
     def acquisition(self) -> pd.DataFrame:
         """
@@ -211,10 +195,8 @@ class Surrogate(Simulation):
 
         flag = np.zeros(len(distances)-nsuggested+1) # keep track of suggested point
         if nsuggested > 0:
-            start = time.time()
             suggested_x = random_optimize(self)
             flag[-1] = 1 # add flags
-            print('time optimization: ', time.time()-start)
 
         self.flag_vec = np.append(self.flag_vec, flag)
 
@@ -257,7 +239,7 @@ class Surrogate(Simulation):
         self.mmodel_std.fit(data, self.y_std)
         self.build_time.append(time.time()-start)
 
-    def optimize(self, solver='random', MAXITER=1000, epsilon=1e-2, verbose=False) -> None:
+    def optimize(self, solver='random', MAXITER=100, epsilon=1e-2, verbose=False) -> None:
 
         # acquisition optimizer (random or simulated annealing)
         self.solver = solver
@@ -265,7 +247,6 @@ class Surrogate(Simulation):
         for iter in range(MAXITER):
             self.acquisition()
             self.update()
-
             if verbose: print('{} % done'.format((iter+1)/MAXITER*100))
 
             if iter > 10 and np.mean(list(map(abs,self.improvement[-10:]))) < epsilon:
