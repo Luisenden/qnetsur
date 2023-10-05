@@ -2,7 +2,6 @@ import numpy as np
 import time
 import pandas as pd
 from gower import gower_matrix
-from scipy.stats import truncnorm
 
 import multiprocessing as mp
 from multiprocessing import Pool
@@ -56,6 +55,11 @@ class Simulation:
         # simulation function handler
         self.func = func
 
+        # multiprocessing
+        self.procs = mp.cpu_count()
+        if self.procs > 30:
+            self.procs = 30
+
     @simwrap
     def run_sim(self,x :dict) -> list:
         """
@@ -95,33 +99,6 @@ class Simulation:
                 x[dim] = np.random.uniform(vals[0], vals[1], n) if n > 1 or use_list else np.random.uniform(vals[0], vals[1])         
 
         return x
-    
-    def get_neighbour(self, MAXITER, count, x :dict) -> dict:
-        """
-        Generates random parameters for the simulation.
-
-        Args:
-            n (int): Number of random parameter sets to generate.
-
-        Returns:
-            dict: Randomly generated parameters.
-        """
-        
-        assert all(isinstance(val, list) for val in self.vars.values()), f"Dimension types must be list!"
-
-        x_n = {}
-        f = (1-np.log(1+count/MAXITER))**4
-        for dim, vals in self.vars.items():
-            if len(vals) > 2:
-                x_n[dim] = np.random.choice(vals)
-            elif all(isinstance(x, int) for x in vals):
-                std = f * (vals[1] - vals[0])/2
-                x_n[dim] = int(truncnorm.rvs((vals[0] - x[dim]) / std, (vals[1] - x[dim]) / std, loc=x[dim], scale=std, size=1)[0])
-            elif all(isinstance(x, float) for x in vals):
-                std = f * (vals[1] - vals[0])/2
-                x_n[dim] = truncnorm.rvs((vals[0] - x[dim]) / std, (vals[1] - x[dim]) / std, loc=x[dim], scale=std, size=1)[0]         
-
-        return x_n
 
     
 class Surrogate(Simulation):
@@ -158,12 +135,8 @@ class Surrogate(Simulation):
         # profiling storage
         self.sim_time = []
         self.build_time = []
-        self.optimize_time = []
-    
-        # multiprocessing
-        self.procs = mp.cpu_count()
-        if self.procs > initial_model_size:
-            self.procs = initial_model_size
+        self.predict_time = []
+        self.findmax_time = []
 
         # generate initial training set 
         ## X
@@ -173,10 +146,15 @@ class Surrogate(Simulation):
         ## y, run simulation in parallel
         self.y = []
         self.y_std = []
+        self.y_optimized = []
 
         start = time.time() 
         with Pool(processes=self.procs) as pool:
             y_temp = pool.map(self.run_sim, self.X_df.iloc)
+
+        # y_temp = [] # in serial
+        # for x in self.X_df.iloc:
+        #     y_temp.append(self.run_sim(x))
 
         for y_i in y_temp:
             self.y.append(y_i[0])
@@ -201,25 +179,28 @@ class Surrogate(Simulation):
         self.improvement = []
         #self.flag_vec = np.zeros(initial_model_size)
 
-    def objective(self):
-        y_obj_vec = np.array(self.y).mean(axis=1)
-        return y_obj_vec
-
-    def acquisition(self,MAXITER,count) -> pd.DataFrame:
+        
+    def acquisition(self) -> pd.DataFrame:
         """
         Computes new data points according to estimated improvement and degree of exploration and adds the data to training sample.
 
         """
-        y_obj_vec = self.objective()
-        newx = []
-        for x in self.X_df.iloc[np.argsort(y_obj_vec)[-5:]].iloc:
-            newx.append(self.get_neighbour(MAXITER=MAXITER, count=count, x=x.to_dict()))
-        # for _ in range(3):
-        #     newx.append(self.get_random_x(1))
-        self.X_df_add = pd.DataFrame.from_records(newx).astype(object)
+        limit = 0.97
 
-        self.X_df = pd.concat([self.X_df, self.X_df_add], axis=0, ignore_index=True)
+        x_rand_df = pd.DataFrame(self.get_random_x(self.procs)).astype(object) # newly sampled points
+        distances = np.array([np.mean(dists) for dists in gower_matrix(x_rand_df, self.X_df)]) # calculates gower distance between newly sampled points and previously observed points
 
+        # optimize surrogate model and suggest new x for sample points that were close enough
+        suggested_x = pd.DataFrame(columns=self.X_df.columns).astype(object)
+        nsuggested = sum(distances<limit)
+
+        if nsuggested > 0:
+            suggested_x = random_optimize(self)
+
+        self.current_points = pd.concat([x_rand_df[distances>=limit], suggested_x], ignore_index=True ,axis=0)
+
+        # add points
+        self.X_df = pd.concat([self.X_df, self.current_points], ignore_index=True ,axis=0)
 
     
     def update(self) -> None:
@@ -231,8 +212,8 @@ class Surrogate(Simulation):
         """
 
         start = time.time() 
-        with Pool(processes=5) as pool:
-            y_temp = pool.map(self.run_sim, self.X_df_add.iloc)
+        with Pool(processes=self.procs) as pool:
+            y_temp = pool.map(self.run_sim, self.current_points.iloc)
         self.sim_time.append(time.time() - start)
 
         # calculate improvement of new data point to previous best observed point
@@ -243,6 +224,8 @@ class Surrogate(Simulation):
         for y_i in y_temp:
             self.y.append(y_i[0])
             self.y_std.append(y_i[1])
+
+        self.y_optimized.append(y_temp[-1][0])
         
         # update surrogate model
         start = time.time()
@@ -255,13 +238,17 @@ class Surrogate(Simulation):
         self.mmodel_std.fit(self.X_df.values, self.y_std)
         self.build_time.append(time.time()-start)
 
-    def optimize(self, MAXITER, verbose=False) -> None:
+    def optimize(self, solver='random', MAXITER=100, epsilon=1e-2, verbose=False) -> None:
+
+        # acquisition optimizer (random or simulated annealing)
+        self.solver = solver
 
         for iter in range(MAXITER):
-            start = time.time()
-            self.acquisition(MAXITER,iter)
-            self.optimize_time.append(time.time()-start)
+            self.acquisition()
             self.update()
             if verbose: print('{} % done'.format((iter+1)/MAXITER*100))
+
+            if iter > 10 and np.mean(list(map(abs,self.improvement[-10:]))) < epsilon:
+                break
 
         if verbose: print('Optimization finished.')

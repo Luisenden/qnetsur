@@ -12,18 +12,17 @@ def simwrap(func):
 def objective(s, X) -> tuple:
 
     start = time.time()
-    y = s.mmodel.predict(X)
+    y = s.mmodel.predict(X.values)
     s.predict_time.append(time.time()-start)
     # print('predict ', s.predict_time)
 
     start = time.time()
     y = np.array(y)
     y_mean = y.mean(axis=1)
-    y_mean = np.array(y_mean)
     index = y_mean.argmax()
     s.findmax_time.append(time.time()-start)
 
-    return X[index]
+    return X.iloc[index]
 
 class NetworkTopology:
     def __init__(self, size: tuple, name: str):
@@ -37,17 +36,17 @@ vals = { # define fixed parameters for your simulation function
         'p_swap':1,  
         'return_data':'avg', 
         'progress_bar': None,
-        'total_time': 1000,
+        'total_time': 300,
         'N_samples' : 10,
         }
 
 vars = { # define variables and bounds for your simulation function
         'M': [1, 10],
         'qbits_per_channel': [1,50],
-        'cutoff':[1.,30.],
+        'cutoff':[1.,10.],
         'q_swap': [0., 1.],
         'p_cons':[0.01, 0.2]
         } 
 
 nodes_to_optimize = [] # specify nodes for objective, use [] in case all nodes
-initial_model_size = 30
+initial_model_size = 10

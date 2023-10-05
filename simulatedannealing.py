@@ -26,15 +26,15 @@ def get_neighbour(s, temp, temp_init, x :dict) -> dict:
     assert all(isinstance(val, list) for val in s.vars.values()), f"Dimension types must be list!"
 
     x_n = {}
-    f = (1-np.log(1+temp/temp_init))**2
+    f = 1#(1-np.log(1+(temp_init-temp)/temp_init))**2 #(1-np.log(1+temp/temp_init))**2
     for dim, vals in s.vars.items():
         if len(vals) > 2:
             x_n[dim] = np.random.choice(vals)
         elif all(isinstance(x, int) for x in vals):
-            std = f * (vals[1] - vals[0])
+            std = f * (vals[1] - vals[0])/2
             x_n[dim] = int(truncnorm.rvs((vals[0] - x[dim]) / std, (vals[1] - x[dim]) / std, loc=x[dim], scale=std, size=1)[0])
         elif all(isinstance(x, float) for x in vals):
-            std = f * (vals[1] - vals[0])
+            std = f * (vals[1] - vals[0])/2
             x_n[dim] = truncnorm.rvs((vals[0] - x[dim]) / std, (vals[1] - x[dim]) / std, loc=x[dim], scale=std, size=1)[0]         
 
     return x_n

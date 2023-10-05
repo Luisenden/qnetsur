@@ -6,7 +6,7 @@ from datetime import datetime
 from optimizingcd import main_cd
 from specifications import *
 
-from simulatedannealing import *
+from simulatedannealing import * 
 
 
 if __name__ == '__main__':
@@ -27,19 +27,21 @@ if __name__ == '__main__':
         s.optimize(MAXITER=MAXITER, verbose=False)
         total_time = time.time()-start
 
+        print(np.array(s.y).mean(axis=1))
+
         # baseline 
         start = time.time()
-        MAXITERSA = s.procs*MAXITER + initial_model_size
+        MAXITERSA = 5*MAXITER + initial_model_size
         si = Simulation(main_cd.simulation_cd, topo, vals, vars)
         xSA, ySA = simulated_annealing(si, MAXITER=MAXITERSA)
         total_timeSA = time.time()-start
 
-        # print('optimization:', np.mean(s.y[-1]))
-        # print('time total', total_time)
+        print('optimization:', ySA[-1])
+        print('time total', total_time, total_timeSA)
 
         # reference model
-        # initial_ref_size = initial_model_size+MAXITER # reference model
-        # sref = Surrogate(main_cd.simulation_cd, topo, vals=vals, vars=vars, initial_model_size=initial_ref_size)
+        initial_ref_size = initial_model_size+MAXITER*5 # reference model
+        sref = Surrogate(main_cd.simulation_cd, topo, vals=vals, vars=vars, initial_model_size=initial_ref_size)
 
         with open('../surdata/'+topo.name+vv.replace(',','')+'_iter-'+str(MAXITER)+'_objective-meanopt'+datetime.now().strftime("%m-%d-%Y_%H:%M")+'.pkl', 'wb') as file:
-                pickle.dump([s,total_time, xSA, ySA, total_timeSA], file)
+                pickle.dump([s,total_time, sref, xSA, ySA, total_timeSA], file)
