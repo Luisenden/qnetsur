@@ -27,7 +27,7 @@ if __name__ == '__main__':
         s.optimize(MAXITER=MAXITER, verbose=False)
         total_time = time.time()-start
 
-        print(np.array(s.y).mean(axis=1))
+        # print(np.array(s.y).mean(axis=1))
 
         # baseline 
         start = time.time()
@@ -36,8 +36,8 @@ if __name__ == '__main__':
         xSA, ySA = simulated_annealing(si, MAXITER=MAXITERSA)
         total_timeSA = time.time()-start
 
-        print('optimization:', ySA[-1])
-        print('time total', total_time, total_timeSA)
+        # print('optimization:', ySA[-1])
+        # print('time total', total_time, total_timeSA)
 
         # reference model
         initial_ref_size = initial_model_size+MAXITER*5 # reference model
