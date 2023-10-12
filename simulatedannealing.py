@@ -80,6 +80,7 @@ def simulated_annealing(s, temp :int = 10, beta_schedule :int = 100, MAXITER = 5
             if diff < 0 or np.random.random() < metropolis:
                 current, current_eval = candidate, candidate_eval
         
+        count += 1 
     y.append(current_eval)
     # print('result value %.2f' % current_eval)
     return current, y

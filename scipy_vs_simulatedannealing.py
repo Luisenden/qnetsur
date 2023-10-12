@@ -14,7 +14,8 @@ schaffer = lambda x,y,z,w: 0.5+ (np.sin(x**2-y**2)**2 - 0.5) / (1+0.001*(y**2+x*
 step = lambda x,y,z,w: sum([np.floor(i+0.5)**2 for i in [x,y,z,w]]) # nr.139  discont.
 sign = lambda x,y,z,w: sum([np.sign(i) for i in [x,y,z,w]]) # discont.
 
-funs = [rosenbrock]#, bartelsconn, schaffer, step, sign]
+funs = [rosenbrock, bartelsconn, schaffer, step, sign]
+
 
 vars = {}
 dims = 'xyzw'
@@ -22,11 +23,12 @@ for i in dims:
     vars[i] =  [-100.,100.]
 
 vals = {}
+
 sims = [Simulation(fun, vals=vals, vars=vars) for fun in funs]
- 
+        
 # Optimization using simulated annealing
-MAXITERSA = 2
-simannealsols = [simulated_annealing(si, MAXITER=MAXITERSA) for si in sims]
+MAXITERSA = 2000
+simannealsols = [simulated_annealing(si, MAXITER=MAXITERSA)[1][-1] for si in sims]
 
 # Optimization using SciPy
 scipysols = []
