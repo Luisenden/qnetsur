@@ -8,11 +8,11 @@ from specifications import *
 
 def objective(s, x :dict) -> float:
 
-    eval = s.run_sim(x)[0]
-    return -np.mean(eval)
+    eval = s.run_sim(x)#[0]
+    return eval#-np.mean(eval)
 
 
-def get_neighbour(s, temp, temp_init, x :dict) -> dict:
+def get_neighbour(s, x :dict) -> dict:
     """
     Generates random parameters for the simulation.
 
@@ -26,24 +26,22 @@ def get_neighbour(s, temp, temp_init, x :dict) -> dict:
     assert all(isinstance(val, list) for val in s.vars.values()), f"Dimension types must be list!"
 
     x_n = {}
-    f = 1#(1-np.log(1+(temp_init-temp)/temp_init))**2 #(1-np.log(1+temp/temp_init))**2
     for dim, vals in s.vars.items():
         if len(vals) > 2:
             x_n[dim] = np.random.choice(vals)
         elif all(isinstance(x, int) for x in vals):
-            std = f * (vals[1] - vals[0])/2
+            std = (vals[1] - vals[0])/2
             x_n[dim] = int(truncnorm.rvs((vals[0] - x[dim]) / std, (vals[1] - x[dim]) / std, loc=x[dim], scale=std, size=1)[0])
         elif all(isinstance(x, float) for x in vals):
-            std = f * (vals[1] - vals[0])/2
+            std = (vals[1] - vals[0])/2
             x_n[dim] = truncnorm.rvs((vals[0] - x[dim]) / std, (vals[1] - x[dim]) / std, loc=x[dim], scale=std, size=1)[0]         
 
     return x_n
 
 
-def simulated_annealing(s, temp :int = 10, beta_schedule :int = 1, MAXITER = 5, seed=42):
+def simulated_annealing(s, temp :int = 10, beta_schedule :int = 100, MAXITER = 5, seed=42):
 
     np.random.seed(seed)
-    temp_init = temp
 
     y = []
     
@@ -66,7 +64,7 @@ def simulated_annealing(s, temp :int = 10, beta_schedule :int = 1, MAXITER = 5, 
         for _ in range(beta_schedule):
 
             # choose a different point and evaluate
-            candidate = get_neighbour(s, t, temp_init, current)
+            candidate = get_neighbour(s, current)
             candidate_eval = objective(s,candidate)
 
             # check for new best solution
@@ -82,7 +80,6 @@ def simulated_annealing(s, temp :int = 10, beta_schedule :int = 1, MAXITER = 5, 
             if diff < 0 or np.random.random() < metropolis:
                 current, current_eval = candidate, candidate_eval
         
-        count += 1 
     y.append(current_eval)
     # print('result value %.2f' % current_eval)
     return current, y

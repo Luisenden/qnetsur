@@ -6,26 +6,26 @@ def simwrap(func):
     @functools.wraps(func)
     def wrapper(*args,**kwargs):
         result = func(*args,**kwargs)
-        return [[node[-1] for node in result[1]], [node[-1] for node in result[3]]] # mean and std according to simulation function
+        return result#[[node[-1] for node in result[1]], [node[-1] for node in result[3]]] # mean and std according to simulation function
     return wrapper
 
-def objective(s, X) -> tuple:
+# def objective(s, X) -> tuple:
 
-    start = time.time()
-    y = s.mmodel.predict(X.values)
-    s.predict_time.append(time.time()-start)
-    # print('predict ', s.predict_time)
+#     start = time.time()
+#     y = s.mmodel.predict(X.values)
+#     s.predict_time.append(time.time()-start)
+#     # print('predict ', s.predict_time)
 
-    start = time.time()
-    y = np.array(y)
-    y_mean = y.mean(axis=1)
-    index = y_mean.argmax()
-    s.findmax_time.append(time.time()-start)
+#     start = time.time()
+#     y = np.array(y)
+#     y_mean = y.mean(axis=1)
+#     index = y_mean.argmax()
+#     s.findmax_time.append(time.time()-start)
 
-    return X.iloc[index]
+#     return X.iloc[index]
 
 class NetworkTopology:
-    def __init__(self, size: tuple, name: str):
+    def __init__(self, size:tuple = None, name:str = None):
             self.size = size
             self.name = name
 

@@ -16,7 +16,6 @@ from sklearn.linear_model import SGDRegressor
 from sklearn.ensemble import GradientBoostingRegressor
 
 from optimizingcd import main_cd as simulation
-from random_optimize import random_optimize
 
 
 class Simulation:
@@ -42,11 +41,9 @@ class Simulation:
             Computes the gower difference between a point x and all other observed points in sample.
     """
 
-    def __init__(self, func, topology, vals, vars):
+    def __init__(self, func, vals, vars):
         # specify fixed parameters
         self.vals = vals 
-        self.size = topology.size
-        self.vals['A'] = simulation.adjacency_squared(self.size[0]) if topology.name == 'square' else simulation.adjacency_tree(self.size[0], self.size[1])
         
         # specify variable parameters
         self.vars = vars
@@ -151,8 +148,8 @@ class Surrogate(Simulation):
         update(x):
             Updates the model with new data.
     """
-    def __init__(self, func, topology, vals, vars, initial_model_size):
-        super().__init__(func, topology, vals, vars)
+    def __init__(self, func,  vals, vars, initial_model_size):
+        super().__init__(func, vals, vars)
         np.random.seed(42)
     
         # profiling storage
@@ -201,21 +198,16 @@ class Surrogate(Simulation):
         self.improvement = []
         #self.flag_vec = np.zeros(initial_model_size)
 
-    def objective(self):
-        y_obj_vec = np.array(self.y).mean(axis=1)
-        return y_obj_vec
 
     def acquisition(self,MAXITER,count) -> pd.DataFrame:
         """
         Computes new data points according to estimated improvement and degree of exploration and adds the data to training sample.
 
         """
-        y_obj_vec = self.objective()
+        y_obj_vec = np.array(self.y).mean(axis=1)
         newx = []
         for x in self.X_df.iloc[np.argsort(y_obj_vec)[-5:]].iloc:
             newx.append(self.get_neighbour(MAXITER=MAXITER, count=count, x=x.to_dict()))
-        # for _ in range(3):
-        #     newx.append(self.get_random_x(1))
         self.X_df_add = pd.DataFrame.from_records(newx).astype(object)
 
         self.X_df = pd.concat([self.X_df, self.X_df_add], axis=0, ignore_index=True)
