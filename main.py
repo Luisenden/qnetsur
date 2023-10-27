@@ -26,24 +26,25 @@ if __name__ == '__main__':
         # instatiate surrogate model and run optimization
         start = time.time()
         s = Surrogate(main_cd.simulation_cd, vals=vals, vars=vars, initial_model_size=initial_model_size)
-        s.optimize(MAXITER=MAXITER, verbose=False)
+        s.optimize(MAXITER=MAXITER, verbose=True)
         total_time = time.time()-start
 
-        # print(np.array(s.y).mean(axis=1))
+        print(np.array(s.y).mean(axis=1))
+        print('time', total_time)
 
-        # baseline 
-        start = time.time()
-        MAXITERSA = 5*MAXITER + initial_model_size
-        si = Simulation(main_cd.simulation_cd, vals, vars)
-        xSA, ySA = simulated_annealing(si, MAXITER=MAXITERSA)
-        total_timeSA = time.time()-start
+        # # baseline 
+        # start = time.time()
+        # MAXITERSA = 5*MAXITER + initial_model_size
+        # si = Simulation(main_cd.simulation_cd, vals, vars)
+        # xSA, ySA = simulated_annealing(si, MAXITER=MAXITERSA)
+        # total_timeSA = time.time()-start
 
-        # print('optimization:', ySA[-1])
-        # print('time total', total_time, total_timeSA)
+        # # print('optimization:', ySA[-1])
+        # # print('time total', total_time, total_timeSA)
 
-        # reference model
-        initial_ref_size = initial_model_size+MAXITER*5 # reference model
-        sref = Surrogate(main_cd.simulation_cd, vals=vals, vars=vars, initial_model_size=initial_ref_size)
+        # # reference model
+        # initial_ref_size = initial_model_size+MAXITER*5 # reference model
+        # sref = Surrogate(main_cd.simulation_cd, vals=vals, vars=vars, initial_model_size=initial_ref_size)
 
-        with open('../surdata/'+topo.name+vv.replace(',','')+'_iter-'+str(MAXITER)+'_objective-meanopt'+datetime.now().strftime("%m-%d-%Y_%H:%M")+'.pkl', 'wb') as file:
-                pickle.dump([s,total_time, sref, xSA, ySA, total_timeSA], file)
+        # with open('../surdata/'+topo.name+vv.replace(',','')+'_iter-'+str(MAXITER)+'_objective-meanopt'+datetime.now().strftime("%m-%d-%Y_%H:%M")+'.pkl', 'wb') as file:
+        #         pickle.dump([s,total_time, sref, xSA, ySA, total_timeSA], file)
