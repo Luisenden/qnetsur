@@ -61,7 +61,7 @@ if __name__ == '__main__':
         #objectives[f"n{i}"] = ObjectiveProperties(minimize=False)
     objectives["mean"] = ObjectiveProperties(minimize=False)
 
-    ax_client = AxClient()
+    ax_client = AxClient(verbose_logging=False)
     ax_client.create_experiment(
         name="simulation_test_experiment",
         parameters=[
