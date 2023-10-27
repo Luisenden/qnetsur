@@ -18,7 +18,7 @@ def evaluate(parameters) -> float:
     result = simulation.simulation_cd(**x)
     mean_all_nodes, std_all_nodes = np.mean([node[-1] for node in result[1]]), np.mean([node[-1] for node in result[3]])
     res = dict()
-    res["mean"] = (mean_all_nodes[-1],std_all_nodes[-1])
+    res["mean"] = (mean_all_nodes,std_all_nodes)
     return res
 
 def evaluate_multiple(parameters) -> float:
