@@ -13,6 +13,14 @@ class NetworkTopology:
             self.size = size
             self.name = name
 
+def evaluate_multiple(parameters) -> float:
+    x = {**parameters, **vals}
+    result = simulation.simulation_cd(**x)
+    mean_all_nodes, std_all_nodes = np.mean([node[-1] for node in result[1]]), np.mean([node[-1] for node in result[3]])
+    res = dict()
+    res[f"mean"] = (mean_all_nodes[-1],std_all_nodes[-1])
+    return res
+
 def evaluate(parameters) -> float:
     x = {**parameters, **vals}
     result = simulation.simulation_cd(**x)
