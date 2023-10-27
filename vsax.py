@@ -2,7 +2,7 @@ import numpy as np
 from functools import partial
 from optimizingcd import main_cd as simulation
 import time
-import datetime
+from datetime import datetime
 
 import pickle
 import sys 
