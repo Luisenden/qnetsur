@@ -8,6 +8,8 @@ import pickle
 import sys 
 from ax.service.ax_client import AxClient, ObjectiveProperties
 
+from specifications import *
+
 class NetworkTopology:
     def __init__(self, size:tuple = None, name:str = None):
             self.size = size
@@ -39,7 +41,9 @@ if __name__ == '__main__':
     v = vv.split(',') 
 
     # user input: number of maximum iterations optimiztion
+   
     MAXITER = int(sys.argv[2]) 
+    MAXITERAX =  5*MAXITER + initial_model_size
 
     assert(len(v) in [1,2]), 'Argument must be given for network topology: e.g. "11" yields 11x11 square lattice, while e.g. "2,3" yields 2,3-tree network.'
     topo = NetworkTopology((int(v[0]), ), 'square') if len(v)==1 else NetworkTopology((int(v[0]), int(v[1])), 'tree')
@@ -96,12 +100,12 @@ if __name__ == '__main__':
 
     start = time.time()
     raw_data_vec = []
-    for i in range(MAXITER):
+    for i in range(MAXITERAX):
         parameters, trial_index = ax_client.get_next_trial()
         # Local evaluation here can be replaced with deployment to external system.
         ax_client.complete_trial(trial_index=trial_index, raw_data=evaluate(parameters))
     total_time = time.time()-start
 
     
-    with open('../surdata/Ax_'+topo.name+vv.replace(',','')+'_iter-'+str(MAXITER)+'_objective-meanopt'+datetime.now().strftime("%m-%d-%Y_%H:%M")+'.pkl', 'wb') as file:
+    with open('../surdata/Ax_'+topo.name+vv.replace(',','')+'_iter-'+str(MAXITERAX)+'_objective-meanopt'+datetime.now().strftime("%m-%d-%Y_%H:%M")+'.pkl', 'wb') as file:
             pickle.dump([ax_client,total_time,vals], file)
