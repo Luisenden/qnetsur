@@ -1,6 +1,8 @@
 import functools
+import numpy as np
+import time
 
-def simwrap(func): # simulation wrapper: any postprocessing of the simulation function
+def simwrap(func):
     @functools.wraps(func)
     def wrapper(*args,**kwargs):
         result = func(*args,**kwargs)
@@ -24,14 +26,12 @@ vals = { # define fixed parameters for your simulation function
         }
 
 vars = { # define variables and bounds for your simulation function
-        'range': {
-            'M': ([1, 10],'int'), 
-            'qbits_per_channel': ([1,50], 'int'),
-            'cutoff': ([1.,10.], 'float'),
-            'q_swap': ([0., 1.], 'float'),
-            'p_cons': ([0.01, 0.2],'float')
-            },
-        'choice':{}
+        'M': [1, 10],
+        'qbits_per_channel': [1,50],
+        'cutoff':[1.,10.],
+        'q_swap': [0., 1.],
+        'p_cons':[0.01, 0.2]
         } 
 
-initial_model_size = 10 # number of samples used for the initial training of the surrogate model
+nodes_to_optimize = [] # specify nodes for objective, use [] in case all nodes
+initial_model_size = 10

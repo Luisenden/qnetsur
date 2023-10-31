@@ -5,11 +5,12 @@ from scipy.stats import truncnorm
 from optimizingcd import main_cd as sim
 from utils import Simulation
 from specifications import *
+import time
 
 def objective(s, x :dict) -> float:
 
-    eval = s.run_sim(x)#[0]
-    return eval#-np.mean(eval)
+    eval = s.run_sim(x)[0]
+    return -np.mean(eval)
 
 
 def get_neighbour(s, x :dict) -> dict:
@@ -22,35 +23,38 @@ def get_neighbour(s, x :dict) -> dict:
     Returns:
         dict: Randomly generated parameters.
     """
-    
-    assert all(isinstance(val, list) for val in s.vars.values()), f"Dimension types must be list!"
-
     x_n = {}
-    for dim, vals in s.vars.items():
-        if len(vals) > 2:
-            x_n[dim] = np.random.choice(vals)
-        elif all(isinstance(x, int) for x in vals):
-            std = (vals[1] - vals[0])/2
-            x_n[dim] = int(truncnorm.rvs((vals[0] - x[dim]) / std, (vals[1] - x[dim]) / std, loc=x[dim], scale=std, size=1)[0])
-        elif all(isinstance(x, float) for x in vals):
-            std = (vals[1] - vals[0])/2
-            x_n[dim] = truncnorm.rvs((vals[0] - x[dim]) / std, (vals[1] - x[dim]) / std, loc=x[dim], scale=std, size=1)[0]         
+    for dim, par in s.vars['range'].items():
+            vals = par[0]
+            if par[1] == 'int':
+                std = (vals[1] - vals[0])/2
+                x_n[dim] = int(truncnorm.rvs((vals[0] - x[dim]) / std, (vals[1] - x[dim]) / std, loc=x[dim], scale=std, size=1)[0])
+            elif par[1] == 'float':
+                std = (vals[1] - vals[0])/2
+                x_n[dim] = truncnorm.rvs((vals[0] - x[dim]) / std, (vals[1] - x[dim]) / std, loc=x[dim], scale=std, size=1)[0]  
+            else:
+                raise Exception('Datatype must be "int" or "float".')
+                
+    for dim, vals in s.vars['choice'].items():
+            x_n[dim] = np.random.choice(vals)        
 
     return x_n
 
 
-def simulated_annealing(s, temp :int = 10, beta_schedule :int = 100, MAXITER = 5, seed=42):
+def simulated_annealing(s, temp :int = 10, beta_schedule :int = 10, MAXITER = 5, seed=42):
 
     np.random.seed(seed)
-
-    y = []
     
     # generate an initial point
     current = s.get_random_x(1)
 
     # evaluate the initial point
     current_eval = objective(s,current)
-    # print('initial value %.2f' % current_eval)
+    current_set = current.copy()
+    current_set['objective'] = -current_eval
+
+    sets = []
+    sets.append(current_set)
 
     # optimize
     count = 0
@@ -59,7 +63,7 @@ def simulated_annealing(s, temp :int = 10, beta_schedule :int = 100, MAXITER = 5
 
         # cooling 
         t = temp / (count + 1)
-        y.append(current_eval)
+
         # repeat
         for _ in range(beta_schedule):
 
@@ -80,10 +84,13 @@ def simulated_annealing(s, temp :int = 10, beta_schedule :int = 100, MAXITER = 5
             if diff < 0 or np.random.random() < metropolis:
                 current, current_eval = candidate, candidate_eval
         
+        current_set = current.copy()
+        current_set['objective'] = -current_eval
+        sets.append(current_set)
+
         count += 1 
-    y.append(current_eval)
-    # print('result value %.2f' % current_eval)
-    return current, y
+
+    return sets
 
 if __name__ == '__main__':
 
