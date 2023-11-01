@@ -249,8 +249,8 @@ class Surrogate(Simulation):
         for iter in range(MAXITER):
             start = time.time()
             self.acquisition(MAXITER,iter)
-            self.update()
             self.optimize_time.append(time.time()-start)
+            self.update()
             if verbose: print('{} % done'.format((iter+1)/MAXITER*100))
 
         if verbose: print('Optimization finished.')

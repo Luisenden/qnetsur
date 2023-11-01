@@ -59,7 +59,7 @@ if __name__ == '__main__':
     objectives = dict()
     objectives["mean"] = ObjectiveProperties(minimize=False)
 
-    total_time = 0
+    total_time = []
     ax_clients = []
     for _ in range(ntrials):
         ax_client = AxClient(verbose_logging=False)
@@ -100,12 +100,10 @@ if __name__ == '__main__':
         for i in range(MAXITER):
             parameters, trial_index = ax_client.get_next_trial()
             ax_client.complete_trial(trial_index=trial_index, raw_data=evaluate(parameters))
-        total_time += time.time()-start
+        total_time.append(time.time()-start)
 
         ax_clients.append(ax_client)
 
-    total_time_avg = total_time/ntrials
-
     
     with open('../surdata/Ax_'+topo.name+vv.replace(',','')+'_iter-'+str(MAXITER)+'_objective-meanopt'+datetime.now().strftime("%m-%d-%Y_%H:%M")+'.pkl', 'wb') as file:
-            pickle.dump([ax_clients,total_time_avg,vals], file)
+            pickle.dump([ax_clients,total_time,vals], file)

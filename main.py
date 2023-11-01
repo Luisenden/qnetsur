@@ -29,35 +29,33 @@ if __name__ == '__main__':
     
 
         # instatiate surrogate model and run optimization
-        total_time = 0
+        total_time = []
         sims = []
         for _ in range(ntrials):
                 start = time.time()
                 s = Surrogate(simulation.simulation_cd, vals=vals, vars=vars, initial_model_size=initial_model_size)
                 s.optimize(MAXITER=MAXITER, verbose=False)
-                total_time += time.time()-start
+                total_time.append(time.time()-start)
                 sims.append(s)
 
-        total_time_avg = total_time/ntrials
 
         # reference model
-        initial_ref_size = initial_model_size+MAXITER*10 # reference model
-        sref = Surrogate(simulation.simulation_cd, vals=vals, vars=vars, initial_model_size=initial_ref_size)
+        # initial_ref_size = initial_model_size+MAXITER*10 # reference model
+        # sref = Surrogate(simulation.simulation_cd, vals=vals, vars=vars, initial_model_size=initial_ref_size)
 
         with open('../surdata/Sur_'+topo.name+vv.replace(',','')+'_iter-'+str(MAXITER)+'_objective-meanopt'+datetime.now().strftime("%m-%d-%Y_%H:%M")+'.pkl', 'wb') as file:
-                pickle.dump([sims,total_time_avg, sref], file)
+                pickle.dump([sims,total_time], file)
 
         # baseline simulated annealing
-        total_timeSA = 0
+        total_timeSA = []
         sas = []
         for _ in range(ntrials):
                 start = time.time()
                 si = Simulation(simulation.simulation_cd, vals, vars)
                 result = simulated_annealing(si, MAXITER=MAXITER)
-                total_timeSA += time.time()-start
+                total_timeSA.append(time.time()-start)
                 result = pd.DataFrame.from_records(result)
                 sas.append(result)
-        total_timeSA_avg = total_timeSA/ntrials
 
         with open('../surdata/SA_'+topo.name+vv.replace(',','')+'_iter-'+str(MAXITER)+'_objective-meanopt'+datetime.now().strftime("%m-%d-%Y_%H:%M")+'.pkl', 'wb') as file:
-                pickle.dump([sas,total_timeSA_avg], file)
+                pickle.dump([sas,total_timeSA], file)
