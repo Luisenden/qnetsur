@@ -49,6 +49,7 @@ def plot_trial(df, store=False):
 
     dspace = len(sur_loaded_data[0][0].vars['range'])+len(sur_loaded_data[0][0].vars['choice']) # extract number of parameters
 
+    df['Trial'] = df['Trial'].astype(int)
     g = sns.FacetGrid(df, col='Trial', hue='Method', col_wrap=5)
     g.map(sns.scatterplot, 'Iteration', 'Number of virtual neighbours')
     g.add_legend()
@@ -69,7 +70,7 @@ def plot_avg_time(raw_data:list, store=False):
     barlist[0].set_color('green')
     plt.ylabel('Execution time [s]')
 
-    if store: plt.savefig(f'../surdata/Figures/compare_trials_{topo}_iter-{niter}.pdf')
+    if store: plt.savefig(f'../surdata/Figures/compare_times_{topo}_iter-{niter}.pdf')
     plt.show()
 
 
@@ -101,3 +102,5 @@ if __name__ == '__main__':
     df_plot = get_comparison_dataframe(raw_data_list)
     plot_trial(df=df_plot, store=True)
     plot_overall(df=df_plot, store=True)
+
+    plot_avg_time(raw_data=raw_data_list, store=True)
