@@ -160,6 +160,7 @@ class Surrogate(Simulation):
     
         # multiprocessing
         self.procs = mp.cpu_count()
+        print("number of processes available:", self.procs)
         if self.procs > initial_model_size:
             self.procs = initial_model_size
 
