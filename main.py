@@ -19,7 +19,7 @@ if __name__ == '__main__':
 
         # user input: number of trials
         ntrials = int(sys.argv[3]) 
-
+        
 
         v = vv.split(',') 
         assert(len(v) in [1,2]), 'Argument must be given for network topology: e.g. "11" yields 11x11 square lattice, while e.g. "2,3" yields 2,3-tree network.'
