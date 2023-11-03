@@ -19,7 +19,7 @@ vals = { # define fixed parameters for your simulation function
         'p_swap':1,  
         'return_data':'avg', 
         'progress_bar': None,
-        'total_time': 300,
+        'total_time': 1000,
         'N_samples' : 10,
         }
 

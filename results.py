@@ -20,17 +20,25 @@ def get_comparison_dataframe(raw_data:list):
 
     sur_raw, ax_raw, sa_raw = raw_data # assign raw data 
 
-    sur_results = pd.DataFrame([np.mean(sur_raw[0][i].y, axis=1)[10:] for i in range(10)]).T # get results of trials # take all y values except initial training sample
-    sur_results = reduce_to_means_per_iteration(sur_results,20) # take mean over 10 samples (=evaluations done in parallel per iteration)
-    sur_df = pd.melt(sur_results, var_name='Trial', value_name='Surrogate', ignore_index=False).reset_index(names='Iteration') # convert to one column
+    dfs = []
 
-    ax_results = pd.DataFrame([np.array(ax_raw[0][i].get_trials_data_frame()['mean']) for i in range(10)]).T # get results of trials
-    ax_df = pd.melt(ax_results, var_name='Trial', value_name='Ax', ignore_index=False).reset_index(names='Iteration') # convert to one column
+    if sur_raw != None:
+        sur_results = pd.DataFrame([np.mean(sur_raw[0][i].y, axis=1)[10:] for i in range(ntrials)]).T # get results of trials # take all y values except initial training sample
+        sur_results = reduce_to_means_per_iteration(sur_results,int(niter)) # take mean over 10 samples (=evaluations done in parallel per iteration)
+        sur_df = pd.melt(sur_results, var_name='Trial', value_name='Surrogate', ignore_index=False).reset_index(names='Iteration') # convert to one column
+        dfs.append(sur_df)
 
-    sa_results = pd.DataFrame([np.array(sa_raw[0][i].objective[:20]) for i in range(10)]).T # get results of trials ####### for some reason 21 iterations?? #######
-    sa_df = pd.melt(sa_results, var_name='Trial', value_name='SA', ignore_index=False).reset_index(names='Iteration') # convert to one column
+    if ax_raw != None:
+        ax_results = pd.DataFrame([np.array(ax_raw[0][i].get_trials_data_frame()['mean']) for i in range(ntrials)]).T # get results of trials
+        ax_df = pd.melt(ax_results, var_name='Trial', value_name='Ax', ignore_index=False).reset_index(names='Iteration') # convert to one column
+        dfs.append(ax_df)
 
-    df_plot = pd.concat([sur_df, ax_df, sa_df], axis=1).T.drop_duplicates().T.melt(id_vars=['Iteration', 'Trial'], var_name='Method', value_name='Number of virtual neighbours') # concatenate all three methods' results
+    if sa_raw != None:
+        sa_results = pd.DataFrame([np.array(sa_raw[0][i].objective[:int(niter)]) for i in range(ntrials)]).T # get results of trials ####### for some reason 21 iterations?? #######
+        sa_df = pd.melt(sa_results, var_name='Trial', value_name='SA', ignore_index=False).reset_index(names='Iteration') # convert to one column
+        dfs.append(sa_df)
+
+    df_plot = pd.concat(dfs, axis=1).T.drop_duplicates().T.melt(id_vars=['Iteration', 'Trial'], var_name='Method', value_name='Number of virtual neighbours') # concatenate all three methods' results
     
     return df_plot
 
@@ -38,10 +46,14 @@ def plot_overall(df, store=False):
 
     dspace = len(sur_loaded_data[0][0].vars['range'])+len(sur_loaded_data[0][0].vars['choice']) # extract number of parameters
 
-    sns.lineplot(data = df, x='Iteration', y='Number of virtual neighbours', hue='Method') # plot the Number of Neighbours for all methods
-    plt.gca().xaxis.set_major_formatter(FuncFormatter(lambda x, _: int(x)))
+    df['Iteration'] = df['Iteration'].astype(int)
+
+    g = sns.lineplot(data = df, x='Iteration', y='Number of virtual neighbours', hue='Method') # plot the Number of Neighbours for all methods
     plt.title(f'Optimization Quantum Network ({topo}) over {dspace} parameters')
-    
+    plt.gcf().set_size_inches(15,7)
+    g.grid(which='major', color='w', linewidth=1.0)
+    g.grid(which='minor', color='w', linewidth=0.5)
+    g.set_xticks(range(0,int(niter),2))
     if store: plt.savefig(f'../surdata/Figures/compare_overall_{topo}_iter-{niter}.pdf')
     plt.show()
 
@@ -58,17 +70,28 @@ def plot_trial(df, store=False):
     plt.gca().xaxis.set_major_formatter(FuncFormatter(lambda x, _: int(x)))
     
     if store: plt.savefig(f'../surdata/Figures/compare_trials_{topo}_iter-{niter}.pdf')
-    plt.show()
+   #plt.show()
 
 def plot_avg_time(raw_data:list, store=False):
 
     sur_loaded_data = raw_data[0]
-    
-    sur_sim_time = sum([sum(sur_loaded_data[0][i].sim_time) for i in range(10)])/10
 
-    barlist = plt.bar(x=['Surrogate simulation', 'Surrogate total', 'Ax', 'SA'], height=[sur_sim_time]+[data[1] for data in raw_data])
-    barlist[0].set_color('green')
+    rdata = [raw for raw in raw_data if raw != None] 
+    
+    sur_sim_mean_time_per_trial = [np.mean(sur_loaded_data[0][i].sim_time) for i in range(ntrials)]
+    sur_sim_total_time_per_trial = [np.sum(sur_loaded_data[0][i].sim_time) for i in range(ntrials)]
+    sur_sim_mean_time = np.mean(sur_sim_mean_time_per_trial)
+    sur_sim_total_time = np.mean(sur_sim_total_time_per_trial)
+
+
+    x = ['Surrogate', 'Ax', 'SA']
+    if raw_data[2] == None: x.pop()
+    t = [np.mean(data[1]) for data in rdata]
+    barlist = plt.bar(x=x, height=t)
+    plt.errorbar(x, t, yerr=[np.std(data[1]) for data in rdata], fmt='none', color="grey")
+    barlist[0].set_color('grey')
     plt.ylabel('Execution time [s]')
+    #plt.yscale('symlog')
 
     if store: plt.savefig(f'../surdata/Figures/compare_times_{topo}_iter-{niter}.pdf')
     plt.show()
@@ -78,11 +101,13 @@ if __name__ == '__main__':
 
     topo = sys.argv[1]
     niter = sys.argv[2]
+    ntrials = int(sys.argv[3])
 
     path = f'../surdata/*_{topo}_iter-{niter}*.pkl'
     files = [file for file in glob.glob(path)]
-    assert(len(files)==3), 'The received pattern was ambigious - there are more than three files.'
+    assert(len(files)<=3), 'The received pattern was ambigious - there are more than three files.'
 
+    sur_loaded_data, ax_loaded_data, sa_loaded_data = [None]*3
     for filename in files:
         if 'Sur' in filename:
             with open(filename, 'rb') as file: 
@@ -100,7 +125,10 @@ if __name__ == '__main__':
     raw_data_list = [sur_loaded_data, ax_loaded_data, sa_loaded_data]
 
     df_plot = get_comparison_dataframe(raw_data_list)
-    plot_trial(df=df_plot, store=True)
-    plot_overall(df=df_plot, store=True)
+    
+    plot_trial(df=df_plot)
+    plt.show()
 
-    plot_avg_time(raw_data=raw_data_list, store=True)
+    plot_overall(df=df_plot)
+
+    plot_avg_time(raw_data=raw_data_list)

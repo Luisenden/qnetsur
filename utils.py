@@ -93,35 +93,6 @@ class Simulation:
 
         return x
     
-    def get_neighbour(self, MAXITER, count, x :dict) -> dict:
-        """
-        Generates random parameters for the simulation.
-
-        Args:
-            n (int): Number of random parameter sets to generate.
-
-        Returns:
-            dict: Randomly generated parameters.
-        """
-        
-        x_n = {}
-        f = (1-np.log(1+count/MAXITER)**2)**4#(1-np.log(1+count/MAXITER))
-        for dim, par in self.vars['range'].items():
-                vals = par[0]
-                if par[1] == 'int':
-                    std = f * (vals[1] - vals[0])/2
-                    x_n[dim] = int(truncnorm.rvs((vals[0] - x[dim]) / std, (vals[1] - x[dim]) / std, loc=x[dim], scale=std, size=1)[0])
-                elif par[1] == 'float':
-                    std = f * (vals[1] - vals[0])/2
-                    x_n[dim] = truncnorm.rvs((vals[0] - x[dim]) / std, (vals[1] - x[dim]) / std, loc=x[dim], scale=std, size=1)[0]  
-                else:
-                    raise Exception('Datatype must be "int" or "float".')
-                    
-        for dim, vals in self.vars['choice'].items():
-                x_n[dim] = np.random.choice(vals)       
-
-        return x_n
-    
 class Surrogate(Simulation):
     """
     Class for creating and optimizing a surrogate model.
@@ -160,7 +131,6 @@ class Surrogate(Simulation):
     
         # multiprocessing
         self.procs = mp.cpu_count()
-        print("number of processes available:", self.procs)
         if self.procs > initial_model_size:
             self.procs = initial_model_size
 
@@ -195,6 +165,40 @@ class Surrogate(Simulation):
 
         # storage
         self.improvement = []
+
+    def get_neighbour(self, MAXITER, count, x :dict) -> dict:
+        """
+        Generates random parameters for the simulation.
+
+        Args:
+            n (int): Number of random parameter sets to generate.
+
+        Returns:
+            dict: Randomly generated parameters.
+        """
+        
+        x_n = {}
+        f = (1-np.log(1+count/MAXITER)**2)**4
+        for dim, par in self.vars['range'].items():
+                vals = par[0]
+                if par[1] == 'int':
+                    std = f * (vals[1] - vals[0])/2
+                    x_n[dim] = truncnorm.rvs((vals[0] - x[dim]) / std, (vals[1] - x[dim]) / std, loc=x[dim], scale=std, size=1000).astype(int)
+                elif par[1] == 'float':
+                    std = f * (vals[1] - vals[0])/2
+                    x_n[dim] = truncnorm.rvs((vals[0] - x[dim]) / std, (vals[1] - x[dim]) / std, loc=x[dim], scale=std, size=1000) 
+                else:
+                    raise Exception('Datatype must be "int" or "float".')
+                    
+        for dim, vals in self.vars['choice'].items():
+                x_n[dim] = np.random.choice(vals, 1000)       
+
+        samples_x = pd.DataFrame(x_n).astype(object)
+        samples_y = self.mmodel.predict(samples_x.values)
+        fittest_neighbour_index = np.argsort(np.array(samples_y).mean(axis=1))[-1]
+        
+        x_fittest = samples_x.iloc[fittest_neighbour_index].to_dict()
+        return x_fittest
 
 
     def acquisition(self,MAXITER,count) -> pd.DataFrame:
