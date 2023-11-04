@@ -179,19 +179,21 @@ class Surrogate(Simulation):
         
         x_n = {}
         f = (1-np.log(1+count/MAXITER)**2)**4
+
+        size = 1000*(count+1)//MAXITER
         for dim, par in self.vars['range'].items():
                 vals = par[0]
                 if par[1] == 'int':
                     std = f * (vals[1] - vals[0])/2
-                    x_n[dim] = truncnorm.rvs((vals[0] - x[dim]) / std, (vals[1] - x[dim]) / std, loc=x[dim], scale=std, size=1000).astype(int)
+                    x_n[dim] = truncnorm.rvs((vals[0] - x[dim]) / std, (vals[1] - x[dim]) / std, loc=x[dim], scale=std, size=size).astype(int)
                 elif par[1] == 'float':
                     std = f * (vals[1] - vals[0])/2
-                    x_n[dim] = truncnorm.rvs((vals[0] - x[dim]) / std, (vals[1] - x[dim]) / std, loc=x[dim], scale=std, size=1000) 
+                    x_n[dim] = truncnorm.rvs((vals[0] - x[dim]) / std, (vals[1] - x[dim]) / std, loc=x[dim], scale=std, size=size) 
                 else:
                     raise Exception('Datatype must be "int" or "float".')
                     
         for dim, vals in self.vars['choice'].items():
-                x_n[dim] = np.random.choice(vals, 1000)       
+                x_n[dim] = np.random.choice(vals, size)       
 
         samples_x = pd.DataFrame(x_n).astype(object)
         samples_y = self.mmodel.predict(samples_x.values)
