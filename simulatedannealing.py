@@ -41,8 +41,9 @@ def get_neighbour(s, x :dict) -> dict:
     return x_n
 
 
-def simulated_annealing(s, temp :int = 10, beta_schedule :int = 10, MAXITER = 5, seed=42):
+def simulated_annealing(s, MAXITER = 5, temp :int = 10, beta_schedule :int = 10, seed=42):
 
+    
     np.random.seed(seed)
     
     # generate an initial point
