@@ -45,17 +45,3 @@ if __name__ == '__main__':
 
         with open('../surdata/Sur_'+topo.name+vv.replace(',','')+'_iter-'+str(MAXITER)+'_objective-meanopt'+datetime.now().strftime("%m-%d-%Y_%H:%M")+'.pkl', 'wb') as file:
                 pickle.dump([sims,total_time], file)
-
-        # baseline simulated annealing
-        total_timeSA = []
-        sas = []
-        for _ in range(ntrials):
-                start = time.time()
-                si = Simulation(simulation.simulation_cd, vals, vars)
-                result = simulated_annealing(si, MAXITER=MAXITER)
-                total_timeSA.append(time.time()-start)
-                result = pd.DataFrame.from_records(result)
-                sas.append(result)
-
-        with open('../surdata/SA_'+topo.name+vv.replace(',','')+'_iter-'+str(MAXITER)+'_objective-meanopt'+datetime.now().strftime("%m-%d-%Y_%H:%M")+'.pkl', 'wb') as file:
-                pickle.dump([sas,total_timeSA], file)
