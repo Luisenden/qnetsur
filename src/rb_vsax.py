@@ -11,7 +11,7 @@ from rb_simulation import *
 def evaluate(parameters) -> float:
     x = {**parameters, **vals}
     mean_per_node, std_per_node = simulation_rb(**x)
-    mean_all_nodes, std_all_nodes = np.mean(mean_per_node), np.mean(std_per_node)
+    mean_all_nodes, std_all_nodes = np.mean(mean_per_node)-sum(parameters.values())/450, np.mean(std_per_node)
     res = {"mean" : (mean_all_nodes,std_all_nodes)}
     return res
 
@@ -42,7 +42,7 @@ if __name__ == '__main__':
         'cavity': 500, 
         'network_config_file': 'starlight.json',
         'N': 1,
-        'total_time': 1e14
+        'total_time': 1e11
         }
 
     total_time = []

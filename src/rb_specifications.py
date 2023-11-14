@@ -1,17 +1,18 @@
 import functools
+import numpy as np
 
 def simwrap(func): # simulation wrapper: any postprocessing of the simulation function
     @functools.wraps(func)
     def wrapper(*args,**kwargs):
         mean, std = func(*args,**kwargs)
-        return mean, std # number of completed requests per node (nodes sorted alphabetically)
+        return mean-sum(kwargs.values())/450, std # number of completed requests per node (nodes sorted alphabetically)
     return wrapper
 
 vals = { # specify fixed parameters of quantum network simulation
         'cavity': 500, 
         'network_config_file': 'starlight.json',
         'N': 1,
-        'total_time': 1e14
+        'total_time': 1e11
         }
 
 

@@ -7,7 +7,7 @@ import time
 
 def objective(s, x :dict) -> float:
     eval = s.run_sim(x)[0]
-    return -np.mean(eval)
+    return -(np.mean(eval)-sum(x.values())/450)
 
 
 def get_neighbour(s, x :dict) -> dict:
