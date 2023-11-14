@@ -41,8 +41,8 @@ if __name__ == '__main__':
     vals = { 
         'cavity': 500, 
         'network_config_file': 'starlight.json',
-        'N': 1,
-        'total_time': 1e11
+        'N': 10,
+        'total_time': 1e14
         }
 
     total_time = []
