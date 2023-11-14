@@ -11,7 +11,7 @@ from rb_simulation import *
 def evaluate(parameters) -> float:
     x = {**parameters, **vals}
     mean_per_node, std_per_node = simulation_rb(**x)
-    mean_all_nodes, std_all_nodes = np.mean(mean_per_node)-sum(parameters.values())/450, np.mean(std_per_node)
+    mean_all_nodes, std_all_nodes = np.mean(mean_per_node)-(sum(parameters.values())-450)**2, np.mean(std_per_node)
     res = {"mean" : (mean_all_nodes,std_all_nodes)}
     return res
 
@@ -55,7 +55,7 @@ if __name__ == '__main__':
                 {
                     "name": f'mem_size_node_{i}',
                     "type": "range",
-                    "bounds": [4, 50],
+                    "bounds": [4, 105],
                 } for i in range(9)
             ],
             objectives=objectives,
