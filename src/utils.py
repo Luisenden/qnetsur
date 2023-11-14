@@ -1,21 +1,17 @@
 import numpy as np
 import time
 import pandas as pd
-from gower import gower_matrix
 from scipy.stats import truncnorm
 
 import multiprocessing as mp
 from multiprocessing import Pool
-from specifications import simwrap
+from rb_specifications import simwrap # !!!! change !!!!
 
-from sklearn import preprocessing as pp
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.tree import ExtraTreeRegressor
 from sklearn.svm import SVR
 from sklearn.linear_model import SGDRegressor
 from sklearn.ensemble import GradientBoostingRegressor
-
-from optimizingcd import main_cd as simulation
 
 
 class Simulation:
@@ -47,8 +43,6 @@ class Simulation:
         
         # specify variable parameters
         self.vars = vars
-        self.dtypes = pd.DataFrame(self.vars).dtypes.to_dict()
-
 
         # simulation function handler
         self.func = func
@@ -56,7 +50,7 @@ class Simulation:
     @simwrap
     def run_sim(self,x :dict) -> list:
         """
-        Runs the simulation with the provided parameters.
+        Runs the quantum network simulation with the provided parameters.
 
         Args:
             x (dict): Parameters for the simulation.
@@ -80,46 +74,22 @@ class Simulation:
             dict: Randomly generated parameters.
         """
         
-        assert all(isinstance(val, list) for val in self.vars.values()) and n > 0, f"Dimension types must be list and n > 0!"
+        assert all(isinstance(val, tuple) for val in self.vars['range'].values()) and n > 0, f"Dimension types must be a tuple (sample-list, dataype) and n must be greater zero."
 
         x = {}
-        for dim, vals in self.vars.items():
-            if len(vals) > 2:
-                x[dim] = np.random.choice(vals, n) if n > 1 else np.random.choice(vals)
-            elif all(isinstance(x, int) for x in vals):
-                x[dim] = np.random.randint(vals[0], vals[1], n) if n > 1 or use_list else np.random.randint(vals[0], vals[1])
-            elif all(isinstance(x, float) for x in vals):
-                x[dim] = np.random.uniform(vals[0], vals[1], n) if n > 1 or use_list else np.random.uniform(vals[0], vals[1])         
+        for dim, par in self.vars['range'].items():
+                vals = par[0]
+                if par[1] == 'int':
+                    x[dim] = np.random.randint(vals[0], vals[1], n) if n > 1 or use_list else np.random.randint(vals[0], vals[1])
+                elif par[1] == 'float':
+                    x[dim] = np.random.uniform(vals[0], vals[1], n) if n > 1 or use_list else np.random.uniform(vals[0], vals[1])
+                else:
+                    raise Exception('Datatype must be "int" or "float".')
+                    
+        for dim, vals in self.vars['choice'].items():
+                x[dim] = np.random.choice(vals, n) if n > 1 else np.random.choice(vals)       
 
         return x
-    
-    def get_neighbour(self, MAXITER, count, x :dict) -> dict:
-        """
-        Generates random parameters for the simulation.
-
-        Args:
-            n (int): Number of random parameter sets to generate.
-
-        Returns:
-            dict: Randomly generated parameters.
-        """
-        
-        assert all(isinstance(val, list) for val in self.vars.values()), f"Dimension types must be list!"
-
-        x_n = {}
-        f = (1-np.log(1+count/MAXITER))**4
-        for dim, vals in self.vars.items():
-            if len(vals) > 2:
-                x_n[dim] = np.random.choice(vals)
-            elif all(isinstance(x, int) for x in vals):
-                std = f * (vals[1] - vals[0])/2
-                x_n[dim] = int(truncnorm.rvs((vals[0] - x[dim]) / std, (vals[1] - x[dim]) / std, loc=x[dim], scale=std, size=1)[0])
-            elif all(isinstance(x, float) for x in vals):
-                std = f * (vals[1] - vals[0])/2
-                x_n[dim] = truncnorm.rvs((vals[0] - x[dim]) / std, (vals[1] - x[dim]) / std, loc=x[dim], scale=std, size=1)[0]         
-
-        return x_n
-
     
 class Surrogate(Simulation):
     """
@@ -167,7 +137,7 @@ class Surrogate(Simulation):
         X = self.get_random_x(initial_model_size)
         self.X_df = pd.DataFrame(X).astype(object)
         
-        ## y, run simulation in parallel
+        ## y, run quantum network simulation in parallel
         self.y = []
         self.y_std = []
 
@@ -186,9 +156,6 @@ class Surrogate(Simulation):
         self.model = SVR
         self.mmodel = MultiOutputRegressor(self.model())
         self.mmodel_std = MultiOutputRegressor(self.model())
-
-        # self.scaler = pp.MinMaxScaler((0,1))
-        # data = self.scaler.fit_transform(self.X_df)
         
         self.mmodel.fit(self.X_df.values, self.y)
         self.mmodel_std.fit(self.X_df.values, self.y_std)
@@ -196,17 +163,54 @@ class Surrogate(Simulation):
 
         # storage
         self.improvement = []
-        #self.flag_vec = np.zeros(initial_model_size)
+
+    def get_neighbour(self, MAXITER, count, x :dict) -> dict:
+        """
+        Generates random parameters for the simulation.
+
+        Args:
+            n (int): Number of random parameter sets to generate.
+
+        Returns:
+            dict: Randomly generated parameters.
+        """
+        
+        x_n = {}
+        f = (1-np.log(1+count/MAXITER)**2)**4
+
+        size = 1000*(count+1)//MAXITER
+        for dim, par in self.vars['range'].items():
+                vals = par[0]
+                if par[1] == 'int':
+                    std = f * (vals[1] - vals[0])/2
+                    x_n[dim] = truncnorm.rvs((vals[0] - x[dim]) / std, (vals[1] - x[dim]) / std, loc=x[dim], scale=std, size=size).astype(int)
+                elif par[1] == 'float':
+                    std = f * (vals[1] - vals[0])/2
+                    x_n[dim] = truncnorm.rvs((vals[0] - x[dim]) / std, (vals[1] - x[dim]) / std, loc=x[dim], scale=std, size=size) 
+                else:
+                    raise Exception('Datatype must be "int" or "float".')
+                    
+        for dim, vals in self.vars['choice'].items():
+                x_n[dim] = np.random.choice(vals, size)       
+
+        samples_x = pd.DataFrame(x_n).astype(object)
+        samples_y = self.mmodel.predict(samples_x.values)
+        fittest_neighbour_index = np.argsort(np.array(samples_y).mean(axis=1))[-1]
+        
+        x_fittest = samples_x.iloc[fittest_neighbour_index].to_dict()
+        return x_fittest
 
 
     def acquisition(self,MAXITER,count) -> pd.DataFrame:
         """
-        Computes new data points according to estimated improvement and degree of exploration and adds the data to training sample.
+        Computes new data points according to estimated improvement and degree of exploration and adds the data to the training sample.
 
         """
         y_obj_vec = np.array(self.y).mean(axis=1)
+
+
         newx = []
-        for x in self.X_df.iloc[np.argsort(y_obj_vec)[-5:]].iloc:
+        for x in self.X_df.iloc[np.argsort(y_obj_vec)[-10:]].iloc:
             newx.append(self.get_neighbour(MAXITER=MAXITER, count=count, x=x.to_dict()))
         self.X_df_add = pd.DataFrame.from_records(newx).astype(object)
 
@@ -223,7 +227,7 @@ class Surrogate(Simulation):
         """
 
         start = time.time() 
-        with Pool(processes=5) as pool:
+        with Pool(processes=10) as pool:
             y_temp = pool.map(self.run_sim, self.X_df_add.iloc)
         self.sim_time.append(time.time() - start)
 
@@ -240,8 +244,6 @@ class Surrogate(Simulation):
         start = time.time()
         self.mmodel = MultiOutputRegressor(self.model())
         self.mmodel_std = MultiOutputRegressor(self.model())
-
-        # data = self.scaler.fit_transform(self.X_df)
         
         self.mmodel.fit(self.X_df.values, self.y)
         self.mmodel_std.fit(self.X_df.values, self.y_std)

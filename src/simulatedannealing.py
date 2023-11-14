@@ -2,13 +2,10 @@ import sys
 import numpy as np
 from scipy.stats import truncnorm
 
-from optimizingcd import main_cd as sim
 from utils import Simulation
-from specifications import *
 import time
 
 def objective(s, x :dict) -> float:
-
     eval = s.run_sim(x)[0]
     return -np.mean(eval)
 
