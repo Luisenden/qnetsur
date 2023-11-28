@@ -5,13 +5,24 @@ from scipy.stats import truncnorm
 
 import multiprocessing as mp
 from multiprocessing import Pool
-from cd_specifications import simwrap # !!!! change !!!!
+# from usecase_rb.config import * #!!!! change !!!!
 
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.tree import ExtraTreeRegressor
 from sklearn.svm import SVR
 from sklearn.linear_model import SGDRegressor
 from sklearn.ensemble import GradientBoostingRegressor
+
+import os
+from importlib import import_module
+
+USE_CASE = os.environ.get('USE_CASE') or 'usecase_cd'  # Default to usecase_cd if not set
+
+try:
+    config = import_module(f'{USE_CASE}.config')
+
+except ImportError:
+    raise ImportError(f"Cannot import config.py for '{USE_CASE}'")
 
 
 class Simulation:
@@ -47,7 +58,7 @@ s
         # simulation function handler
         self.func = func
 
-    @simwrap
+    @config.simwrap()
     def run_sim(self,x :dict) -> list:
         """
         Runs the quantum network simulation with the provided parameters.

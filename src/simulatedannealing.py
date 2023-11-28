@@ -1,9 +1,8 @@
-import sys
+import sys, time
 import numpy as np
 from scipy.stats import truncnorm
 
-from utils import Simulation
-import time
+from src.utils import Simulation
 
 def objective(s, x :dict) -> float:
     eval = s.run_sim(x)[0]

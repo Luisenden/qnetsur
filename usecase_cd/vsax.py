@@ -1,20 +1,15 @@
-import numpy as np
-from optimizingcd import main_cd as simulation
-import time
-from datetime import datetime
+from config import *
 
-import pickle
-import sys 
 from ax.service.ax_client import AxClient, ObjectiveProperties
+from optimizingcd import main_cd as simulation
 
-from cd_specifications import *
 
+simwrap(ax=True)
 def evaluate(parameters) -> float:
     x = {**parameters, **vals}
     result = simulation.simulation_cd(**x)
-    mean_all_nodes, std_all_nodes = np.mean([node[-1] for node in result[1]]), np.mean([node[-1] for node in result[3]])
-    res = {"mean" : (mean_all_nodes,std_all_nodes)}
-    return res
+    mean_per_node, std_per_node = [node[-1] for node in result[1]], [node[-1] for node in result[3]]
+    return {"mean" : (np.mean(mean_per_node), np.mean(std_per_node))}
 
 def evaluate_multiple(parameters) -> float:
     x = {**parameters, **vals}
@@ -26,6 +21,19 @@ def evaluate_multiple(parameters) -> float:
         i += 1
     return res
 
+def get_parameters(vars:dict):
+    parameters = []
+    for k in vars:
+        for key,value in vars[k].items():
+            parameters.append(
+                {
+                "name": str(key),
+                "type": k,
+                "bounds": value[0],
+                }
+            )
+    return parameters
+          
 
 if __name__ == '__main__':
 
@@ -44,16 +52,7 @@ if __name__ == '__main__':
     topo = NetworkTopology((int(v[0]), ), 'square') if len(v)==1 else NetworkTopology((int(v[0]), int(v[1])), 'tree')
     size = topo.size
 
-    vals = { # define fixed parameters for simulation function
-        'A': simulation.adjacency_squared(size[0]) if topo.name == 'square' else simulation.adjacency_tree(size[0], size[1]),
-        'protocol':'srs', 
-        'p_gen': 0.9, 
-        'p_swap':1,  
-        'return_data':'avg', 
-        'progress_bar': None,
-        'total_time': 1000,
-        'N_samples' : 10,
-        } 
+    vals['A'] = simulation.adjacency_squared(size[0]) if topo.name == 'square' else simulation.adjacency_tree(size[0], size[1])
 
     objectives = dict()
     objectives["mean"] = ObjectiveProperties(minimize=False)
@@ -64,33 +63,7 @@ if __name__ == '__main__':
         ax_client = AxClient(verbose_logging=False)
         ax_client.create_experiment( # define variable parameters for simulation function
             name="simulation_test_experiment",
-            parameters=[
-                {
-                    "name": "M",
-                    "type": "range",
-                    "bounds": [0, 10],
-                },
-                {
-                    "name": "qbits_per_channel",
-                    "type": "range",
-                    "bounds": [1, 50],
-                },
-                {
-                    "name": "cutoff",
-                    "type": "range",
-                    "bounds": [1., 10.],
-                },
-                {
-                    "name": "q_swap",
-                    "type": "range",
-                    "bounds": [0.0, 1.0],
-                },
-                {
-                    "name": "p_cons",
-                    "type": "range",
-                    "bounds": [0.01, 0.2],
-                },
-            ],
+            parameters=get_parameters(vars),
             objectives=objectives,
         )
 

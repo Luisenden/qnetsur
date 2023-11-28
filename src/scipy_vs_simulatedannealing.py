@@ -1,11 +1,10 @@
 ## Script to test SA algorithm
 
 import numpy as np
-import time
+import time, pickle
 from simulatedannealing import *
 from scipy.optimize import minimize
 from multiprocessing import Pool
-import pickle
 
 # testfunctions
 rosenbrock = lambda x,y,z,w: sum([(1-[x,y][i])**2+100*([x,y][i+1]-[x,y][i]**2)**2 for i in range(1)]) + 0*(z+w) # Continious Rosenbrock function with optimal at (1,1) https://irene.readthedocs.io/en/latest/benchmarks.html

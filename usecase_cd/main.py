@@ -1,12 +1,13 @@
-import sys
-import pickle
-from utils import Surrogate
+
+from config import *
+from src.utils import *
 from datetime import datetime
 
 from optimizingcd import main_cd as simulation
-from cd_specifications import *
 
-from simulatedannealing import * 
+from src.simulatedannealing import * 
+
+
 
 
 if __name__ == '__main__':
