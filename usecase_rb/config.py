@@ -10,12 +10,20 @@ n = 9 # number of nodes
 m_max = 106 # maximum number of memory qubits in a node
 initial_model_size = 10 # number of samples used for the initial training of the surrogate model
 
-def simwrap(func): # simulation wrapper: define processing of a given simulation function
-    @wraps(func)
-    def wrapper(*args,**kwargs):
-        mean, std = func(*args,**kwargs)
-        return mean-sum(kwargs.values())/(n*m_max), std # number of completed requests per node (nodes sorted alphabetically)
-    return wrapper
+
+def simwrap(ax=False): # simulation wrapper: define processing of a given simulation function
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args,**kwargs):
+            mean, std = func(*args,**kwargs)
+            mean_per_node = mean-sum(kwargs.values())/(n*m_max)
+            if ax:
+                return {"mean" : (np.mean(mean_per_node), np.mean(std))}
+            else:
+                return mean_per_node, std # number of completed requests per node (nodes sorted alphabetically)
+
+        return wrapper
+    return decorator
 
 vals = { # specify fixed parameters of quantum network simulation
         'cavity': 500, 
