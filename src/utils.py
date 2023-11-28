@@ -5,7 +5,7 @@ from scipy.stats import truncnorm
 
 import multiprocessing as mp
 from multiprocessing import Pool
-from rb_specifications import simwrap # !!!! change !!!!
+from cd_specifications import simwrap # !!!! change !!!!
 
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.tree import ExtraTreeRegressor
@@ -17,7 +17,7 @@ from sklearn.ensemble import GradientBoostingRegressor
 class Simulation:
     """
     Class for running quantum network simulations.
-
+s
     Args:
         func (function): The simulation function to be used.
 

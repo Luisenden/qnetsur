@@ -1,6 +1,6 @@
 import sys
 import pickle
-from utils import *
+from utils import Surrogate
 from datetime import datetime
 
 from optimizingcd import main_cd as simulation

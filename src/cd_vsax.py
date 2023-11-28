@@ -1,5 +1,4 @@
 import numpy as np
-from functools import partial
 from optimizingcd import main_cd as simulation
 import time
 from datetime import datetime
