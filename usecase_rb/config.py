@@ -8,7 +8,7 @@ sys.path.append('../')
 
 n = 9 # number of nodes
 m_max = 106 # maximum number of memory qubits in a node
-initial_model_size = 10 # number of samples used for the initial training of the surrogate model
+initial_model_size = 5 # number of samples used for the initial training of the surrogate model
 
 
 def simwrap(ax=False): # simulation wrapper: define processing of a given simulation function

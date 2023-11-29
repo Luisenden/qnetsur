@@ -108,7 +108,7 @@ def run(network_topo):
         others.remove(app_node_name)
         max_mem_to_reserve = len(node.get_components_by_type("MemoryArray")[0])//2
         app = RandomRequestApp(node, others, i,
-                            min_dur=1e13, max_dur=2e13, min_size=max(1,max_mem_to_reserve-max_mem_to_reserve//2),
+                            min_dur=1e12, max_dur=2e12, min_size=max(1,max_mem_to_reserve-max_mem_to_reserve//2),
                             max_size=max_mem_to_reserve, min_fidelity=0.8, max_fidelity=1.0)
         apps.append(app)
         app.start()
@@ -159,6 +159,7 @@ def simulation_rb(network_config_file, cavity, total_time, N, **kwargs):
     
     results = []
     proc = mp.current_process().ident
+    print('N, kwargs', N, list(kwargs.values()))
     for n in range(N):
         update_memory_config(network_config_file, list(kwargs.values()), total_time, seed=n)
         network_topo = RouterNetTopo(str(proc)+'.json')

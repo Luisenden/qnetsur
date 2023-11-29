@@ -4,7 +4,7 @@ import pandas as pd
 from scipy.stats import truncnorm
 
 import multiprocessing as mp
-from multiprocessing import Pool
+from multiprocessing import get_context
 # from usecase_rb.config import * #!!!! change !!!!
 
 from sklearn.multioutput import MultiOutputRegressor
@@ -153,7 +153,7 @@ class Surrogate(Simulation):
         self.y_std = []
 
         start = time.time() 
-        with Pool(processes=self.procs) as pool:
+        with get_context("spawn").Pool(processes=self.procs) as pool:
             y_temp = pool.map(self.run_sim, self.X_df.iloc)
 
         for y_i in y_temp:
@@ -238,7 +238,7 @@ class Surrogate(Simulation):
         """
 
         start = time.time() 
-        with Pool(processes=10) as pool:
+        with get_context("spawn").Pool(processes=10) as pool:
             y_temp = pool.map(self.run_sim, self.X_df_add.iloc)
         self.sim_time.append(time.time() - start)
 
