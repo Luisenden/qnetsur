@@ -15,6 +15,7 @@ from sequence.topology.router_net_topo import RouterNetTopo
 def update_memory_config(file_path, new_memo_size, total_time, seed):
     np.random.seed(1000+seed)
     proc = mp.current_process().ident
+    print(proc)
 
     # Load JSON data from file
     with open(file_path, 'r') as file:
@@ -186,13 +187,33 @@ if __name__ == "__main__":
 
     start = time.time()
     network_config_file = "starlight.json"
-    update_memory_config(network_config_file, [25, 91, 67, 24, 67, 24, 103, 25, 24], seed=42) #source for weighted: https://github.com/sequence-toolbox/Chicago-metropolitan-quantum-network/blob/master/sec5.4-two-memory-distribution-policies/uneven_memory.json
-    network_topo = RouterNetTopo(network_config_file)
+    total_time = 1e14
+
+    even = [50]*9
+    weighted = [25, 91, 67, 24, 67, 24, 103, 25, 24]
+
+    proc = mp.current_process().ident
+    update_memory_config(network_config_file, weighted, total_time, seed=42) #source for weighted: https://github.com/sequence-toolbox/Chicago-metropolitan-quantum-network/blob/master/sec5.4-two-memory-distribution-policies/uneven_memory.json
+    print(proc)
+    network_topo = RouterNetTopo(str(proc)+'.json')
 
     set_parameters(cavity=500, network_topo=network_topo)
     nodes = network_topo.get_nodes_by_type(RouterNetTopo.QUANTUM_ROUTER)
 
-    for node in nodes:
-        print(len(node.get_components_by_type("MemoryArray")[0]))
+    results = []
+    df = run(network_topo)
+    completed_requests_per_node = df.groupby('Initiator').size()
+
+    res = np.zeros(len(nodes))
+    for i,node in enumerate(nodes):
+        if node.name in completed_requests_per_node: res[i] = completed_requests_per_node[node.name]
+
+    results.append(res)
+    
+    mean = np.mean(results, axis=0)
+    std = np.std(results, axis=0)
+
+    print('means:', sum(mean))
+    print('stds:', std)
 
     print('time:', time.time()-start)

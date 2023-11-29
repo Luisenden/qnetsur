@@ -28,7 +28,7 @@ def simwrap(ax=False): # simulation wrapper: define processing of a given simula
 vals = { # specify fixed parameters of quantum network simulation
         'cavity': 500, 
         'network_config_file': 'starlight.json',
-        'N': 5,
+        'N': 1,
         'total_time': 1e14
         }
 
