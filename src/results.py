@@ -1,3 +1,9 @@
+import sys
+sys.path.append('../')
+sys.path.append('../usecase_rb')
+sys.path.append('../usecase_cd')
+import src
+import simulation
 import numpy as np
 import pandas as pd
 

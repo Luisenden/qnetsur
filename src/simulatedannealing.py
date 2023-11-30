@@ -1,5 +1,6 @@
 import sys, time
 import numpy as np
+import pandas as pd
 from scipy.stats import truncnorm
 
 from src.utils import Simulation

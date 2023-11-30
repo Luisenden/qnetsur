@@ -18,7 +18,7 @@ if __name__ == '__main__':
         start = time.time()
         si = Simulation(simulation_rb, vals, vars)
         simaneal = partial(simulated_annealing, MAXITER=MAXITER)
-        with Pool(processes=ntrials) as pool:
+        with get_context("spawn").Pool(processes=ntrials) as pool:
             result = pool.map(simaneal, [si]*ntrials) 
         
         total_timeSA = time.time()-start

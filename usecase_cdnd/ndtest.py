@@ -3,20 +3,16 @@ from src.utils import *
 
 from optimizingcd import main_cd as simulation
 
-from src.simulatedannealing import simulated_annealing 
-
+from src.simulatedannealing import * 
 
 if __name__ == '__main__':
-
+        
         # user input: network topology type
         vv = sys.argv[1]
 
         # user input: number of maximum iterations optimization
         MAXITER = int(sys.argv[2]) 
-
-        # user input: number of trials
-        ntrials = int(sys.argv[3]) 
-
+        
 
         v = vv.split(',') 
         assert(len(v) in [1,2]), 'Argument must be given for network topology: e.g. "11" yields 11x11 square lattice, while e.g. "2,3" yields 2,3-tree network.'
@@ -24,15 +20,23 @@ if __name__ == '__main__':
         size = topo.size
         vals['A'] = simulation.adjacency_squared(size[0]) if topo.name == 'square' else simulation.adjacency_tree(size[0], size[1])
 
-        # baseline simulated annealing
-        start = time.time()
-        si = Simulation(simulation.simulation_cd, vals, vars)
-        simaneal = partial(simulated_annealing, MAXITER=MAXITER)
-        with get_context("spawn").Pool(processes=ntrials) as pool:
-            result = pool.map(simaneal, [si]*ntrials) 
-        
-        total_timeSA = time.time()-start
-        result = pd.DataFrame.from_records(result)
 
-        with open('../../surdata/SA_'+topo.name+vv.replace(',','')+'_iter-'+str(MAXITER)+'_objective-meanopt'+datetime.now().strftime("%m-%d-%Y_%H:%M")+'.pkl', 'wb') as file:
-                pickle.dump([result,[total_timeSA]], file)
+        vars = { # define variables and bounds for given simulation function
+            'range': {
+                'M': ([1, 10],'int')
+                },
+            'choice':{}
+        } 
+        for i in range(np.shape(vals['A'])[0]):
+            vars['range'][f'q_swap{i}'] = ([0., 1.], 'float')
+
+
+        # instatiate surrogate model and run optimization
+        total_time = []
+        sims = []
+
+        start = time.time()
+        s = Surrogate(simulation.simulation_cd, vals=vals, vars=vars, initial_model_size=2)
+        s.optimize(MAXITER=MAXITER, verbose=False)
+        total_time.append(time.time()-start)
+        sims.append(s)

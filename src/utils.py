@@ -58,7 +58,7 @@ s
         # simulation function handler
         self.func = func
 
-    @config.simwrap()
+    @config.simwrap
     def run_sim(self,x :dict) -> list:
         """
         Runs the quantum network simulation with the provided parameters.

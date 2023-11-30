@@ -24,6 +24,16 @@ if __name__ == '__main__':
         size = topo.size
         vals['A'] = simulation.adjacency_squared(size[0]) if topo.name == 'square' else simulation.adjacency_tree(size[0], size[1])
 
+        vars = { # define variables and bounds for given simulation function
+            'range': {
+                'M': ([1, 10],'int')
+                },
+            'choice':{}
+        } 
+        for i in range(np.shape(vals['A'])[0]):
+            vars['range'][f'q_swap{i}'] = ([0., 1.], 'float')
+
+
         # baseline simulated annealing
         start = time.time()
         si = Simulation(simulation.simulation_cd, vals, vars)
@@ -34,5 +44,5 @@ if __name__ == '__main__':
         total_timeSA = time.time()-start
         result = pd.DataFrame.from_records(result)
 
-        with open('../../surdata/SA_'+topo.name+vv.replace(',','')+'_iter-'+str(MAXITER)+'_objective-meanopt'+datetime.now().strftime("%m-%d-%Y_%H:%M")+'.pkl', 'wb') as file:
+        with open('../../surdata/SA_ND_'+topo.name+vv.replace(',','')+'_iter-'+str(MAXITER)+'_objective-meanopt'+datetime.now().strftime("%m-%d-%Y_%H:%M")+'.pkl', 'wb') as file:
                 pickle.dump([result,[total_timeSA]], file)

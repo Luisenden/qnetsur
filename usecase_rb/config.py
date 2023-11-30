@@ -6,6 +6,8 @@ from datetime import datetime
 import sys
 sys.path.append('../')
 
+print('importet config of rb')
+
 n = 9 # number of nodes
 m_max = 106 # maximum number of memory qubits in a node
 initial_model_size = 5 # number of samples used for the initial training of the surrogate model

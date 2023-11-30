@@ -5,12 +5,15 @@ import pickle, time
 from datetime import datetime
 from functools import partial, wraps
 import numpy as np
+import pandas as pd
+
+print('importet config of cd')
 
 def simwrap(ax=False): # simulation wrapper: define processing of a given simulation function
     def decorator(func): 
         @wraps(func)
-        def wrapper(*args,**kwargs):
-            result = func(*args,**kwargs)
+        def wrapper(*args):
+            result = func(*args)
             if ax:
                 return result
             else:
