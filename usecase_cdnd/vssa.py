@@ -44,5 +44,5 @@ if __name__ == '__main__':
         total_timeSA = time.time()-start
         result = pd.DataFrame.from_records(result)
 
-        with open('../../surdata/SA_ND_'+topo.name+vv.replace(',','')+'_iter-'+str(MAXITER)+'_objective-meanopt'+datetime.now().strftime("%m-%d-%Y_%H:%M")+'.pkl', 'wb') as file:
-                pickle.dump([result,[total_timeSA]], file)
+        # with open('../../surdata/SA_ND_'+topo.name+vv.replace(',','')+'_iter-'+str(MAXITER)+'_objective-meanopt'+datetime.now().strftime("%m-%d-%Y_%H:%M")+'.pkl', 'wb') as file:
+        #         pickle.dump([result,[total_timeSA]], file)

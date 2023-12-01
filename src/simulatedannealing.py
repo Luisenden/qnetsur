@@ -8,7 +8,7 @@ from src.utils import *
 
 def objective(s, x :dict) -> float:
     eval = s.run_sim(x)[0] 
-    return np.mean(eval)
+    return -np.mean(eval)
 
 
 def get_neighbour(s, x :dict) -> dict:
