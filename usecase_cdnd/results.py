@@ -1,9 +1,7 @@
 import sys
 sys.path.append('../')
-sys.path.append('../usecase_rb')
-sys.path.append('../usecase_cd')
+sys.path.append('../src')
 import src
-import simulation
 import numpy as np
 import pandas as pd
 
@@ -115,7 +113,7 @@ if __name__ == '__main__':
     niter = sys.argv[2]
     ntrials = int(sys.argv[3])
 
-    path = f'../../surdata/*_{topo}_iter-{niter}*.pkl'
+    path = f'../../surdata/*_ND_{topo}_iter-{niter}*.pkl'
     files = [file for file in glob.glob(path)]
     assert(len(files)<=3), 'The received pattern was ambigious - there are more than three files.'
 
@@ -133,7 +131,7 @@ if __name__ == '__main__':
         else:
             print(files)
             raise Exception('Naming of files wrong, could not find Sur, Ax or Sa specifying the data.')
-
+    print(sur_loaded_data)
     raw_data_list = [sur_loaded_data, ax_loaded_data, sa_loaded_data]
 
     df_plot = get_comparison_dataframe(raw_data_list)

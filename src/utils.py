@@ -160,7 +160,6 @@ class Surrogate(Simulation):
             y_temp = pool.map(self.run_sim, self.X_df.iloc)
             pool.close()
             pool.join()
-
         for y_i in y_temp:
             self.y.append(y_i[0])
             self.y_std.append(y_i[1])
