@@ -3,11 +3,11 @@ from ax.service.ax_client import AxClient, ObjectiveProperties
 
 from simulation import *
 
-@simwrap(ax=True)
+
 def evaluate(parameters) -> float:
     x = {**parameters, **vals}
     mean_all_nodes, std_all_nodes = simulation_rb(**x)
-    return mean_all_nodes, std_all_nodes
+    return np.mean(mean_all_nodes), np.mean(std_all_nodes)
 
 def evaluate_multiple(parameters) -> float:
     x = {**parameters, **vals}

@@ -3,9 +3,12 @@ import time
 import pandas as pd
 from scipy.stats import truncnorm
 
-import multiprocessing as mp
-from multiprocessing import get_context
-# from usecase_rb.config import * #!!!! change !!!!
+import torch.multiprocessing as mp
+from torch.multiprocessing import Pool, set_start_method
+try:    
+    set_start_method('spawn')
+except RuntimeError:
+     pass
 
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.tree import ExtraTreeRegressor
@@ -153,8 +156,10 @@ class Surrogate(Simulation):
         self.y_std = []
 
         start = time.time() 
-        with get_context("spawn").Pool(processes=self.procs) as pool:
+        with Pool(processes=self.procs, maxtasksperchild=1) as pool:
             y_temp = pool.map(self.run_sim, self.X_df.iloc)
+            pool.close()
+            pool.join()
 
         for y_i in y_temp:
             self.y.append(y_i[0])
@@ -238,8 +243,10 @@ class Surrogate(Simulation):
         """
 
         start = time.time() 
-        with get_context("spawn").Pool(processes=10) as pool:
+        with Pool(processes=10, maxtasksperchild=1) as pool:
             y_temp = pool.map(self.run_sim, self.X_df_add.iloc)
+            pool.close()
+            pool.join()
         self.sim_time.append(time.time() - start)
 
         # calculate improvement of new data point to previous best observed point

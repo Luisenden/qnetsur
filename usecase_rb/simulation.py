@@ -1,7 +1,12 @@
 import numpy as np
 from datetime import datetime
 import json, os, time
-import multiprocessing as mp
+import torch.multiprocessing as mp
+from torch.multiprocessing import set_start_method
+try:    
+    set_start_method('spawn')
+except RuntimeError:
+     pass
 
 from typing import TYPE_CHECKING
 
@@ -15,7 +20,6 @@ from sequence.topology.router_net_topo import RouterNetTopo
 def update_memory_config(file_path, new_memo_size, total_time, seed):
     np.random.seed(1000+seed)
     proc = mp.current_process().ident
-    print(proc)
 
     # Load JSON data from file
     with open(file_path, 'r') as file:
@@ -159,7 +163,6 @@ def simulation_rb(network_config_file, cavity, total_time, N, **kwargs):
     
     results = []
     proc = mp.current_process().ident
-    print('N, kwargs', N, list(kwargs.values()))
     for n in range(N):
         update_memory_config(network_config_file, list(kwargs.values()), total_time, seed=n)
         network_topo = RouterNetTopo(str(proc)+'.json')
@@ -175,11 +178,9 @@ def simulation_rb(network_config_file, cavity, total_time, N, **kwargs):
             if node.name in completed_requests_per_node: res[i] = completed_requests_per_node[node.name]
 
         results.append(res)
-    
+    os.remove(str(proc)+'.json')
     mean = np.mean(results, axis=0)
     std = np.std(results, axis=0)
-    
-    os.remove(str(proc)+'.json')
     return mean, std
 
 
@@ -188,14 +189,13 @@ if __name__ == "__main__":
 
     start = time.time()
     network_config_file = "starlight.json"
-    total_time = 1e14
+    total_time = 2e13
 
     even = [50]*9
     weighted = [25, 91, 67, 24, 67, 24, 103, 25, 24]
 
     proc = mp.current_process().ident
-    update_memory_config(network_config_file, weighted, total_time, seed=42) #source for weighted: https://github.com/sequence-toolbox/Chicago-metropolitan-quantum-network/blob/master/sec5.4-two-memory-distribution-policies/uneven_memory.json
-    print(proc)
+    update_memory_config(network_config_file, even, total_time, seed=42) #source for weighted: https://github.com/sequence-toolbox/Chicago-metropolitan-quantum-network/blob/master/sec5.4-two-memory-distribution-policies/uneven_memory.json
     network_topo = RouterNetTopo(str(proc)+'.json')
 
     set_parameters(cavity=500, network_topo=network_topo)
