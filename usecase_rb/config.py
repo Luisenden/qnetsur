@@ -1,4 +1,5 @@
 import pickle, time
+import pandas as pd
 from functools import partial, wraps
 import numpy as np
 from datetime import datetime
@@ -13,11 +14,11 @@ initial_model_size = 10 # number of samples used for the initial training of the
 
 def simwrap(func): # simulation wrapper: define processing of a given simulation function
     @wraps(func)
-    def wrapper(*args,**kwargs):
-        mean, std = func(*args,**kwargs)
-        mean_per_node = mean-sum(kwargs.values())/(n*m_max)
+    def wrapper(*args):
+        mems = pd.Series(args[1]).values
+        mean, std = func(*args)
+        mean_per_node = mean-sum(mems)/(n*m_max)
         return mean_per_node, std # number of completed requests per node (nodes sorted alphabetically)
-
     return wrapper
 
 

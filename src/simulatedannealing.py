@@ -3,11 +3,12 @@ import numpy as np
 import pandas as pd
 from scipy.stats import truncnorm
 
-from src.utils import Simulation
+from src.utils import *
+
 
 def objective(s, x :dict) -> float:
-    eval = s.run_sim(x)[0]
-    return -(np.mean(eval)-(sum(x.values())-450)**2)
+    eval = s.run_sim(x)[0] 
+    return np.mean(eval)
 
 
 def get_neighbour(s, x :dict) -> dict:
