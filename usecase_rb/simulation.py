@@ -178,9 +178,10 @@ def simulation_rb(network_config_file, cavity, total_time, N, **kwargs):
             if node.name in completed_requests_per_node: res[i] = completed_requests_per_node[node.name]
 
         results.append(res)
-    os.remove(str(proc)+'.json')
+        os.remove(str(proc)+'.json')
     mean = np.mean(results, axis=0)
     std = np.std(results, axis=0)
+    #print(f'mean {mean} and std {std} from proc {proc}')
     return mean, std
 
 

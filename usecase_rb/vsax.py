@@ -3,11 +3,11 @@ from ax.service.ax_client import AxClient, ObjectiveProperties
 
 from simulation import *
 
-
+@simwrap
 def evaluate(parameters) -> float:
     x = {**parameters, **vals}
-    mean_all_nodes, std_all_nodes = simulation_rb(**x)
-    return np.mean(mean_all_nodes), np.mean(std_all_nodes)
+    mean_per_node, std_per_node = simulation_rb(**x) 
+    return np.mean(mean_per_node), np.mean(std_per_node)
 
 def evaluate_multiple(parameters) -> float:
     x = {**parameters, **vals}
@@ -59,6 +59,7 @@ if __name__ == '__main__':
         raw_data_vec = []
         for i in range(MAXITER):
             parameters, trial_index = ax_client.get_next_trial()
+            print(parameters)
             ax_client.complete_trial(trial_index=trial_index, raw_data=evaluate(parameters))
         total_time.append(time.time()-start)
 

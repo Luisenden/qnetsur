@@ -8,14 +8,14 @@ import sys
 sys.path.append('../')
 
 n = 9 # number of nodes
-m_max = 106 # maximum number of memory qubits in a node
+m_max = 110 # maximum number of memory qubits in a node
 initial_model_size = 10 # number of samples used for the initial training of the surrogate model
 
 
 def simwrap(func): # simulation wrapper: define processing of a given simulation function
     @wraps(func)
     def wrapper(*args):
-        mems = pd.Series(args[1]).values
+        mems = pd.Series(args[-1]).values
         mean, std = func(*args)
         mean_per_node = mean-sum(mems)/(n*m_max)
         return mean_per_node, std # number of completed requests per node (nodes sorted alphabetically)
@@ -36,4 +36,4 @@ vars = {
         } 
 
 for i in range(n):
-    vars['range'][f'mem_size_node_{i}'] = ([4,m_max], 'int')
+    vars['range'][f'mem_size_node_{i}'] = ([5,m_max], 'int')

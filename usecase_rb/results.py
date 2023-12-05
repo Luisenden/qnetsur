@@ -22,19 +22,20 @@ def get_comparison_dataframe(raw_data:list):
     
     # merge and plot overall mean and standard deviation over different trials 
 
-    sur_raw, ax_raw, sa_raw = raw_data # assign raw data 
+    sur_raw, ax_raw, sa_raw = raw_data # assign raw data
 
 
     dfs = []
 
     if sur_raw != None:
-        sur_results = pd.DataFrame([np.mean(sur_raw[0][i].y, axis=1)[10:] for i in range(ntrials)]).T # get results of trials # take all y values except initial training sample
+        sur_results = pd.DataFrame([np.mean(pd.DataFrame(sur_raw[0][i].y).apply(lambda col: col+pd.DataFrame(sur_raw[0][i].X_df).T.sum()/(9*106), axis=0), axis=1)[10:] for i in range(ntrials)]).T # get results of trials # take all y values except initial training sample
         sur_results = reduce_to_means_per_iteration(sur_results,int(niter)) # take mean over 10 samples (=evaluations done in parallel per iteration)
         sur_df = pd.melt(sur_results, var_name='Trial', value_name='Surrogate', ignore_index=False).reset_index(names='Iteration') # convert to one column
         dfs.append(sur_df)
 
     if ax_raw != None:
-        ax_results = pd.DataFrame([np.array(ax_raw[0][i].get_trials_data_frame()['mean']) for i in range(ntrials)]).T # get results of trials
+        columns = ax_raw[0][0].get_trials_data_frame().columns
+        ax_results = pd.DataFrame([np.array(ax_loaded_data[0][i].get_trials_data_frame()['mean'])+pd.DataFrame(ax_loaded_data[0][i].get_trials_data_frame()[columns[columns.str.contains('mem')]]).T.sum()/(9*106) for i in range(ntrials)]).T # get results of trials
         ax_df = pd.melt(ax_results, var_name='Trial', value_name='Ax', ignore_index=False).reset_index(names='Iteration') # convert to one column
         ax_df = ax_df.drop(['Iteration','Trial'], axis=1)
         dfs.append(ax_df)
@@ -45,7 +46,7 @@ def get_comparison_dataframe(raw_data:list):
         sa_df = sa_df.drop(['Iteration','Trial'], axis=1)
         dfs.append(sa_df)
 
-    df_plot = pd.concat(dfs, axis=1).melt(id_vars=['Iteration', 'Trial'], var_name='Method', value_name='Number of virtual neighbours') # concatenate all three methods' results
+    df_plot = pd.concat(dfs, axis=1).melt(id_vars=['Iteration', 'Trial'], var_name='Method', value_name='Number of completed requests') # concatenate all three methods' results
 
     return df_plot
 
@@ -55,13 +56,13 @@ def plot_overall(df, store=False):
 
     df['Iteration'] = df['Iteration'].astype(int)
 
-    g = sns.lineplot(data = df, x='Iteration', y='Number of virtual neighbours', hue='Method') # plot the Number of Neighbours for all methods
+    g = sns.lineplot(data = df, x='Iteration', y='Number of completed requests', hue='Method') # plot the Number of Neighbours for all methods
     plt.title(f'Optimization Quantum Network ({topo}) over {dspace} parameters')
     plt.gcf().set_size_inches(15,7)
     g.grid(which='major', color='w', linewidth=1.0)
     g.grid(which='minor', color='w', linewidth=0.5)
     g.set_xticks(range(0,int(niter),2))
-    if store: plt.savefig(f'../../surdata/Figures/compare_overall_{topo}_iter-{niter}_ND.pdf')
+    if store: plt.savefig(f'../../surdata/Figures/compare_overall_{topo}_iter-{niter}.pdf')
     plt.show()
 
 def plot_trial(df, store=False):
@@ -70,7 +71,7 @@ def plot_trial(df, store=False):
 
     df['Trial'] = df['Trial'].astype(int)
     g = sns.FacetGrid(df, col='Trial', hue='Method', col_wrap=5)
-    g.map(sns.scatterplot, 'Iteration', 'Number of virtual neighbours')
+    g.map(sns.scatterplot, 'Iteration', 'Number of completed requests')
     g.add_legend()
     g.fig.subplots_adjust(top=0.9)
     g.fig.suptitle(f'Optimization Quantum Network ({topo}) over {dspace} parameters')
@@ -113,7 +114,7 @@ if __name__ == '__main__':
     niter = sys.argv[2]
     ntrials = int(sys.argv[3])
 
-    path = f'../../surdata/*_ND_{topo}_iter-{niter}*.pkl'
+    path = f'../../surdata/*_{topo}_iter-{niter}*.pkl'
     files = [file for file in glob.glob(path)]
     assert(len(files)<=3), 'The received pattern was ambigious - there are more than three files.'
 
@@ -131,14 +132,23 @@ if __name__ == '__main__':
         else:
             print(files)
             raise Exception('Naming of files wrong, could not find Sur, Ax or Sa specifying the data.')
-    print(sur_loaded_data, ax_loaded_data, sa_loaded_data)
+    #print(ax_loaded_data)
     raw_data_list = [sur_loaded_data, ax_loaded_data, sa_loaded_data]
 
     df_plot = get_comparison_dataframe(raw_data_list)
     
-    plot_trial(df=df_plot, store=True)
-    plt.show()
+    # plot_trial(df=df_plot, store=True)
+    # plt.show()
 
-    plot_overall(df=df_plot, store=True)
+    # plot_overall(df=df_plot, store=True)
 
-    plot_avg_time(raw_data=raw_data_list, store=True)
+    # plot_avg_time(raw_data=raw_data_list, store=True)
+
+    print(np.mean(sur_loaded_data[0][0].sim_time))
+
+    # sur_raw = sur_loaded_data
+    # sur_results = pd.DataFrame([sur_raw[0][i].X_df for i in range(ntrials)][0][10:]) # get results of trials # take all y values except initial training sample
+    # sur_results = reduce_to_means_per_iteration(sur_results,int(niter)) 
+    # print(sur_results.sum(axis=1))
+    # g = sns.lineplot(data = sur_results)
+    # plt.show()
