@@ -57,20 +57,20 @@ def get_component(node: "Node", component_type: str):
 
     raise ValueError("No component of type {} on node {}".format(component_type, node.name))
 
-def set_parameters(cavity:int, network_topo):
+def set_parameters(cavity:int, network_topo, memo_freq:list):
 
     C = cavity
     routers = network_topo.get_nodes_by_type(RouterNetTopo.QUANTUM_ROUTER)
     bsm_nodes = network_topo.get_nodes_by_type(RouterNetTopo.BSM_NODE)
 
     # set memory parameters
-    MEMO_FREQ = 2e3
+    MEMO_FREQ = np.array(memo_freq)*1e3
     MEMO_EXPIRE = 1.3
     MEMO_EFFICIENCY = 0.75
     MEMO_FIDELITY = get_fidelity_by_efficiency(C) #0.9349367588934053
-    for node in routers:
+    for i,node in enumerate(routers):
         memory_array = node.get_components_by_type("MemoryArray")[0]  # assume only 1 memory array
-        memory_array.update_memory_params("frequency", MEMO_FREQ)
+        memory_array.update_memory_params("frequency", MEMO_FREQ[i])
         memory_array.update_memory_params("coherence_time", MEMO_EXPIRE)
         memory_array.update_memory_params("efficiency", MEMO_EFFICIENCY)
         memory_array.update_memory_params("raw_fidelity", MEMO_FIDELITY)
@@ -164,11 +164,11 @@ def simulation_rb(network_config_file, cavity, total_time, N, **kwargs):
     results = []
     proc = mp.current_process().ident
     for n in range(N):
-        update_memory_config(network_config_file, list(kwargs.values()), total_time, seed=n)
+        update_memory_config(network_config_file, list([v for k,v in kwargs.items() if 'size' in k]), total_time, seed=n)
         network_topo = RouterNetTopo(str(proc)+'.json')
         nodes = network_topo.get_nodes_by_type(RouterNetTopo.QUANTUM_ROUTER)
 
-        set_parameters(cavity=cavity, network_topo=network_topo)
+        set_parameters(cavity=cavity, network_topo=network_topo, memo_freq=list([v for k,v in kwargs.items() if 'freq' in k]))
         df = run(network_topo)
 
         completed_requests_per_node = df.groupby('Initiator').size()

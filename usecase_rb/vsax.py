@@ -59,7 +59,6 @@ if __name__ == '__main__':
         raw_data_vec = []
         for i in range(MAXITER):
             parameters, trial_index = ax_client.get_next_trial()
-            print(parameters)
             ax_client.complete_trial(trial_index=trial_index, raw_data=evaluate(parameters))
         total_time.append(time.time()-start)
 

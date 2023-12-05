@@ -14,6 +14,8 @@ import pickle
 import glob
 import sys
 
+from config import *
+
 def reduce_to_means_per_iteration(sur_df, group_size):
     sur_df['Iteration'] = [i for i in range(group_size) for _ in range(len(sur_df)//group_size)]
     return pd.DataFrame(sur_df.groupby('Iteration').mean().to_numpy()) 
@@ -28,14 +30,14 @@ def get_comparison_dataframe(raw_data:list):
     dfs = []
 
     if sur_raw != None:
-        sur_results = pd.DataFrame([np.mean(pd.DataFrame(sur_raw[0][i].y).apply(lambda col: col+pd.DataFrame(sur_raw[0][i].X_df).T.sum()/(9*106), axis=0), axis=1)[10:] for i in range(ntrials)]).T # get results of trials # take all y values except initial training sample
+        sur_results = pd.DataFrame([np.mean(pd.DataFrame(sur_raw[0][i].y).apply(lambda col: col+pd.DataFrame(sur_raw[0][i].X_df).T.sum()/(n*m_max), axis=0), axis=1)[10:] for i in range(ntrials)]).T # get results of trials # take all y values except initial training sample
         sur_results = reduce_to_means_per_iteration(sur_results,int(niter)) # take mean over 10 samples (=evaluations done in parallel per iteration)
         sur_df = pd.melt(sur_results, var_name='Trial', value_name='Surrogate', ignore_index=False).reset_index(names='Iteration') # convert to one column
         dfs.append(sur_df)
 
     if ax_raw != None:
         columns = ax_raw[0][0].get_trials_data_frame().columns
-        ax_results = pd.DataFrame([np.array(ax_loaded_data[0][i].get_trials_data_frame()['mean'])+pd.DataFrame(ax_loaded_data[0][i].get_trials_data_frame()[columns[columns.str.contains('mem')]]).T.sum()/(9*106) for i in range(ntrials)]).T # get results of trials
+        ax_results = pd.DataFrame([np.array(ax_loaded_data[0][i].get_trials_data_frame()['mean'])+pd.DataFrame(ax_loaded_data[0][i].get_trials_data_frame()[columns[columns.str.contains('mem')]]).T.sum()/(n*m_max) for i in range(ntrials)]).T # get results of trials #
         ax_df = pd.melt(ax_results, var_name='Trial', value_name='Ax', ignore_index=False).reset_index(names='Iteration') # convert to one column
         ax_df = ax_df.drop(['Iteration','Trial'], axis=1)
         dfs.append(ax_df)
@@ -132,19 +134,20 @@ if __name__ == '__main__':
         else:
             print(files)
             raise Exception('Naming of files wrong, could not find Sur, Ax or Sa specifying the data.')
-    #print(ax_loaded_data)
+    print(ax_loaded_data)
+    print(sur_loaded_data)
     raw_data_list = [sur_loaded_data, ax_loaded_data, sa_loaded_data]
 
     df_plot = get_comparison_dataframe(raw_data_list)
     
-    # plot_trial(df=df_plot, store=True)
-    # plt.show()
+    plot_trial(df=df_plot, store=True)
+    plt.show()
 
-    # plot_overall(df=df_plot, store=True)
+    plot_overall(df=df_plot, store=True)
 
-    # plot_avg_time(raw_data=raw_data_list, store=True)
+    plot_avg_time(raw_data=raw_data_list, store=True)
 
-    print(np.mean(sur_loaded_data[0][0].sim_time))
+
 
     # sur_raw = sur_loaded_data
     # sur_results = pd.DataFrame([sur_raw[0][i].X_df for i in range(ntrials)][0][10:]) # get results of trials # take all y values except initial training sample
