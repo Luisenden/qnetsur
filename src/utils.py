@@ -28,6 +28,8 @@ except ImportError:
     raise ImportError(f"Cannot import config.py for '{USE_CASE}'")
 
 
+np.random.seed(config.SEED_OPT)
+
 class Simulation:
     """
     Class for running quantum network simulations.
@@ -152,7 +154,6 @@ class Surrogate(Simulation):
     """
     def __init__(self, func,  vals, vars, sample_size):
         super().__init__(func, vals, vars)
-        np.random.seed(seed=config.SEED_OPT)
     
         # profiling storage
         self.sim_time = []

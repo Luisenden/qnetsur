@@ -1,7 +1,6 @@
 from config import *
 
 from ax.service.ax_client import AxClient, ObjectiveProperties
-from optimizingcd import main_cd as simulation
 
 def set_q_swap_for_nd(args):
     series = pd.Series(args)
@@ -43,54 +42,29 @@ def get_parameters(vars:dict):
 
 if __name__ == '__main__':
 
-    # user input: network topology
-    vv = sys.argv[1] 
-
-    # user input: number of maximum iterations optimiztion
-    MAXITER = int(sys.argv[2]) 
-
-    # user input: number of trials
-    ntrials = int(sys.argv[3]) 
-
-    # instantiate network topology
-    v = vv.split(',')
-    assert(len(v) in [1,2]), 'Argument must be given for network topology: e.g. "11" yields 11x11 square lattice, while e.g. "2,3" yields 2,3-tree network.'
-    topo = NetworkTopology((int(v[0]), ), 'square') if len(v)==1 else NetworkTopology((int(v[0]), int(v[1])), 'tree')
-    size = topo.size
-
-    vals['A'] = simulation.adjacency_squared(size[0]) if topo.name == 'square' else simulation.adjacency_tree(size[0], size[1])
-
-    vars = { # define variables and bounds for given simulation function
-        'range': {
-            'M': ([1, 10],'int')
-            },
-        'choice':{}
-    } 
-    for i in range(np.shape(vals['A'])[0]):
-        vars['range'][f'q_swap{i}'] = ([0., 1.], 'float')
+    # user input:
+    max_time= MAX_TIME * 3600 # in sec
 
     objectives = dict()
     objectives["mean"] = ObjectiveProperties(minimize=False)
 
-    total_time = []
-    ax_clients = []
-    for _ in range(ntrials):
-        ax_client = AxClient(verbose_logging=False)
-        ax_client.create_experiment( # define variable parameters for simulation function
-            name="simulation_test_experiment",
-            parameters=get_parameters(vars),
-            objectives=objectives,
-        )
+    ax_client = AxClient(verbose_logging=False, random_seed=SEED_OPT)
+    ax_client.create_experiment( # define variable parameters for simulation function
+        name="continious-based-node-dependent-simulation-seed{SEED_OPT}",
+        parameters=get_parameters(vars),
+        objectives=objectives,
+    )
 
+    times_tracked = []
+    time_tracker = 0
+    while time_tracker < max_time:
         start = time.time()
-        raw_data_vec = []
-        for i in range(MAXITER):
-            parameters, trial_index = ax_client.get_next_trial()
-            ax_client.complete_trial(trial_index=trial_index, raw_data=evaluate(parameters))
-        total_time.append(time.time()-start)
 
-        ax_clients.append(ax_client)
+        parameters, trial_index = ax_client.get_next_trial()
+        ax_client.complete_trial(trial_index=trial_index, raw_data=evaluate(parameters))
 
+        times_tracked.append(time.time()-start)
+        time_tracker = sum(times_tracked)
     
-    with open('../../surdata/Ax_ND_'+topo.name+vv.replace(',','')+'_iter-'+str(MAXITER)+'_objective-meanopt'+datetime.now().strftime("%m-%d-%Y_%H:%M")+'.pkl', 'wb') as file:
-            pickle.dump([ax_clients,total_time,vals], file)
+    with open(f'../../surdata/Ax_ND_{TOPO}_{max_time}h_objective-meanopt_SEED{SEED_OPT}'+'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")'+'.pkl', 'wb') as file:
+            pickle.dump([ax_client,time_tracker,vals], file)

@@ -6,6 +6,26 @@ from datetime import datetime
 from functools import partial, wraps
 import numpy as np
 import pandas as pd
+import argparse
+
+from optimizingcd import main_cd as simulation
+
+# get the globals
+parser = argparse.ArgumentParser(description="Import globals")
+parser.add_argument("--topo", type=str, help="Network topology")
+parser.add_argument("--time", type=float, help="Maximum time allowed for optimization (in hours)")
+parser.add_argument("--seed", type=int, help="Global seed for random number generation for the optimizer")
+args = parser.parse_args()
+
+TOPO = args.topo
+if TOPO is None:
+    raise ValueError("Please provide a network topology using --topo argument, e.g. '11' yields 11x11 square lattice and '2,3' yields 2,3-tree network.")
+MAX_TIME = args.time
+if MAX_TIME is None:
+    raise ValueError("Please provide a maximum number of hours (float) using --time argument.")
+SEED_OPT = args.seed
+if SEED_OPT is None:
+    print(f"Warning: No global seed for optimization used. The results might not be reproduceable.")
 
 
 def simwrap(func): 
@@ -46,5 +66,22 @@ vals = { # define fixed parameters for given simulation function
         'qbits_per_channel': 50,
         'cutoff': 20
         }
+
+
+input_topo = TOPO.split(',') 
+assert(len(input_topo) in [1,2]), 'Argument must be given for network topology: e.g. "11" yields 11x11 square lattice, while e.g. "2,3" yields 2,3-tree network.'
+
+topo = NetworkTopology((int(input_topo[0]), ), 'square') if len(input_topo)==1 else NetworkTopology((int(input_topo[0]), int(input_topo[1])), 'tree')
+size = topo.size
+vals['A'] = simulation.adjacency_squared(size[0]) if topo.name == 'square' else simulation.adjacency_tree(size[0], size[1])
+
+vars = { # define variables and bounds for given simulation function
+    'range': {
+        'M': ([1, 10],'int')
+        },
+    'choice':{}
+} 
+for i in range(np.shape(vals['A'])[0]):
+    vars['range'][f'q_swap{i}'] = ([0., 1.], 'float')
 
 initial_model_size = 10 # number of samples used for the initial training of the surrogate model

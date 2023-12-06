@@ -8,8 +8,8 @@ import argparse
 import sys
 sys.path.append('../')
 
-# get the global seed
-parser = argparse.ArgumentParser(description="Import seed")
+# get the globals
+parser = argparse.ArgumentParser(description="Import globals")
 parser.add_argument("--time", type=float, help="Maximum time allowed for optimization (in hours)")
 parser.add_argument("--seed", type=int, help="Global seed for random number generation for the optimizer")
 args = parser.parse_args()

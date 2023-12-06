@@ -44,13 +44,11 @@ if __name__ == '__main__':
 
     ax_client = AxClient(verbose_logging=False, random_seed=SEED_OPT)
     ax_client.create_experiment( # define variable parameters of quantum network simulation
-        name=f"request-based-simulation{i}",
+        name=f"request-based-simulation-seed{SEED_OPT}",
         parameters=get_parameters(vars),
         objectives=objectives,
     )
 
-    start = time.time()
-    raw_data_vec = []
 
     times_tracked = []
     time_tracker = 0
