@@ -12,7 +12,7 @@ if __name__ == '__main__':
 
         # baseline simulated annealing
         si = Simulation(simulation_rb, vals, vars)
-        simaneal = partial(simulated_annealing, MAXTIME=max_time)
+        simaneal = partial(simulated_annealing, MAX_TIME=max_time)
         
         result = simaneal(si, seed=SEED_OPT)
         result = pd.DataFrame.from_records(result)
