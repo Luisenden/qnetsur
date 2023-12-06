@@ -299,7 +299,7 @@ class Surrogate(Simulation):
 
         assert max_optimize_time > 0, "Initial model generated, but no time left for optimization after initial build."
 
-        if verbose: print(f'After initial build, time left for optimization: {max_optimize_time:.2f}')
+        if verbose: print(f'After initial build, time left for optimization: {max_optimize_time}')
         current_time = 0
         while current_time < max_optimize_time:
             start = time.time()
