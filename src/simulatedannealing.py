@@ -39,7 +39,7 @@ def get_neighbour(s, x :dict) -> dict:
     return x_n
 
 
-def simulated_annealing(s, MAXTIME, temp :int = 10, beta_schedule :int = 1, seed=42):
+def simulated_annealing(s, MAXTIME, temp :int = 10, beta_schedule :int = 5, seed=42):
 
     
     np.random.seed(seed*int(mp.current_process().ident))
