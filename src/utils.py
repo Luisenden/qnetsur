@@ -28,7 +28,7 @@ except ImportError:
     raise ImportError(f"Cannot import config.py for '{USE_CASE}'")
 
 
-np.random.seed(config.SEED_OPT)
+np.random.seed(config.SEED_OPT) # set global optimization seed
 
 class Simulation:
     """
