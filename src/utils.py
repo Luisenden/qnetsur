@@ -134,7 +134,7 @@ class Surrogate(Simulation):
     """
     def __init__(self, func,  vals, vars, sample_size):
         super().__init__(func, vals, vars)
-        np.random.seed(42)
+        #np.random.seed(42)
     
         # profiling storage
         self.sim_time = []
