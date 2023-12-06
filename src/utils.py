@@ -241,7 +241,7 @@ class Surrogate(Simulation):
         """
 
         start = time.time() 
-        with Pool(processes=10, maxtasksperchild=1) as pool:
+        with Pool(processes=10) as pool:
             y_temp = pool.map(self.run_sim, self.X_df_add.iloc)
             pool.close()
             pool.join()
@@ -277,7 +277,7 @@ class Surrogate(Simulation):
         self.build_time.append(time.time() - start)
 
         start = time.time() 
-        with Pool(processes=self.procs, maxtasksperchild=1) as pool:
+        with Pool(processes=self.procs) as pool:
             y_temp = pool.map(self.run_sim, self.X_df.iloc)
             pool.close()
             pool.join()

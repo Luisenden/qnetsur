@@ -12,20 +12,14 @@ from optimizingcd import main_cd as simulation
 
 # get the globals
 parser = argparse.ArgumentParser(description="Import globals")
-parser.add_argument("--topo", type=str, help="Network topology")
-parser.add_argument("--time", type=float, help="Maximum time allowed for optimization (in hours)")
-parser.add_argument("--seed", type=int, help="Global seed for random number generation for the optimizer")
+parser.add_argument("--topo", type=str, default='2,3', help="Network topology")
+parser.add_argument("--time", type=float, default=1, help="Maximum time allowed for optimization (in hours)")
+parser.add_argument("--seed", type=int, default=42, help="Global seed for random number generation for the optimizer")
 args = parser.parse_args()
 
 TOPO = args.topo
-if TOPO is None:
-    raise ValueError("Please provide a network topology using --topo argument, e.g. '11' yields 11x11 square lattice and '2,3' yields 2,3-tree network.")
 MAX_TIME = args.time
-if MAX_TIME is None:
-    raise ValueError("Please provide a maximum number of hours (float) using --time argument.")
 SEED_OPT = args.seed
-if SEED_OPT is None:
-    print(f"Warning: No global seed for optimization used. The results might not be reproduceable.")
 
 
 def simwrap(func): 

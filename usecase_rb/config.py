@@ -10,8 +10,8 @@ sys.path.append('../')
 
 # get the globals
 parser = argparse.ArgumentParser(description="Import globals")
-parser.add_argument("--time", type=float, help="Maximum time allowed for optimization (in hours)")
-parser.add_argument("--seed", type=int, help="Global seed for random number generation for the optimizer")
+parser.add_argument("--time", type=float, default=1, help="Maximum time allowed for optimization (in hours)")
+parser.add_argument("--seed", type=int, default=42, help="Global seed for random number generation for the optimizer")
 args = parser.parse_args()
 
 MAX_TIME = args.time

@@ -61,5 +61,5 @@ if __name__ == '__main__':
         times_tracked.append(time.time()-start)
         time_tracker = sum(times_tracked)
     
-    with open(f'../../surdata/Ax_starlight_{max_time:.0f}h_objective-meanopt_SEED{SEED_OPT}'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
+    with open(f'../../surdata/Ax_starlight_{MAX_TIME:.0f}h_objective-meanopt_SEED{SEED_OPT}'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
             pickle.dump([ax_client,time_tracker,vals], file)
