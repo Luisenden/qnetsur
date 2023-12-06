@@ -1,9 +1,10 @@
 from config import *
 from ax.service.ax_client import AxClient, ObjectiveProperties
+from ax.service.scheduler import SchedulerOptions
 
 from simulation import *
 
-@simwrap
+
 def evaluate(parameters) -> float:
     x = {**parameters, **vals}
     mean_per_node, std_per_node = simulation_rb(**x) 
@@ -35,37 +36,32 @@ def get_parameters(vars:dict):
 
 if __name__ == '__main__':
 
-    start = time.time()
-    # user input: number of maximum iterations optimiztion
-    MAXITER = int(sys.argv[1]) 
-
-    # user input: number of trials
-    ntrials = int(sys.argv[2]) 
+    # user input:
+    max_time = float(sys.argv[1]) * 3600 # in sec
 
     objectives = dict()
     objectives["mean"] = ObjectiveProperties(minimize=False)
 
-    total_time = []
-    ax_clients = []
-    for _ in range(ntrials):
-        ax_client = AxClient(verbose_logging=False)
-        ax_client.create_experiment( # define variable parameters of quantum network simulation
-            name="simulation_test_experiment",
-            parameters=get_parameters(vars),
-            objectives=objectives,
-        )
+    ax_client = AxClient(verbose_logging=False)
+    ax_client.create_experiment( # define variable parameters of quantum network simulation
+        name=f"request-based-simulation{i}",
+        parameters=get_parameters(vars),
+        objectives=objectives,
+    )
 
+    start = time.time()
+    raw_data_vec = []
+
+    times_tracked = []
+    time_tracker = 0
+    while time_tracker < max_time:
         start = time.time()
-        raw_data_vec = []
-        for i in range(MAXITER):
-            parameters, trial_index = ax_client.get_next_trial()
-            ax_client.complete_trial(trial_index=trial_index, raw_data=evaluate(parameters))
-        total_time.append(time.time()-start)
 
-        ax_clients.append(ax_client)
+        parameters, trial_index = ax_client.get_next_trial()
+        ax_client.complete_trial(trial_index=trial_index, raw_data=evaluate(parameters))
 
+        times_tracked.append(time.time()-start)
+        time_tracker = sum(times_tracked)
     
-    with open('../../surdata/Ax_starlight_iter-'+str(MAXITER)+'_objective-meanopt'+datetime.now().strftime("%m-%d-%Y_%H:%M")+'.pkl', 'wb') as file:
-            pickle.dump([ax_clients,total_time,vals], file)
-    
-    print('time:', time.time()-start)
+    with open('../../surdata/Ax_starlight_'+str(max_time)+'h_objective-meanopt'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
+            pickle.dump([ax_client,time_tracker,vals], file)

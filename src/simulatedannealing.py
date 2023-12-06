@@ -39,7 +39,7 @@ def get_neighbour(s, x :dict) -> dict:
     return x_n
 
 
-def simulated_annealing(s, MAXITER = 5, temp :int = 10, beta_schedule :int = 10, seed=42):
+def simulated_annealing(s, MAXTIME, temp :int = 10, beta_schedule :int = 1, seed=42):
 
     
     np.random.seed(seed)
@@ -57,11 +57,13 @@ def simulated_annealing(s, MAXITER = 5, temp :int = 10, beta_schedule :int = 10,
 
     # optimize
     count = 0
+    time_tracker = 0
     t = temp 
-    while t > 1e-5 and count < MAXITER:
+    while t > 1e-5 and time_tracker < MAXTIME:
 
         # cooling 
         t = temp / (count + 1)
+        start = time.time()
 
         # repeat
         for _ in range(beta_schedule):
@@ -87,9 +89,11 @@ def simulated_annealing(s, MAXITER = 5, temp :int = 10, beta_schedule :int = 10,
         current_set['objective'] = -current_eval
         sets.append(current_set)
 
+        time_tracker += time.time()-start
+
         count += 1 
 
-    return sets
+    return sets, time_tracker
 
 if __name__ == '__main__':
 

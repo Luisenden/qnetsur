@@ -37,7 +37,7 @@ def get_comparison_dataframe(raw_data:list):
 
     if ax_raw != None:
         columns = ax_raw[0][0].get_trials_data_frame().columns
-        ax_results = pd.DataFrame([np.array(ax_loaded_data[0][i].get_trials_data_frame()['mean'])+pd.DataFrame(ax_loaded_data[0][i].get_trials_data_frame()[columns[columns.str.contains('mem')]]).T.sum()/(n*m_max) for i in range(ntrials)]).T # get results of trials #
+        ax_results = pd.DataFrame([np.array(ax_loaded_data[0][i].get_trials_data_frame()['mean']) for i in range(ntrials)]).T # get results of trials 
         ax_df = pd.melt(ax_results, var_name='Trial', value_name='Ax', ignore_index=False).reset_index(names='Iteration') # convert to one column
         ax_df = ax_df.drop(['Iteration','Trial'], axis=1)
         dfs.append(ax_df)

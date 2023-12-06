@@ -132,7 +132,7 @@ class Surrogate(Simulation):
         update(x):
             Updates the model with new data.
     """
-    def __init__(self, func,  vals, vars, initial_model_size):
+    def __init__(self, func,  vals, vars, sample_size):
         super().__init__(func, vals, vars)
         np.random.seed(42)
     
@@ -143,43 +143,23 @@ class Surrogate(Simulation):
     
         # multiprocessing
         self.procs = mp.cpu_count()
-        if self.procs > initial_model_size:
-            self.procs = initial_model_size
-
-        # generate initial training set 
-        ## X
-        X = self.get_random_x(initial_model_size)
-        self.X_df = pd.DataFrame(X).astype(object)
+        self.sample_size = sample_size
+        if self.procs > sample_size:
+            self.procs = sample_size
         
-        ## y, run quantum network simulation in parallel
+        # storage target value
         self.y = []
         self.y_std = []
 
-        start = time.time() 
-        with Pool(processes=self.procs, maxtasksperchild=1) as pool:
-            y_temp = pool.map(self.run_sim, self.X_df.iloc)
-            pool.close()
-            pool.join()
-        for y_i in y_temp:
-            self.y.append(y_i[0])
-            self.y_std.append(y_i[1])
-
-        self.sim_time.append(time.time() - start)
-
-        # build model
-        start = time.time()
+        # model declaration
         self.model = SVR
         self.mmodel = MultiOutputRegressor(self.model())
         self.mmodel_std = MultiOutputRegressor(self.model())
-        
-        self.mmodel.fit(self.X_df.values, self.y)
-        self.mmodel_std.fit(self.X_df.values, self.y_std)
-        self.build_time.append(time.time()-start)
 
-        # storage
+        # improvement storage
         self.improvement = []
 
-    def get_neighbour(self, MAXITER, count, x :dict) -> dict:
+    def get_neighbour(self, max_time, current_time, x :dict) -> dict:
         """
         Generates random parameters for the simulation.
 
@@ -191,9 +171,9 @@ class Surrogate(Simulation):
         """
         
         x_n = {}
-        f = (1-np.log(1+count/MAXITER)**2)**4
+        f = (1-np.log(1+current_time/max_time)**2)**4
 
-        size = 1000*(count+1)//MAXITER
+        size = 1000
         for dim, par in self.vars['range'].items():
                 vals = par[0]
                 if par[1] == 'int':
@@ -216,7 +196,7 @@ class Surrogate(Simulation):
         return x_fittest
 
 
-    def acquisition(self,MAXITER,count) -> pd.DataFrame:
+    def acquisition(self,max_time,current_time) -> pd.DataFrame:
         """
         Computes new data points according to estimated improvement and degree of exploration and adds the data to the training sample.
 
@@ -226,9 +206,9 @@ class Surrogate(Simulation):
 
         newx = []
         for x in self.X_df.iloc[np.argsort(y_obj_vec)[-10:]].iloc:
-            newx.append(self.get_neighbour(MAXITER=MAXITER, count=count, x=x.to_dict()))
+            newx.append(self.get_neighbour(max_time=max_time, current_time=current_time, x=x.to_dict()))
+        
         self.X_df_add = pd.DataFrame.from_records(newx).astype(object)
-
         self.X_df = pd.concat([self.X_df, self.X_df_add], axis=0, ignore_index=True)
 
 
@@ -257,7 +237,7 @@ class Surrogate(Simulation):
             self.y.append(y_i[0])
             self.y_std.append(y_i[1])
         
-        # update surrogate model
+        # build/update surrogate model
         start = time.time()
         self.mmodel = MultiOutputRegressor(self.model())
         self.mmodel_std = MultiOutputRegressor(self.model())
@@ -266,13 +246,47 @@ class Surrogate(Simulation):
         self.mmodel_std.fit(self.X_df.values, self.y_std)
         self.build_time.append(time.time()-start)
 
-    def optimize(self, MAXITER, verbose=False) -> None:
+    def optimize(self, max_time, verbose=False) -> None:
+    
+        optimize_start = time.time()
+        
+        # generate initial training set X
+        start = time.time()
+        X = self.get_random_x(self.sample_size)
+        self.X_df = pd.DataFrame(X).astype(object)
+        self.build_time.append(time.time() - start)
 
-        for iter in range(MAXITER):
+        start = time.time() 
+        with Pool(processes=self.procs, maxtasksperchild=1) as pool:
+            y_temp = pool.map(self.run_sim, self.X_df.iloc)
+            pool.close()
+            pool.join()
+        for y_i in y_temp:
+            self.y.append(y_i[0])
+            self.y_std.append(y_i[1])
+        self.sim_time.append(time.time() - start)
+
+        # train model
+        start = time.time()
+        self.mmodel.fit(self.X_df.values, self.y)
+        self.mmodel_std.fit(self.X_df.values, self.y_std)
+        self.build_time.append(time.time()-start)
+
+        current_optimize_time = time.time()-optimize_start
+
+        # optimization
+        max_optimize_time = max_time - current_optimize_time
+
+        assert max_optimize_time > 0, "No time left for optimization after initial build."
+
+        if verbose: print(f'After initial build, time left for optimization: {max_optimize_time:.2f}')
+        current_time = 0
+        while current_time < max_optimize_time:
             start = time.time()
-            self.acquisition(MAXITER,iter)
+            self.acquisition(max_optimize_time,current_time)
             self.optimize_time.append(time.time()-start)
+
             self.update()
-            if verbose: print('{} % done'.format((iter+1)/MAXITER*100))
+            current_time += time.time()-start
 
         if verbose: print('Optimization finished.')

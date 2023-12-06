@@ -2,6 +2,7 @@ import numpy as np
 from datetime import datetime
 import json, os, time
 import torch.multiprocessing as mp
+import random
 from torch.multiprocessing import set_start_method
 try:    
     set_start_method('spawn')
@@ -17,8 +18,8 @@ import pandas as pd
 from sequence.app.random_request import RandomRequestApp
 from sequence.topology.router_net_topo import RouterNetTopo
 
-def update_memory_config(file_path, new_memo_size, total_time, seed):
-    np.random.seed(1000+seed)
+def update_memory_config(file_path, new_memo_size, total_time,n):
+    random.seed(n)
     proc = mp.current_process().ident
 
     # Load JSON data from file
@@ -28,9 +29,10 @@ def update_memory_config(file_path, new_memo_size, total_time, seed):
     data["stop_time"] = total_time
 
     # Call the function to update memo_size dynamically
+    seeds = random.sample(range(len(data["nodes"])), len(data["nodes"])) 
     for i,node in enumerate(data["nodes"]):
             node["memo_size"] = new_memo_size[i]
-            node["seed"] = np.random.randint(0,100)
+            node["seed"] = seeds[i]
 
     # Write the updated JSON back to the file
     with open(str(proc)+'.json', 'w') as file:
@@ -57,20 +59,20 @@ def get_component(node: "Node", component_type: str):
 
     raise ValueError("No component of type {} on node {}".format(component_type, node.name))
 
-def set_parameters(cavity:int, network_topo, memo_freq:list):
+def set_parameters(cavity:int, network_topo):
 
     C = cavity
     routers = network_topo.get_nodes_by_type(RouterNetTopo.QUANTUM_ROUTER)
     bsm_nodes = network_topo.get_nodes_by_type(RouterNetTopo.BSM_NODE)
 
     # set memory parameters
-    MEMO_FREQ = np.array(memo_freq)*1e3
+    MEMO_FREQ = 2e3
     MEMO_EXPIRE = 1.3
     MEMO_EFFICIENCY = 0.75
     MEMO_FIDELITY = get_fidelity_by_efficiency(C) #0.9349367588934053
-    for i,node in enumerate(routers):
+    for node in routers:
         memory_array = node.get_components_by_type("MemoryArray")[0]  # assume only 1 memory array
-        memory_array.update_memory_params("frequency", MEMO_FREQ[i])
+        memory_array.update_memory_params("frequency", MEMO_FREQ)
         memory_array.update_memory_params("coherence_time", MEMO_EXPIRE)
         memory_array.update_memory_params("efficiency", MEMO_EFFICIENCY)
         memory_array.update_memory_params("raw_fidelity", MEMO_FIDELITY)
@@ -99,7 +101,7 @@ def set_parameters(cavity:int, network_topo, memo_freq:list):
         node.network_manager.protocol_stack[1].set_swapping_success_rate(SWAP_SUCC_PROB)
         node.network_manager.protocol_stack[1].set_swapping_degradation(SWAP_DEGRADATION)
     
-def run(network_topo):
+def run(network_topo,n):
     tl = network_topo.get_timeline()
     tl.show_progress = False
     
@@ -111,9 +113,9 @@ def run(network_topo):
         others = router_names[:]
         others.remove(app_node_name)
         max_mem_to_reserve = len(node.get_components_by_type("MemoryArray")[0])//2
-        app = RandomRequestApp(node, others, i,
+        app = RandomRequestApp(node, others,
                             min_dur=1e12, max_dur=2e12, min_size=max(1,max_mem_to_reserve-max_mem_to_reserve//2),
-                            max_size=max_mem_to_reserve, min_fidelity=0.8, max_fidelity=1.0)
+                            max_size=max_mem_to_reserve, min_fidelity=0.8, max_fidelity=1.0, seed=i*n)
         apps.append(app)
         app.start()
 
@@ -163,13 +165,14 @@ def simulation_rb(network_config_file, cavity, total_time, N, **kwargs):
     
     results = []
     proc = mp.current_process().ident
+
     for n in range(N):
-        update_memory_config(network_config_file, list([v for k,v in kwargs.items() if 'size' in k]), total_time, seed=n)
+        update_memory_config(network_config_file, list([v for k,v in kwargs.items() if 'size' in k]), total_time,n)
         network_topo = RouterNetTopo(str(proc)+'.json')
         nodes = network_topo.get_nodes_by_type(RouterNetTopo.QUANTUM_ROUTER)
 
-        set_parameters(cavity=cavity, network_topo=network_topo, memo_freq=list([v for k,v in kwargs.items() if 'freq' in k]))
-        df = run(network_topo)
+        set_parameters(cavity=cavity, network_topo=network_topo)
+        df = run(network_topo,n)
 
         completed_requests_per_node = df.groupby('Initiator').size()
 

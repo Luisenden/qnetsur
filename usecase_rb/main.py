@@ -6,25 +6,12 @@ from simulation import *
 
 if __name__ == '__main__':
 
-        start = time.time()
-        # user input: number of maximum iterations optimization
-        MAXITER = int(sys.argv[1]) 
-
-        # user input: number of trials
-        ntrials = int(sys.argv[2]) 
+        # user input:
+        max_time= float(sys.argv[1]) * 3600 # in sec
 
         # instatiate surrogate model and run optimization
-        total_time = []
-        sims = []
-        for _ in range(ntrials):
-                start = time.time()
-                s = Surrogate(simulation_rb, vals=vals, vars=vars, initial_model_size=initial_model_size)
-                s.optimize(MAXITER=MAXITER, verbose=False)
-                sims.append(s)
-                total_time.append(time.time()-start)
+        sim = Surrogate(simulation_rb, vals=vals, vars=vars, sample_size=sample_size)
+        sim.optimize(max_time=max_time, verbose=False)
         
-        
-        with open('../../surdata/Sur_starlight_iter-'+str(MAXITER)+'_objective-meanopt'+datetime.now().strftime("%m-%d-%Y_%H:%M")+'.pkl', 'wb') as file:
-                pickle.dump([sims,total_time], file)
-
-        print('time:', time.time()-start)
+        with open('../../surdata/Sur_starlight_'+str(max_time)+'h_objective-meanopt'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
+                pickle.dump(sim, file)

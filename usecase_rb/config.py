@@ -7,9 +7,9 @@ from datetime import datetime
 import sys
 sys.path.append('../')
 
-n = 9 # number of nodes
+nnodes = 9 # number of nodes
 m_max = 110 # maximum number of memory qubits in a node
-initial_model_size = 10 # number of samples used for the initial training of the surrogate model
+sample_size = 2 # number of samples used for the initial training of the surrogate model
 
 
 def simwrap(func): # simulation wrapper: define processing of a given simulation function
@@ -18,7 +18,7 @@ def simwrap(func): # simulation wrapper: define processing of a given simulation
         vars_temp = pd.Series(args[-1])
         mems = vars_temp[vars_temp.index.str.contains('size')].values
         mean, std = func(*args)
-        mean_per_node = mean-sum(mems)/(n*m_max)
+        mean_per_node = mean-sum(mems)/(nnodes*m_max)
         return mean_per_node, std # number of completed requests per node (nodes sorted alphabetically)
     return wrapper
 
@@ -36,6 +36,5 @@ vars = {
         'choice':{}
         } 
 
-for i in range(n):
+for i in range(nnodes):
     vars['range'][f'mem_size_node_{i}'] = ([5,m_max], 'int')
-    vars['range'][f'mem_freq_node_{i}'] = ([2, 20], 'int') #kHz

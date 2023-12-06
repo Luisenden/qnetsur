@@ -49,7 +49,6 @@ if __name__ == '__main__':
                 total_time.append(time.time()-start)
                 sims.append(s)
 
-
         print('time:', time.time()-start)
         # reference model
         # initial_ref_size = initial_model_size+MAXITER*10 # reference model
