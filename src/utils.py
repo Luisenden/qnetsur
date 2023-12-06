@@ -31,9 +31,6 @@ except ImportError:
 class Simulation:
     """
     Class for running quantum network simulations.
-s
-    Args:
-        func (function): The simulation function to be used.
 
     Attributes:
         vals (dict): A dictionary of fixed parameters.
@@ -41,14 +38,17 @@ s
         func (function): The simulation function.
 
     Methods:
-        run_sim(x):
-            Runs the simulation with the provided parameters where x is a dict.
+        run_sim(x): Runs the simulation with the provided parameters.
+            Args:
+                x (dict): Parameters for the simulation.
+            Returns:
+                list: Results of the simulation.
 
-        get_random_x(n):
-            Generates random parameters for n simulation runs.
-
-        diff(x, sample):
-            Computes the gower difference between a point x and all other observed points in sample.
+        get_random_x(n): Generates random parameters for the simulation.
+            Args:
+                n (int): Number of random parameter sets to generate.
+            Returns:
+                dict: Randomly generated parameters.
     """
 
     def __init__(self, func, vals, vars):
@@ -77,7 +77,7 @@ s
         res = self.func(**xrun)
         return res
     
-    def get_random_x(self,n, use_list=False) -> dict:
+    def get_random_x(self,n) -> dict:
         """
         Generates random parameters for the simulation.
 
@@ -94,9 +94,9 @@ s
         for dim, par in self.vars['range'].items():
                 vals = par[0]
                 if par[1] == 'int':
-                    x[dim] = np.random.randint(vals[0], vals[1], n) if n > 1 or use_list else np.random.randint(vals[0], vals[1])
+                    x[dim] = np.random.randint(vals[0], vals[1], n) if n > 1 else np.random.randint(vals[0], vals[1])
                 elif par[1] == 'float':
-                    x[dim] = np.random.uniform(vals[0], vals[1], n) if n > 1 or use_list else np.random.uniform(vals[0], vals[1])
+                    x[dim] = np.random.uniform(vals[0], vals[1], n) if n > 1 else np.random.uniform(vals[0], vals[1])
                 else:
                     raise Exception('Datatype must be "int" or "float".')
                     
@@ -111,30 +111,48 @@ class Surrogate(Simulation):
 
     Args:
         func (function): The simulation function to be used.
-        n (int): Number of initial training set samples.
+        vals (dict): A dictionary of fixed parameters.
+        vars (dict): A dictionary of variable parameters.
+        sample_size (int): Number of initial training set samples.
 
     Attributes:
-        X (dict): Training set parameters.
+        X (dict): Training set of parameters.
         X_df (pd.DataFrame): DataFrame of training set parameters (used for training and prediction).
         y (list): Results of the simulation for the training set.
-        model (class): The regression model to be used.
+        y_std (list): Standard deviation of results for the training set.
+        model (class): The regression model to be used; Currently Support Vector Regression (sklearn.svm.SVR)
         mmodel (class): Multi-output regression model.
-        build_time (float): Time taken to build the model.
+        mmodel_std (class): Multi-output regression model for standard deviation.
+        build_time (list): Time taken to build the model.
+        sim_time (list): Time taken for simulations.
+        optimize_time (list): Time taken for optimization steps.
+        procs (int): Number of CPU cores available.
         improvement (list): List of mean improvements.
 
     Methods:
-        suggest_new_x(temp=10, beta_schedule=5, MAXITER=1e3, seed=42):
-            Suggests a new set of parameters using machine learning model optimization (either with random force or simulated annealing).
+        get_neighbour(max_time, current_time, x): Generates a neighboring parameter set.
+            Args:
+                max_time (float): Maximum time allowed for optimization.
+                current_time (float): Current optimization time.
+                x (dict): Current parameter set.
+            Returns:
+                dict: Neighboring parameter set.
 
-        acquisition():
-            Acquisition Function, computes expected improvement over random parameters.
+        acquisition(max_time, current_time): Computes new data points according to expected improvement and exploration degree and adds it to the the training set.
+            Args:
+                max_time (float): Maximum time allowed for optimization.
+                current_time (float): Current optimization time.
 
-        update(x):
-            Updates the model with new data.
+        update(): Updates the model with new data.
+
+        optimize(max_time, verbose=False): Initiates the optimization process.
+            Args:
+                max_time (float): Maximum time allowed for optimization.
+                verbose (bool, optional): Specifies whether to display optimization information.
     """
     def __init__(self, func,  vals, vars, sample_size):
         super().__init__(func, vals, vars)
-        #np.random.seed(42)
+        np.random.seed(seed=config.SEED_OPT)
     
         # profiling storage
         self.sim_time = []
@@ -248,6 +266,7 @@ class Surrogate(Simulation):
 
     def optimize(self, max_time, verbose=False) -> None:
     
+        if verbose: print("Start opimization ...")
         optimize_start = time.time()
         
         # generate initial training set X
@@ -277,7 +296,7 @@ class Surrogate(Simulation):
         # optimization
         max_optimize_time = max_time - current_optimize_time
 
-        assert max_optimize_time > 0, "No time left for optimization after initial build."
+        assert max_optimize_time > 0, "Initial model generated, but no time left for optimization after initial build."
 
         if verbose: print(f'After initial build, time left for optimization: {max_optimize_time:.2f}')
         current_time = 0

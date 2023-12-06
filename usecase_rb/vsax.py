@@ -37,12 +37,12 @@ def get_parameters(vars:dict):
 if __name__ == '__main__':
 
     # user input:
-    max_time = float(sys.argv[1]) * 3600 # in sec
+    max_time = MAX_TIME * 3600 # in sec
 
     objectives = dict()
     objectives["mean"] = ObjectiveProperties(minimize=False)
 
-    ax_client = AxClient(verbose_logging=False)
+    ax_client = AxClient(verbose_logging=False, random_seed=SEED_OPT)
     ax_client.create_experiment( # define variable parameters of quantum network simulation
         name=f"request-based-simulation{i}",
         parameters=get_parameters(vars),
@@ -63,5 +63,5 @@ if __name__ == '__main__':
         times_tracked.append(time.time()-start)
         time_tracker = sum(times_tracked)
     
-    with open('../../surdata/Ax_starlight_'+str(max_time)+'h_objective-meanopt'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
+    with open(f'../../surdata/Ax_starlight_{max_time}h_objective-meanopt_SEED{SEED_OPT}'+'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")'+'.pkl', 'wb') as file:
             pickle.dump([ax_client,time_tracker,vals], file)

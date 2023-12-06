@@ -18,8 +18,8 @@ import pandas as pd
 from sequence.app.random_request import RandomRequestApp
 from sequence.topology.router_net_topo import RouterNetTopo
 
-def update_memory_config(file_path, new_memo_size, total_time,n):
-    random.seed(n)
+def update_memory_config(file_path, new_memo_size, total_time,seed):
+    random.seed(seed)
     proc = mp.current_process().ident
 
     # Load JSON data from file
@@ -167,7 +167,7 @@ def simulation_rb(network_config_file, cavity, total_time, N, **kwargs):
     proc = mp.current_process().ident
 
     for n in range(N):
-        update_memory_config(network_config_file, list([v for k,v in kwargs.items() if 'size' in k]), total_time,n)
+        update_memory_config(network_config_file, list([v for k,v in kwargs.items() if 'size' in k]), total_time,seed=n)
         network_topo = RouterNetTopo(str(proc)+'.json')
         nodes = network_topo.get_nodes_by_type(RouterNetTopo.QUANTUM_ROUTER)
 
@@ -188,25 +188,25 @@ def simulation_rb(network_config_file, cavity, total_time, N, **kwargs):
     return mean, std
 
 
-
 if __name__ == "__main__":
 
     start = time.time()
     network_config_file = "starlight.json"
-    total_time = 2e13
+    total_time = 2e14
 
     even = [50]*9
     weighted = [25, 91, 67, 24, 67, 24, 103, 25, 24]
 
     proc = mp.current_process().ident
-    update_memory_config(network_config_file, even, total_time, seed=42) #source for weighted: https://github.com/sequence-toolbox/Chicago-metropolitan-quantum-network/blob/master/sec5.4-two-memory-distribution-policies/uneven_memory.json
+    update_memory_config(network_config_file, even, total_time,seed=42) #source for weighted: https://github.com/sequence-toolbox/Chicago-metropolitan-quantum-network/blob/master/sec5.4-two-memory-distribution-policies/uneven_memory.json
     network_topo = RouterNetTopo(str(proc)+'.json')
+    os.remove(str(proc)+'.json')
 
     set_parameters(cavity=500, network_topo=network_topo)
     nodes = network_topo.get_nodes_by_type(RouterNetTopo.QUANTUM_ROUTER)
 
     results = []
-    df = run(network_topo)
+    df = run(network_topo,1)
     completed_requests_per_node = df.groupby('Initiator').size()
 
     res = np.zeros(len(nodes))

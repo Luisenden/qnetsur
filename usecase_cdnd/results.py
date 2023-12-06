@@ -76,7 +76,7 @@ def plot_trial(df, store=False):
     g.fig.suptitle(f'Optimization Quantum Network ({topo}) over {dspace} parameters')
     plt.gca().xaxis.set_major_formatter(FuncFormatter(lambda x, _: int(x)))
     
-    if store: plt.savefig(f'../../surdata/Figures/compare_trials_{topo}_iter-{niter}.pdf')
+    if store: plt.savefig(f'../../surdata/Figures/compare_trials_{topo}_iter-{niter}_ND.pdf')
    #plt.show()
 
 def plot_avg_time(raw_data:list, store=False):
