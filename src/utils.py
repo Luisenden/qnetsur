@@ -28,7 +28,7 @@ except ImportError:
     raise ImportError(f"Cannot import config.py for '{USE_CASE}'")
 
 
-np.random.seed(config.SEED_OPT) # set global optimization seed
+np.random.seed(config.SEED_OPT) # set global optimization
 
 class Simulation:
     """
@@ -292,14 +292,15 @@ class Surrogate(Simulation):
         self.mmodel_std.fit(self.X_df.values, self.y_std)
         self.build_time.append(time.time()-start)
 
-        current_optimize_time = time.time()-optimize_start
+        initial_optimize_time = time.time()-optimize_start
+        self.optimize_time.append(initial_optimize_time)
 
         # optimization
-        max_optimize_time = max_time - current_optimize_time
+        max_optimize_time = max_time - initial_optimize_time
 
         assert max_optimize_time > 0, "Initial model generated, but no time left for optimization after initial build."
 
-        if verbose: print(f'After initial build, time left for optimization: {max_optimize_time}')
+        if verbose: print(f'After initial build, time left for optimization: {max_optimize_time:.2f}')
         current_time = 0
         while current_time < max_optimize_time:
             start = time.time()
