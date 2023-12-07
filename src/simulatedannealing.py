@@ -63,10 +63,10 @@ def simulated_annealing(s, MAX_TIME, temp :int = 10, beta_schedule :int = 5, see
 
         # cooling 
         t = temp / (count + 1)
-        start = time.time()
 
         # repeat
         for _ in range(beta_schedule):
+            start = time.time()
 
             # choose a different point and evaluate
             candidate = get_neighbour(s, current)
@@ -85,6 +85,7 @@ def simulated_annealing(s, MAX_TIME, temp :int = 10, beta_schedule :int = 5, see
             if diff < 0 or np.random.random() < metropolis:
                 current, current_eval = candidate, candidate_eval
             
+            time_tracker += time.time()-start
             if time_tracker >= MAX_TIME:
                 break
         
@@ -92,8 +93,6 @@ def simulated_annealing(s, MAX_TIME, temp :int = 10, beta_schedule :int = 5, see
         current_set['objective'] = -current_eval
         current_set['time'] = time.time()-start
         sets.append(current_set)
-
-        time_tracker += time.time()-start
 
         count += 1 
 
