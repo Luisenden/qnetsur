@@ -169,6 +169,7 @@ class Surrogate(Simulation):
         # storage target value
         self.y = []
         self.y_std = []
+        self.y_raw = []
 
         # model declaration
         self.model = SVR
@@ -253,8 +254,10 @@ class Surrogate(Simulation):
 
         # add new data
         for y_i in y_temp:
-            self.y.append(y_i[0])
-            self.y_std.append(y_i[1])
+            yi,yi_std,*yi_raw = y_i
+            self.y.append(yi)
+            self.y_std.append(yi_std)
+            self.y_raw += yi_raw
         
         # build/update surrogate model
         start = time.time()
@@ -282,8 +285,10 @@ class Surrogate(Simulation):
             pool.close()
             pool.join()
         for y_i in y_temp:
-            self.y.append(y_i[0])
-            self.y_std.append(y_i[1])
+            yi,yi_std,*yi_raw = y_i
+            self.y.append(yi)
+            self.y_std.append(yi_std)
+            self.y_raw += yi_raw
         self.sim_time.append(time.time() - start)
 
         # train model

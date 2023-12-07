@@ -10,7 +10,7 @@ import src
 import config
 
 surs = []
-for name in glob.glob('../../surdata/Sur_starlight_3h_*'):
+for name in glob.glob('../../surdata/Sur_ND_tree_0.1h_objective-meanopt_SEED42_12-07-2023_17:18:24.pkl'):
     with open(name,'rb') as file: surs.append(pickle.load(file))
 
-print(surs)
+print(np.mean(surs[0].y,axis=1)-np.mean(surs[0].y_raw,axis=1))

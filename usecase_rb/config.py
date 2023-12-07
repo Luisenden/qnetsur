@@ -32,8 +32,8 @@ def simwrap(func): # simulation wrapper: define processing of a given simulation
         vars_temp = pd.Series(args[-1])
         mems = vars_temp[vars_temp.index.str.contains('size')].values
         mean, std = func(*args)
-        mean_per_node = mean-sum(mems)/(nnodes*m_max)
-        return mean_per_node, std # number of completed requests per node (nodes sorted alphabetically)
+        wrapped = mean-sum(mems)/(nnodes*m_max)
+        return wrapped, std # number of completed requests per node (nodes sorted alphabetically)
     return wrapper
 
 
