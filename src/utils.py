@@ -315,4 +315,5 @@ class Surrogate(Simulation):
             self.update()
             current_time += time.time()-start
 
+        self.time_tracked = current_time
         if verbose: print('Optimization finished.')

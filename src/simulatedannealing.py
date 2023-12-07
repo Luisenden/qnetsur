@@ -63,7 +63,8 @@ def simulated_annealing(s, MAX_TIME, temp :int = 10, beta_schedule :int = 5, see
 
         # cooling 
         t = temp / (count + 1)
-
+        
+        start_outer = time.time()
         # repeat
         for _ in range(beta_schedule):
             start = time.time()
@@ -91,7 +92,7 @@ def simulated_annealing(s, MAX_TIME, temp :int = 10, beta_schedule :int = 5, see
         
         current_set = current.copy()
         current_set['objective'] = -current_eval
-        current_set['time'] = time.time()-start
+        current_set['time'] = time.time()-start_outer
         sets.append(current_set)
 
         count += 1 
