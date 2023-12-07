@@ -12,5 +12,5 @@ if __name__ == '__main__':
         sim = Surrogate(simulation_rb, vals=vals, vars=vars, sample_size=sample_size)
         sim.optimize(max_time=max_time, verbose=False)
         
-        with open(f'../../surdata/Sur_starlight_{MAX_TIME:.0f}h_objective-meanopt_SEED{SEED_OPT}'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
+        with open(f'../../surdata/Sur_starlight_{MAX_TIME:.0f}h_objective-meanopt_SEED{SEED_OPT}_'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
                 pickle.dump(sim, file)
