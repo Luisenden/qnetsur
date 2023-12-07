@@ -84,6 +84,9 @@ def simulated_annealing(s, MAX_TIME, temp :int = 10, beta_schedule :int = 5, see
             # keep if improvement or metropolis criterion satisfied
             if diff < 0 or np.random.random() < metropolis:
                 current, current_eval = candidate, candidate_eval
+            
+            if time_tracker >= MAX_TIME:
+                break
         
         current_set = current.copy()
         current_set['objective'] = -current_eval
