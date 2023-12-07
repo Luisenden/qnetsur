@@ -4,13 +4,22 @@ import sys
 import numpy as np
 sys.path.append('../')
 sys.path.append('../src')
-sys.path.append('../usecase_cd')
-sys.path.append('../usecase_rb')
 import src
 import config
 
+axs = []
+for name in glob.glob('../../surdata/CD/23tree/Ax_ND_tree_0.2h_objective-meanopt_*'):
+    with open(name,'rb') as file: axs.append(pickle.load(file))
+
 surs = []
-for name in glob.glob('../../surdata/Sur_ND_tree_0.1h_objective-meanopt_SEED42_12-07-2023_17:18:24.pkl'):
+for name in glob.glob('../../surdata/CD/23tree/Sur_ND_tree_0.2h_objective-meanopt_*'):
     with open(name,'rb') as file: surs.append(pickle.load(file))
 
-print(np.mean(surs[0].y,axis=1)-np.mean(surs[0].y_raw,axis=1))
+sas = []
+for name in glob.glob('../../surdata/CD/23tree/SA_ND_tree_0.2h_objective-meanopt_*'):
+    with open(name,'rb') as file: sas.append(pickle.load(file))
+
+print([ax[0].get_trials_data_frame() for ax in axs])
+print(surs)
+print(sas)
+#print(np.mean(surs[0].y,axis=1)-np.mean(surs[0].y_raw,axis=1))

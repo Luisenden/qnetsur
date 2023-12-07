@@ -14,6 +14,10 @@ def evaluate(parameters) -> float:
     x = {**parameters, **vals}
     result = simulation.simulation_cd(**x)
     mean_per_node, std_per_node = [node[-1] for node in result[1]], [node[-1] for node in result[3]]
+
+    A = vals['A']
+    user_indices = np.where(A.sum(axis=1) == min(A.sum(axis=1)))[0]
+    mean_per_node = [mean_per_node[index] for index in user_indices]
     return {"mean" : (np.mean(mean_per_node), np.mean(std_per_node))}
 
 def evaluate_multiple(parameters) -> float:
@@ -66,5 +70,5 @@ if __name__ == '__main__':
         times_tracked.append(time.time()-start)
         time_tracker = sum(times_tracked)
     
-    with open(f'../../surdata/Ax_ND_{topo.name}_{MAX_TIME:.1f}h_objective-meanopt_SEED{SEED_OPT}_'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
+    with open(f'../../surdata/Ax_ND_{topo.name}{TOPO}_{MAX_TIME:.1f}h_objective-meanopt_SEED{SEED_OPT}_'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
             pickle.dump([ax_client,time_tracker,vals], file)
