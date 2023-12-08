@@ -1,7 +1,7 @@
 from config import *
 from src.utils import *
 
-from optimizingcd import main_cd as simulation
+from simulation import simulation_rb
  
 
 if __name__ == '__main__':
@@ -17,7 +17,7 @@ if __name__ == '__main__':
     while time_tracker + delta < max_time:
         start = time.time()
 
-        sim = Simulation(simulation.simulation_cd, vals, vars)
+        sim = Simulation(simulation_rb, vals, vars)
         x = sim.get_random_x(1)
         eval = sim.run_sim(x)
         evalset = x.copy()
