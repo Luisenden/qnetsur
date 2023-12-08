@@ -11,9 +11,9 @@ import src
 from config import *
 
 surs = []
-for name in glob.glob('../../surdata/Sur_starlight_3h_*'):
+for name in glob.glob('../../surdata/RB/*'):
     with open(name,'rb') as file: surs.append(pickle.load(file))
 
 
-df = pd.DataFrame([np.sum(pd.DataFrame(sur.y).apply(lambda col: col+pd.DataFrame(sur.X_df).T.sum()/(nnodes*m_max), axis=0), axis=1) for sur in surs]).T
-print(df)
+print(surs)
+print(len(surs))

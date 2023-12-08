@@ -8,7 +8,8 @@ from simulation import *
 def evaluate(parameters) -> float:
     x = {**parameters, **vals}
     mean_per_node, std_per_node = simulation_rb(**x) 
-    return np.mean(mean_per_node), np.mean(std_per_node)
+    mean = np.mean(mean_per_node) - np.mean(parameters.values())/m_max
+    return mean, np.mean(std_per_node)
 
 def evaluate_multiple(parameters) -> float:
     x = {**parameters, **vals}
@@ -52,14 +53,16 @@ if __name__ == '__main__':
 
     times_tracked = []
     time_tracker = 0
-    while time_tracker < max_time:
+    delta = 0
+    while time_tracker + delta < max_time:
         start = time.time()
 
         parameters, trial_index = ax_client.get_next_trial()
         ax_client.complete_trial(trial_index=trial_index, raw_data=evaluate(parameters))
 
         times_tracked.append(time.time()-start)
-        time_tracker = sum(times_tracked)
+        time_tracker = np.sum(times_tracked)
+        delta = np.mean(times_tracked)
     
-    with open(f'../../surdata/Ax_starlight_{MAX_TIME:.0f}h_objective-meanopt_SEED{SEED_OPT}_'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
+    with open(f'../../surdata/Ax_starlight_{MAX_TIME:.1f}h_objective-meanopt_SEED{SEED_OPT}_'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
             pickle.dump([ax_client,time_tracker,vals], file)

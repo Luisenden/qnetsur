@@ -19,15 +19,15 @@ def reduce_to_means_per_iteration(df, group_size):
     return pd.DataFrame(df.groupby('Iteration').mean().to_numpy(), columns=['mean']) 
 
 axs = []
-for name in glob.glob('../../surdata/CD/23tree/Ax_ND_tree2,3_0.2h_objective-meanopt_*'):
+for name in glob.glob('../../surdata/CD/tree2-3/Ax_ND_tree2,3_0.2h_objective-meanopt_*'):
     with open(name,'rb') as file: axs.append(pickle.load(file))
 
 surs = []
-for name in glob.glob('../../surdata/CD/23tree/Sur_ND_tree_0.2h_objective-meanopt_*'):
+for name in glob.glob('../../surdata/CD/tree2-3/Sur_ND_tree_0.2h_objective-meanopt_*'):
     with open(name,'rb') as file: surs.append(pickle.load(file))
 
 sas = []
-for name in glob.glob('../../surdata/CD/23tree/SA_ND_tree_0.2h_objective-meanopt_*'):
+for name in glob.glob('../../surdata/CD/tree2-3/SA_ND_tree_0.2h_objective-meanopt_*'):
     with open(name,'rb') as file: sas.append(pickle.load(file))
 
 
@@ -54,19 +54,17 @@ dfs_obj = []
 for df in dfs:
     dfs_obj.append(df[['index', 'mean', 'Method']])
 dfs = pd.concat(dfs_obj)
-dfs['Iteration'] = dfs['index']
+dfs['Optimization step'] = dfs['index']
 dfs['Number of virtual neighbours'] = dfs['mean']
 
-g = sns.lineplot(data = dfs, x='Iteration', y='Number of virtual neighbours', hue='Method') # plot the Number of Neighbours for all methods
+g = sns.lineplot(data = dfs, x='Iteration', y='Number of virtual neighbours', hue='Method', style='Method') # plot the Number of Neighbours for all methods
 plt.title(f'Optimization Quantum Network')
 plt.gcf().set_size_inches(15,7)
 g.grid(which='major', color='w', linewidth=1.0)
 g.grid(which='minor', color='w', linewidth=0.5)
-# plt.show()
+plt.show()
 
 
 
-# print(axs[0][1])
-# print(np.mean([sum(sur.build_time) + sum(sur.optimize_time) + sum(sur.sim_time) for sur in surs]))
-
-print(sas)
+print(axs[0][1])
+print(np.mean([sum(sur.build_time) + sum(sur.optimize_time) + sum(sur.sim_time) for sur in surs]))

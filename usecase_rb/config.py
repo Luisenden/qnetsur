@@ -22,7 +22,7 @@ if SEED_OPT is None:
     print(f"Warning: No global seed for optimization used. The results might not be reproduceable.")
 
 nnodes = 9 # number of nodes
-m_max = 110 # maximum number of memory qubits in a node
+m_max = 110 # maximum number of memory qubits per node
 sample_size = 5 # number of samples used for the initial training of the surrogate model
 
 
@@ -32,8 +32,8 @@ def simwrap(func): # simulation wrapper: define processing of a given simulation
         vars_temp = pd.Series(args[-1])
         mems = vars_temp[vars_temp.index.str.contains('size')].values
         mean, std = func(*args)
-        wrapped = mean-sum(mems)/(nnodes*m_max)
-        return wrapped, std # number of completed requests per node (nodes sorted alphabetically)
+        wrapped = mean-mems/m_max
+        return wrapped, std, mean # number of completed requests per node (nodes sorted alphabetically)
     return wrapper
 
 

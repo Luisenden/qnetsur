@@ -61,14 +61,16 @@ if __name__ == '__main__':
 
     times_tracked = []
     time_tracker = 0
-    while time_tracker < max_time:
+    delta = 0
+    while time_tracker + delta < max_time:
         start = time.time()
 
         parameters, trial_index = ax_client.get_next_trial()
         ax_client.complete_trial(trial_index=trial_index, raw_data=evaluate(parameters))
 
         times_tracked.append(time.time()-start)
-        time_tracker = sum(times_tracked)
+        time_tracker = np.sum(times_tracked)
+        delta = np.mean(times_tracked)
     
     with open(f'../../surdata/Ax_ND_{topo.name}{TOPO}_{MAX_TIME:.1f}h_objective-meanopt_SEED{SEED_OPT}_'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
             pickle.dump([ax_client,time_tracker,vals], file)
