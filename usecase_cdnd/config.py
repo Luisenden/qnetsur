@@ -22,7 +22,6 @@ MAX_TIME = args.time
 SEED_OPT = args.seed
 
 
-
 class NetworkTopology: # use case specific topology class defined for convenience
     def __init__(self, size:tuple = None, name:str = None):
             self.size = size

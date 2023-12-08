@@ -57,8 +57,8 @@ dfs = pd.concat(dfs_obj)
 dfs['Optimization step'] = dfs['index']
 dfs['Number of virtual neighbours'] = dfs['mean']
 
-g = sns.lineplot(data = dfs, x='Iteration', y='Number of virtual neighbours', hue='Method', style='Method') # plot the Number of Neighbours for all methods
-plt.title(f'Optimization Quantum Network')
+g = sns.lineplot(data = dfs, x='Optimization step', y='Number of virtual neighbours', hue='Method', style='Method') # plot the Number of Neighbours for all methods
+plt.title(f'Optimization Quantum Network: (2,3)-tree topology with a time limit of {0.2*60:.0f} min')
 plt.gcf().set_size_inches(15,7)
 g.grid(which='major', color='w', linewidth=1.0)
 g.grid(which='minor', color='w', linewidth=0.5)
