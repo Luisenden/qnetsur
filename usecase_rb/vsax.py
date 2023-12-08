@@ -8,7 +8,7 @@ from simulation import *
 def evaluate(parameters) -> float:
     x = {**parameters, **vals}
     mean_per_node, std_per_node = simulation_rb(**x) 
-    mean = np.mean(mean_per_node) - np.mean(parameters.values())/m_max
+    mean = np.mean(mean_per_node) - np.mean(list(parameters.values()))/m_max
     return mean, np.mean(std_per_node)
 
 def evaluate_multiple(parameters) -> float:
