@@ -27,6 +27,6 @@ if __name__ == '__main__':
     
     print(tracked_sim_time)
 
-    with open(f'../../surdata/measured_sim_time_SEED{SEED_OPT}_'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
+    with open(f'../../surdata/measured_sim_time{topo.name}{TOPO}_SEED{SEED_OPT}_'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
                 pickle.dump(tracked_sim_time, file)
     

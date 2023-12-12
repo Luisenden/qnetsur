@@ -19,19 +19,19 @@ def reduce_to_means_per_iteration(df, group_size):
     return pd.DataFrame(df.groupby('Iteration').mean().to_numpy(), columns=['mean']) 
 
 axs = []
-for name in glob.glob('../../surdata/CD/tree2-3/Ax*'):
+for name in glob.glob('../../surdata/CD/tree3-4/Ax*'):
     with open(name,'rb') as file: axs.append(pickle.load(file))
 
 surs = []
-for name in glob.glob('../../surdata/CD/tree2-3/Sur*'):
+for name in glob.glob('../../surdata/CD/tree3-4/Sur*'):
     with open(name,'rb') as file: surs.append(pickle.load(file))
 
 sas = []
-for name in glob.glob('../../surdata/CD/tree2-3/SA_*'):
+for name in glob.glob('../../surdata/CD/tree3-4/SA_*'):
     with open(name,'rb') as file: sas.append(pickle.load(file))
 
 gss = []
-for name in glob.glob('../../surdata/CD/tree2-3/GS_*'):
+for name in glob.glob('../../surdata/CD/tree3-4/GS_*'):
     with open(name,'rb') as file: gss.append(pickle.load(file))
 
 
@@ -66,7 +66,7 @@ dfs['Optimization step'] = dfs['index']
 dfs['Number of virtual neighbours'] = dfs['mean']
 
 g = sns.lineplot(data = dfs, x='Optimization step', y='Number of virtual neighbours', hue='Method', style='Method') # plot the Number of Neighbours for all methods
-plt.title(f'Optimization Quantum Network: (2,3)-tree topology with a time limit of {0.25*60:.0f} min')
+plt.title(f'Optimization Quantum Network: (3,4)-tree topology with a time limit of {1*60:.0f} min')
 plt.gcf().set_size_inches(15,7)
 g.grid(which='major', color='w', linewidth=1.0)
 g.grid(which='minor', color='w', linewidth=0.5)

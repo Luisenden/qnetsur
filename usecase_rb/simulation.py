@@ -189,6 +189,7 @@ def simulation_rb(network_config_file, cavity, total_time, N, **kwargs):
 
 
 if __name__ == "__main__":
+    import pickle
 
     start = time.time()
     network_config_file = "starlight.json"
@@ -206,19 +207,15 @@ if __name__ == "__main__":
     nodes = network_topo.get_nodes_by_type(RouterNetTopo.QUANTUM_ROUTER)
 
     results = []
-    df = run(network_topo,1)
-    completed_requests_per_node = df.groupby('Initiator').size()
+    for _ in range(10):
+        df = run(network_topo,1)
+        completed_requests_per_node = df.groupby('Initiator').size()
 
-    res = np.zeros(len(nodes))
-    for i,node in enumerate(nodes):
-        if node.name in completed_requests_per_node: res[i] = completed_requests_per_node[node.name]
+        res = np.zeros(len(nodes))
+        for i,node in enumerate(nodes):
+            if node.name in completed_requests_per_node: res[i] = completed_requests_per_node[node.name]
 
-    results.append(res)
-    
-    mean = np.mean(results, axis=0)
-    std = np.std(results, axis=0)
+        results.append(res)
 
-    print('means:', sum(mean))
-    print('stds:', std)
-
-    print('time:', time.time()-start)
+    with open(f'../../surdata/RB/sim_even_'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
+        pickle.dump(results, file)

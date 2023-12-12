@@ -191,7 +191,7 @@ class Surrogate(Simulation):
         """
         
         x_n = {}
-        f = (1-np.log(1+current_time/max_time)**2)**4
+        f = (1-np.log(1+current_time/max_time)**2)**6
 
         size = 1000
         for dim, par in self.vars['range'].items():
