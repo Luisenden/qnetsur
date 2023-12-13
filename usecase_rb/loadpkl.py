@@ -18,6 +18,13 @@ def reduce_to_means_per_iteration(df, group_size):
     df['Iteration'] = [i for i in range(len(df)//group_size) for _ in range(group_size)]
     return pd.DataFrame(df.groupby('Iteration').mean().to_numpy(), columns=['mean']) 
 
+sims = []
+for name in glob.glob('../../surdata/RB/sim_*'):
+    with open(name,'rb') as file: sims.append(pickle.load(file))
+
+weighted = [np.mean(sim) for sim in sims[0]]
+even = [np.mean(sim) for sim in sims[1]]
+
 axs = []
 for name in glob.glob('../../surdata/RB/12h/Ax_*'):
     with open(name,'rb') as file: axs.append(pickle.load(file))
@@ -35,12 +42,13 @@ for name in glob.glob('../../surdata/RB/12h/GS_*'):
     with open(name,'rb') as file: gss.append(pickle.load(file))
 
 
-mean_iterations = int(np.mean([len(ax[0].get_trials_data_frame()) for ax in axs]))
+
 df_ax_list = [ax[0].get_trials_data_frame() for ax in axs]
 df_ax = pd.concat(df_ax_list).reset_index()
 df_ax['Method'] = 'Meta Optimization'
 
-mean_iterations = int(np.mean([len(gs[0]) for gs in gss]))
+
+
 df_gs = pd.concat([gs[0] for gs in gss]).reset_index()
 df_gs['mean'] = df_gs['objective'].apply(lambda x: np.mean(x))
 df_gs['Method'] = 'Random Grid Search'
@@ -48,9 +56,10 @@ df_gs['Method'] = 'Random Grid Search'
 dfs_sur = []
 for sur in surs:
     df_sur = pd.DataFrame(np.mean(sur.y, axis=1)+np.mean(sur.X_df, axis=1)/110)
-    print('df_sur: ', df_sur)
     df_sur = reduce_to_means_per_iteration(df_sur,10)
     dfs_sur.append(df_sur)
+
+print(np.mean([np.sum(sur.build_time+sur.optimize_time+sur.sim_time) for sur in surs])/3600)
 
 df_sur = pd.concat(dfs_sur).reset_index()
 df_sur['Method'] = 'Surrogate Optimization'
@@ -65,16 +74,22 @@ for df in dfs:
     dfs_obj.append(df[['index', 'mean', 'Method']])
 dfs = pd.concat(dfs_obj)
 dfs['Optimization step'] = dfs['index']
-dfs['Completed requests on avareage'] = dfs['mean']
+dfs['weighted'] = np.mean(weighted)
+dfs['Diff completed requests on avareage'] = dfs['weighted'] - dfs['mean']
+
 
 # print(dfs)
 
-g = sns.lineplot(data = dfs, x='Optimization step', y='Completed requests on avareage', hue='Method', style='Method', markers=True) # plot the Number of Neighbours for all methods
-plt.title(f'Optimization Quantum Network')
-plt.gcf().set_size_inches(15,7)
-g.grid(which='major', color='w', linewidth=1.0)
-g.grid(which='minor', color='w', linewidth=0.5)
-plt.show()
+# g = sns.lineplot(data = dfs, x='Optimization step', y='Diff completed requests on avareage', hue='Method', style='Method', markers=True) # plot the Number of Neighbours for all methods
+# g.axes.axhline(np.mean(weighted) - np.mean(even), ls='--', color='red')
+# g.axes.text(0.5, np.mean(weighted) - np.mean(even)+0.05, 'even', fontsize=12, va='center', ha='left', color='red')
+# g.axes.axhline(0, ls='--', color='red')
+# g.axes.text(0.5, 0.05, 'weighted', fontsize=12, va='center', ha='left', color='red')
+# plt.title(f'Optimization Quantum Network')
+# plt.gcf().set_size_inches(15,7)
+# g.grid(which='major', color='w', linewidth=1.0)
+# g.grid(which='minor', color='w', linewidth=0.5)
+# plt.show()
 
 
 

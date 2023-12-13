@@ -181,7 +181,7 @@ class Surrogate(Simulation):
 
     def get_neighbour(self, max_time, current_time, x :dict) -> dict:
         """
-        Generates random parameters for the simulation.
+        Generates parameters in limited neighboring region for the simulation.
 
         Args:
             n (int): Number of random parameter sets to generate.
@@ -191,9 +191,9 @@ class Surrogate(Simulation):
         """
         
         x_n = {}
-        f = (1-np.log(1+current_time/max_time)**2)**6
+        f = (1-np.log(1+current_time/max_time)**2)**3
 
-        size = 1000
+        size = current_time/max_time * 5000
         for dim, par in self.vars['range'].items():
                 vals = par[0]
                 if par[1] == 'int':
@@ -248,6 +248,9 @@ class Surrogate(Simulation):
             pool.join()
         self.sim_time.append(time.time() - start)
 
+        # build surrogate model
+        start = time.time()
+
         # calculate improvement of new data point to previous best observed point
         impr = np.max([np.mean(y_i[0]) for y_i in y_temp])-np.max([np.mean(y_i) for y_i in self.y])
         self.improvement.append(impr)
@@ -259,8 +262,7 @@ class Surrogate(Simulation):
             self.y_std.append(yi_std)
             self.y_raw += yi_raw
         
-        # build/update surrogate model
-        start = time.time()
+        # train/update surrogate model
         self.mmodel = MultiOutputRegressor(self.model())
         self.mmodel_std = MultiOutputRegressor(self.model())
         
@@ -284,15 +286,18 @@ class Surrogate(Simulation):
             y_temp = pool.map(self.run_sim, self.X_df.iloc)
             pool.close()
             pool.join()
+        self.sim_time.append(time.time() - start)
+
+        # train model
+        start = time.time()
+
+        # add new training values
         for y_i in y_temp:
             yi,yi_std,*yi_raw = y_i
             self.y.append(yi)
             self.y_std.append(yi_std)
             self.y_raw += yi_raw
-        self.sim_time.append(time.time() - start)
 
-        # train model
-        start = time.time()
         self.mmodel.fit(self.X_df.values, self.y)
         self.mmodel_std.fit(self.X_df.values, self.y_std)
         self.build_time.append(time.time()-start)
