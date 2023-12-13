@@ -26,19 +26,19 @@ weighted = [np.mean(sim) for sim in sims[0]]
 even = [np.mean(sim) for sim in sims[1]]
 
 axs = []
-for name in glob.glob('../../surdata/RB/12h/Ax_*'):
+for name in glob.glob('../../surdata/RB/6h/Ax_*'):
     with open(name,'rb') as file: axs.append(pickle.load(file))
 
 surs = []
-for name in glob.glob('../../surdata/RB/12h/Sur_*'):
+for name in glob.glob('../../surdata/RB/6h/Sur_*'):
     with open(name,'rb') as file: surs.append(pickle.load(file))
 
 sas = []
-for name in glob.glob('../../surdata/RB/12h/SA_*'):
+for name in glob.glob('../../surdata/RB/6h/SA_*'):
     with open(name,'rb') as file: sas.append(pickle.load(file))
 
 gss = []
-for name in glob.glob('../../surdata/RB/12h/GS_*'):
+for name in glob.glob('../../surdata/RB/6h/GS_*'):
     with open(name,'rb') as file: gss.append(pickle.load(file))
 
 
@@ -80,16 +80,16 @@ dfs['Diff completed requests on avareage'] = dfs['weighted'] - dfs['mean']
 
 # print(dfs)
 
-# g = sns.lineplot(data = dfs, x='Optimization step', y='Diff completed requests on avareage', hue='Method', style='Method', markers=True) # plot the Number of Neighbours for all methods
-# g.axes.axhline(np.mean(weighted) - np.mean(even), ls='--', color='red')
-# g.axes.text(0.5, np.mean(weighted) - np.mean(even)+0.05, 'even', fontsize=12, va='center', ha='left', color='red')
-# g.axes.axhline(0, ls='--', color='red')
-# g.axes.text(0.5, 0.05, 'weighted', fontsize=12, va='center', ha='left', color='red')
-# plt.title(f'Optimization Quantum Network')
-# plt.gcf().set_size_inches(15,7)
-# g.grid(which='major', color='w', linewidth=1.0)
-# g.grid(which='minor', color='w', linewidth=0.5)
-# plt.show()
+g = sns.lineplot(data = dfs, x='Optimization step', y='Diff completed requests on avareage', hue='Method', style='Method', markers=True) # plot the Number of Neighbours for all methods
+g.axes.axhline(np.mean(weighted) - np.mean(even), ls='--', color='red')
+g.axes.text(0.5, np.mean(weighted) - np.mean(even)+0.05, 'even', fontsize=12, va='center', ha='left', color='red')
+g.axes.axhline(0, ls='--', color='red')
+g.axes.text(0.5, 0.05, 'weighted', fontsize=12, va='center', ha='left', color='red')
+plt.title(f'Optimization Quantum Network')
+plt.gcf().set_size_inches(15,7)
+g.grid(which='major', color='w', linewidth=1.0)
+g.grid(which='minor', color='w', linewidth=0.5)
+plt.show()
 
 
 
