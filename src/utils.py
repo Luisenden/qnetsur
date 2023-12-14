@@ -193,7 +193,7 @@ class Surrogate(Simulation):
         x_n = {}
         f = (1-np.log(1+current_time/max_time)**2)**3
 
-        size = int((current_time+1)/max_time * 5000)
+        size = int(current_time/max_time * 5000+10)
         for dim, par in self.vars['range'].items():
                 vals = par[0]
                 if par[1] == 'int':
