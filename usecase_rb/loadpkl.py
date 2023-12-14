@@ -30,7 +30,7 @@ for name in glob.glob('../../surdata/RB/6h/Ax_*'):
     with open(name,'rb') as file: axs.append(pickle.load(file))
 
 surs = []
-for name in glob.glob('../../surdata/RB/6h/Sur_*'):
+for name in glob.glob('../../surdata/RB/12h/Sur_*'):
     with open(name,'rb') as file: surs.append(pickle.load(file))
 
 sas = []

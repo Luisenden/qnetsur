@@ -1,0 +1,12 @@
+,total_runtime_in_seconds,connect_size,rates,num_positions,buffer_size,T2,decoherence_rate,include_classical_comm,mean_fidelity,mean_capacity,std_fidelity,std_capacity,nodes involved
+0,9.999999999999999e-05,4.0,"[1900000.0, 1900000.0, 1900000.0, 1900000.0, 1900000.0, 1900000.0, 1900000.0, 1900000.0, 1900000.0, 1900000.0]",1000.0,5.0,1e-07,0.0,0.0,0.5438247011952189,5020000.0,0.0,0.0,"leaf_node_3    211
+leaf_node_6    209
+leaf_node_9    209
+leaf_node_0    207
+leaf_node_2    207
+leaf_node_5    199
+leaf_node_1    193
+leaf_node_8    192
+leaf_node_4    191
+leaf_node_7    190
+dtype: int64"

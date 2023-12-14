@@ -229,11 +229,10 @@ class Surrogate(Simulation):
             newx.append(self.get_neighbour(max_time=max_time, current_time=current_time, x=x.to_dict()))
         
         self.X_df_add = pd.DataFrame.from_records(newx).astype(object)
-        self.X_df = pd.concat([self.X_df, self.X_df_add], axis=0, ignore_index=True)
 
 
     
-    def update(self) -> None:
+    def update(self, counter) -> None:
         """
         Updates the model with new data.
 
@@ -246,14 +245,20 @@ class Surrogate(Simulation):
             y_temp = pool.map(self.run_sim, self.X_df_add.iloc)
             pool.close()
             pool.join()
-        self.sim_time.append(time.time() - start)
 
-        # build surrogate model
-        start = time.time()
+        self.sim_time.append(time.time() - start)
 
         # calculate improvement of new data point to previous best observed point
         impr = np.max([np.mean(y_i[0]) for y_i in y_temp])-np.max([np.mean(y_i) for y_i in self.y])
         self.improvement.append(impr)
+
+        # build surrogate model
+        start = time.time()
+
+        self.X_df_add['Iteration'] = counter
+        self.X_df = pd.concat([self.X_df, self.X_df_add], axis=0, ignore_index=True)
+
+        print('Training for this build: ', self.X_df)
 
         # add new data
         for y_i in y_temp:
@@ -266,8 +271,8 @@ class Surrogate(Simulation):
         self.mmodel = MultiOutputRegressor(self.model())
         self.mmodel_std = MultiOutputRegressor(self.model())
         
-        self.mmodel.fit(self.X_df.values, self.y)
-        self.mmodel_std.fit(self.X_df.values, self.y_std)
+        self.mmodel.fit(self.X_df.drop('Iteration', axis=1).values, self.y)
+        self.mmodel_std.fit(self.X_df.drop('Iteration', axis=1).values, self.y_std)
         self.build_time.append(time.time()-start)
 
     def optimize(self, max_time, verbose=False) -> None:
@@ -286,6 +291,8 @@ class Surrogate(Simulation):
             y_temp = pool.map(self.run_sim, self.X_df.iloc)
             pool.close()
             pool.join()
+        
+        self.X_df['Iteration'] = 0
         self.sim_time.append(time.time() - start)
 
         # train model
@@ -298,8 +305,10 @@ class Surrogate(Simulation):
             self.y_std.append(yi_std)
             self.y_raw += yi_raw
 
-        self.mmodel.fit(self.X_df.values, self.y)
-        self.mmodel_std.fit(self.X_df.values, self.y_std)
+        print('training for initial build: ', self.X_df)
+        self.mmodel.fit(self.X_df.drop('Iteration', axis=1).values, self.y)
+        self.mmodel_std.fit(self.X_df.drop('Iteration', axis=1).values, self.y_std)
+        
         self.build_time.append(time.time()-start)
 
         initial_optimize_time = time.time()-optimize_start
@@ -310,18 +319,22 @@ class Surrogate(Simulation):
 
         assert max_optimize_time > 0, "Initial model generated, but no time left for optimization after initial build."
 
-        if verbose: print(f'After initial build, time left for optimization: {max_optimize_time:.2f}')
+        if verbose: print(f'After initial build, time left for optimization: {max_optimize_time:.2f}s')
         current_times = []
         current_time = 0
         delta = 0
+
+        counter = 1
         while current_time+delta < max_optimize_time:
             start = time.time()
             self.acquisition(max_optimize_time,current_time)
             self.optimize_time.append(time.time()-start)
 
-            self.update()
+            self.update(counter)
             current_times.append(time.time()-start)
             current_time = np.sum(current_times)
             delta = np.mean(current_times)
+            counter +=1
+            if verbose: print(f'Time left for optimization: {max_optimize_time-current_time:.2f}s')
 
         if verbose: print('Optimization finished.')
