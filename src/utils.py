@@ -10,11 +10,11 @@ try:
 except RuntimeError:
      pass
 
-from sklearn.multioutput import MultiOutputRegressor
-from sklearn.tree import ExtraTreeRegressor
+from sklearn.model_selection import cross_val_score
 from sklearn.svm import SVR
-from sklearn.linear_model import SGDRegressor
-from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.multioutput import MultiOutputRegressor
+from sklearn.metrics import mean_absolute_error, make_scorer
 
 import os
 from importlib import import_module
@@ -27,8 +27,6 @@ try:
 except ImportError:
     raise ImportError(f"Cannot import config.py for '{USE_CASE}'")
 
-
-np.random.seed(config.SEED_OPT) # set global optimization
 
 class Simulation:
     """
@@ -53,18 +51,18 @@ class Simulation:
                 dict: Randomly generated parameters.
     """
 
-    def __init__(self, func, vals, vars):
+    def __init__(self, sim_wrapper, sim):
         # specify fixed parameters
-        self.vals = vals 
+        self.vals = config.vals
         
         # specify variable parameters
-        self.vars = vars
+        self.vars = config.vars
 
         # simulation function handler
-        self.func = func
+        self.sim_wrapper = sim_wrapper
+        self.sim = sim
 
-    @config.simwrap
-    def run_sim(self,x :dict) -> list:
+    def run_sim(self,x :dict, vals :dict = None) -> list:
         """
         Runs the quantum network simulation with the provided parameters.
 
@@ -75,8 +73,9 @@ class Simulation:
             list: Results of the simulation.
         """
         
-        xrun = {**x, **self.vals}
-        res = self.func(**xrun)
+        xrun = {**self.vals, **x} if vals == None else {**vals, **x}
+        print('XRUN ', xrun)
+        res = self.sim_wrapper(self.sim, xrun)
         return res
     
     def get_random_x(self,n) -> dict:
@@ -101,6 +100,9 @@ class Simulation:
                     x[dim] = np.random.uniform(vals[0], vals[1], n) if n > 1 else np.random.uniform(vals[0], vals[1])
                 else:
                     raise Exception('Datatype must be "int" or "float".')
+
+        for dim, vals in self.vars['ordinal'].items():
+                x[dim] = np.random.choice(vals, size=n) if n > 1 else np.random.choice(vals)
                     
         for dim, vals in self.vars['choice'].items():
                 x[dim] = np.random.choice(vals, n) if n > 1 else np.random.choice(vals)       
@@ -113,8 +115,6 @@ class Surrogate(Simulation):
 
     Args:
         func (function): The simulation function to be used.
-        vals (dict): A dictionary of fixed parameters.
-        vars (dict): A dictionary of variable parameters.
         sample_size (int): Number of initial training set samples.
 
     Attributes:
@@ -152,8 +152,8 @@ class Surrogate(Simulation):
                 max_time (float): Maximum time allowed for optimization.
                 verbose (bool, optional): Specifies whether to display optimization information.
     """
-    def __init__(self, func,  vals, vars, sample_size):
-        super().__init__(func, vals, vars)
+    def __init__(self, sim_wrapper, sim, sample_size:int):
+        super().__init__(sim_wrapper, sim)
     
         # profiling storage
         self.sim_time = []
@@ -173,8 +173,7 @@ class Surrogate(Simulation):
 
         # model declaration
         self.model = SVR
-        self.mmodel = MultiOutputRegressor(self.model())
-        self.mmodel_std = MultiOutputRegressor(self.model())
+        self.model_scores = {'SVR': [], 'DecisionTree': []}
 
         # improvement storage
         self.improvement = []
@@ -191,9 +190,9 @@ class Surrogate(Simulation):
         """
         
         x_n = {}
-        f = (1-np.log(1+current_time/max_time)**2)**3
+        f = (1-np.log(1+current_time/max_time)**2)**6
 
-        size = int(current_time/max_time * 5000+10)
+        size = int(current_time/max_time * 10000+10)
         for dim, par in self.vars['range'].items():
                 vals = par[0]
                 if par[1] == 'int':
@@ -204,13 +203,25 @@ class Surrogate(Simulation):
                     x_n[dim] = truncnorm.rvs((vals[0] - x[dim]) / std, (vals[1] - x[dim]) / std, loc=x[dim], scale=std, size=size) 
                 else:
                     raise Exception('Datatype must be "int" or "float".')
+
+        for dim, vals in self.vars['ordinal'].items():
+                pos = x[dim] # current position
+                
+                loc = vals.index(pos)/len(vals) # corresponding location between 0 and 1
+                pval = np.linspace(0,1,len(vals))
+
+                std = f/2
+                probs = truncnorm.pdf(pval, (0-loc)/std, (1-loc)/std, scale=std, loc=loc)/len(x) # corresponding weights
+                probs /= probs.sum() # normalize probabilities
+
+                x_n[dim] = np.random.choice(vals, size=size , p=probs)
                     
         for dim, vals in self.vars['choice'].items():
                 x_n[dim] = np.random.choice(vals, size)       
 
         samples_x = pd.DataFrame(x_n).astype(object)
         samples_y = self.mmodel.predict(samples_x.values)
-        fittest_neighbour_index = np.argsort(np.array(samples_y).mean(axis=1))[-1]
+        fittest_neighbour_index = np.argsort(np.array(samples_y).mean(axis=1))[-1] ## !!
         
         x_fittest = samples_x.iloc[fittest_neighbour_index].to_dict()
         return x_fittest
@@ -221,12 +232,17 @@ class Surrogate(Simulation):
         Computes new data points according to estimated improvement and degree of exploration and adds the data to the training sample.
 
         """
+
         y_obj_vec = np.array(self.y).mean(axis=1)
 
 
         newx = []
-        for x in self.X_df.iloc[np.argsort(y_obj_vec)[-10:]].iloc:
-            newx.append(self.get_neighbour(max_time=max_time, current_time=current_time, x=x.to_dict()))
+        top_selection = self.X_df.iloc[np.argsort(y_obj_vec)[-3:]]
+
+
+        for x in top_selection.iloc:  ## !!
+            neighbour = self.get_neighbour(max_time=max_time, current_time=current_time, x=x.to_dict())
+            newx.append(neighbour)
         
         self.X_df_add = pd.DataFrame.from_records(newx).astype(object)
 
@@ -241,7 +257,7 @@ class Surrogate(Simulation):
         """
 
         start = time.time() 
-        with Pool(processes=10) as pool:
+        with Pool(processes=3) as pool:
             y_temp = pool.map(self.run_sim, self.X_df_add.iloc)
             pool.close()
             pool.join()
@@ -258,8 +274,6 @@ class Surrogate(Simulation):
         self.X_df_add['Iteration'] = counter
         self.X_df = pd.concat([self.X_df, self.X_df_add], axis=0, ignore_index=True)
 
-        print('Training for this build: ', self.X_df)
-
         # add new data
         for y_i in y_temp:
             yi,yi_std,*yi_raw = y_i
@@ -268,9 +282,20 @@ class Surrogate(Simulation):
             self.y_raw += yi_raw
         
         # train/update surrogate model
+        score_svr = cross_val_score(MultiOutputRegressor(SVR()), self.X_df.drop('Iteration', axis=1).values, self.y, scoring=make_scorer(mean_absolute_error)).mean()
+        score_tree = cross_val_score(MultiOutputRegressor(DecisionTreeRegressor()), self.X_df.drop('Iteration', axis=1).values, self.y, scoring=make_scorer(mean_absolute_error)).mean()
+        
+        if score_svr < score_tree:
+             self.model = SVR
+        else:
+             self.model = DecisionTreeRegressor
+        print(f'scores: svr = {score_svr} and tree={score_tree}')
+        self.model_scores['SVR'].append(score_svr)
+        self.model_scores['DecisionTree'].append(score_tree)
+        
         self.mmodel = MultiOutputRegressor(self.model())
         self.mmodel_std = MultiOutputRegressor(self.model())
-        
+
         self.mmodel.fit(self.X_df.drop('Iteration', axis=1).values, self.y)
         self.mmodel_std.fit(self.X_df.drop('Iteration', axis=1).values, self.y_std)
         self.build_time.append(time.time()-start)
@@ -305,7 +330,21 @@ class Surrogate(Simulation):
             self.y_std.append(yi_std)
             self.y_raw += yi_raw
 
-        print('training for initial build: ', self.X_df)
+        score_svr = cross_val_score(MultiOutputRegressor(SVR()), self.X_df.drop('Iteration', axis=1).values, self.y, scoring=make_scorer(mean_absolute_error)).mean()
+        score_tree = cross_val_score(MultiOutputRegressor(DecisionTreeRegressor()), self.X_df.drop('Iteration', axis=1).values, self.y, scoring=make_scorer(mean_absolute_error)).mean()
+        
+        print(f'scores: svr = {score_svr} and tree={score_tree}')
+        self.model_scores['SVR'].append(score_svr)
+        self.model_scores['DecisionTree'].append(score_tree)
+
+        if score_svr < score_tree:
+             self.model = SVR
+        else:
+             self.model = DecisionTreeRegressor
+
+        self.mmodel = MultiOutputRegressor(self.model())
+        self.mmodel_std = MultiOutputRegressor(self.model())
+
         self.mmodel.fit(self.X_df.drop('Iteration', axis=1).values, self.y)
         self.mmodel_std.fit(self.X_df.drop('Iteration', axis=1).values, self.y_std)
         
@@ -317,7 +356,7 @@ class Surrogate(Simulation):
         # optimization
         max_optimize_time = max_time - initial_optimize_time
 
-        assert max_optimize_time > 0, "Initial model generated, but no time left for optimization after initial build."
+        if verbose and max_optimize_time < 0: print("Initial model generated, but no time left for optimization after initial build.")
 
         if verbose: print(f'After initial build, time left for optimization: {max_optimize_time:.2f}s')
         current_times = []
@@ -338,3 +377,24 @@ class Surrogate(Simulation):
             if verbose: print(f'Time left for optimization: {max_optimize_time-current_time:.2f}s')
 
         if verbose: print('Optimization finished.')
+
+def get_parameters(vars:dict):
+    parameters = []
+    for k in vars:
+        for key,value in vars[k].items():
+            typ = 'choice' if k == 'ordinal' else k
+            if typ != 'choice': 
+                parameters.append(
+                    {
+                    "name": str(key),
+                    "type": typ,
+                    "bounds": value[0],
+                    })
+            else:
+                parameters.append(
+                    {
+                    "name": str(key),
+                    "type": typ,
+                    "values": value,
+                    })
+    return parameters

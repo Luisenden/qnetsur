@@ -1,8 +1,9 @@
 import numpy as np
 from datetime import datetime
 import json, os, time
-import torch.multiprocessing as mp
 import random
+
+import torch.multiprocessing as mp
 from torch.multiprocessing import set_start_method
 try:    
     set_start_method('spawn')
@@ -161,13 +162,13 @@ def run(network_topo,n):
     return df
 
 
-def simulation_rb(network_config_file, cavity, total_time, N, **kwargs):
+def simulation_rb(network_config_file, cavity, total_time, N, mem_size):
     
     results = []
     proc = mp.current_process().ident
 
     for n in range(N):
-        update_memory_config(network_config_file, list([v for k,v in kwargs.items() if 'size' in k]), total_time,seed=n)
+        update_memory_config(network_config_file, mem_size, total_time,seed=n)
         network_topo = RouterNetTopo(str(proc)+'.json')
         nodes = network_topo.get_nodes_by_type(RouterNetTopo.QUANTUM_ROUTER)
 
@@ -184,7 +185,7 @@ def simulation_rb(network_config_file, cavity, total_time, N, **kwargs):
         os.remove(str(proc)+'.json')
     mean = np.mean(results, axis=0)
     std = np.std(results, axis=0)
-    #print(f'mean {mean} and std {std} from proc {proc}')
+    print(f'mean {mean} and std {std} from proc {proc}')
     return mean, std
 
 
@@ -197,12 +198,13 @@ if __name__ == "__main__":
 
     even = [50]*9
     weighted = [25, 91, 67, 24, 67, 24, 103, 25, 24]
+    surrogate_weighted = [23, 70, 8, 6, 19, 6, 93, 97, 13]
 
     results = []
     for i in range(10):
 
         proc = mp.current_process().ident
-        update_memory_config(network_config_file, even, total_time,seed=42) #source for weighted: https://github.com/sequence-toolbox/Chicago-metropolitan-quantum-network/blob/master/sec5.4-two-memory-distribution-policies/uneven_memory.json
+        update_memory_config(network_config_file, surrogate_weighted, total_time,seed=42) #source for weighted: https://github.com/sequence-toolbox/Chicago-metropolitan-quantum-network/blob/master/sec5.4-two-memory-distribution-policies/uneven_memory.json
         network_topo = RouterNetTopo(str(proc)+'.json')
         os.remove(str(proc)+'.json')
 
@@ -217,7 +219,8 @@ if __name__ == "__main__":
         for i,node in enumerate(nodes):
             if node.name in completed_requests_per_node: res[i] = completed_requests_per_node[node.name]
 
+        print(res)
         results.append(res)
-
+    
     with open(f'../../surdata/RB/sim_even_'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
         pickle.dump(results, file)

@@ -33,8 +33,8 @@ vals = { # define fixed parameters for given simulation function
         'p_swap': 1,
         'return_data':'avg', 
         'progress_bar': None,
-        'total_time': 1000,
-        'N_samples' : 10,
+        'total_time': 100,
+        'N_samples' : 5,
         'p_cons': 0.1,
         'qbits_per_channel': 50,
         'cutoff': 20
@@ -52,33 +52,33 @@ vars = { # define variables and bounds for given simulation function
     'range': {
         'M': ([1, 10],'int')
         },
-    'choice':{}
+    'choice':{},
+    'ordinal':{}
 } 
 for i in range(np.shape(vals['A'])[0]):
     vars['range'][f'q_swap{i}'] = ([0., 1.], 'float')
 
 initial_model_size = 10 # number of samples used for the initial training of the surrogate model
 
-def simwrap(func): 
+def simwrapper(simulation, kwargs: dict):
+     
+    q_swap = []
+    for key,value in list(kwargs.items()):
+        if 'q_swap' in key:
+            q_swap.append(value)
+            kwargs.pop(key)
+    kwargs['q_swap'] = q_swap
 
-    def set_q_swap_for_nd(args):
-        l = list(args).copy()
-        l.pop()
-        series = pd.Series(args[1])
-        x = series[~series.index.str.contains('q_swap')] # filter all vars not containing 'q_swap'
-        x = pd.concat([x, pd.Series([series[series.index.str.contains('q_swap')].values], index=['q_swap'])]) # concatenate with 'q_swap' which is now a vector
-        l.append(x)
-        args = tuple(l)
-        return args
+    # run simulation
+    print('PARAMETERS: ' , kwargs)
+    result = simulation(**kwargs)
+    mean_per_node, std_per_node = [node for node in result[1]][-1], [node for node in result[3]][-1] 
 
-    @wraps(func)
-    def wrapper(*args):
-        args = set_q_swap_for_nd(args=args) 
-        result = func(*args)
-        mean_per_node, std = [node[-1] for node in result[1]], [node[-1] for node in result[3]]
-        
-        A = vals['A']
-        user_indices = np.where(A.sum(axis=1) == min(A.sum(axis=1)))[0]
-        wrapped = [mean_per_node[index] for index in user_indices]
-        return wrapped, std, mean_per_node # mean and std according to simulation function
-    return wrapper
+    user_indices = np.where(kwargs['A'].sum(axis=1) == min(kwargs['A'].sum(axis=1)))[0]
+    
+    objectives = [mean_per_node[index] for index in user_indices]
+    objectives_std = [std_per_node[index] for index in user_indices]
+    raw = mean_per_node
+
+    print('OBJECTIVES', objectives)
+    return objectives, objectives_std, raw

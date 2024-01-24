@@ -26,19 +26,35 @@ m_max = 110 # maximum number of memory qubits per node
 sample_size = 5 # number of samples used for the initial training of the surrogate model
 
 
-def simwrap(func): # simulation wrapper: define processing of a given simulation function
-    @wraps(func)
-    def wrapper(*args):
-        vars_temp = pd.Series(args[-1])
-        mems = vars_temp[vars_temp.index.str.contains('size')].values
-        mean, std = func(*args)
-        wrapped = mean-mems/m_max
-        return wrapped, std, mean # number of completed requests per node (nodes sorted alphabetically)
-    return wrapper
+# def simwrap(func): # simulation wrapper: define processing of a given simulation function
+#     @wraps(func)
+#     def wrapper(*args):
+#         vars_temp = pd.Series(args[-1])
+#         mems = vars_temp[vars_temp.index.str.contains('size')].values
+#         mean, std = func(*args)
+#         wrapped = mean-mems/m_max
+#         return wrapped, std, mean # number of completed requests per node (nodes sorted alphabetically)
+#     return wrapper
+
+def simwrapper(simulation, kwargs: dict):
+
+    mem_size = []
+    for key,value in list(kwargs.items()):
+        if 'size' in key:
+            mem_size.append(value)
+            kwargs.pop(key)
+    kwargs['mem_size'] = mem_size
+    mean, std = simulation(**kwargs)
+    
+    kwargs['mem_size'] = np.array(mem_size)
+    objectives = mean-np.array(mem_size)/m_max
+    objectives_std = std
+
+    return objectives, objectives_std
 
 
 vals = { # specify fixed parameters of quantum network simulation
-        'cavity': 500, 
+        'cavity': 500,
         'network_config_file': 'starlight.json',
         'N': 1,
         'total_time': 2e13
@@ -47,7 +63,8 @@ vals = { # specify fixed parameters of quantum network simulation
 # specify variables and bounds of quantum network simulation
 vars = { 
         'range':{},
-        'choice':{}
+        'choice':{},
+        'ordinal':{}
         } 
 
 for i in range(nnodes):

@@ -14,14 +14,16 @@ if __name__ == '__main__':
     times_tracked = []
     time_tracker = 0
     delta = 0
+
+    sim = Simulation(simwrapper, simulation_rb)
+
     while time_tracker + delta < max_time:
         start = time.time()
 
-        sim = Simulation(simulation_rb, vals, vars)
         x = sim.get_random_x(1)
         eval = sim.run_sim(x)
         evalset = x.copy()
-        evalset['objective'], evalset['std'], evalset['raw'] = eval
+        evalset['objective'], evalset['std'] = eval
         evals.append(evalset)
 
         times_tracked.append(time.time()-start)

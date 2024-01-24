@@ -11,7 +11,7 @@ if __name__ == '__main__':
         max_time = MAX_TIME * 3600 # in sec
 
         # baseline simulated annealing
-        si = Simulation(simulation_rb, vals, vars)
+        si = Simulation(simwrapper, simulation_rb)
         simaneal = partial(simulated_annealing, MAX_TIME=max_time)
         
         result = simaneal(si, seed=SEED_OPT)

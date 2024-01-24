@@ -14,10 +14,11 @@ if __name__ == '__main__':
     times_tracked = []
     time_tracker = 0
     delta = 0
+
+    sim = Simulation(simwrapper, simulation.simulation_cd)
+
     while time_tracker + delta < max_time:
         start = time.time()
-
-        sim = Simulation(simulation.simulation_cd, vals, vars)
         x = sim.get_random_x(1)
         eval = sim.run_sim(x)
         evalset = x.copy()
@@ -29,5 +30,5 @@ if __name__ == '__main__':
         delta = np.mean(times_tracked)
     
     gridsearch = pd.DataFrame.from_records(evals)
-    with open(f'../../surdata/GS_ND_{topo.name}{TOPO}_{MAX_TIME:.2f}h_objective-meanopt_SEED{SEED_OPT}_'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
+    with open(f'../../surdata/GS_CD_{topo.name}{TOPO}_{MAX_TIME:.2f}h_objective-meanopt_SEED{SEED_OPT}_'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
             pickle.dump([gridsearch,time_tracker,vals], file)
