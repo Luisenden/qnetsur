@@ -22,7 +22,7 @@ from importlib import import_module
 USE_CASE = os.environ.get('USE_CASE') or 'usecase_cd'  # Default to usecase_cd if not set
 
 try:
-    config = import_module(f'{USE_CASE}.config')
+    config = import_module(f'{USE_CASE}.config_vardoyan')
 
 except ImportError:
     raise ImportError(f"Cannot import config.py for '{USE_CASE}'")
@@ -74,7 +74,6 @@ class Simulation:
         """
         
         xrun = {**self.vals, **x} if vals == None else {**vals, **x}
-        print('XRUN ', xrun)
         res = self.sim_wrapper(self.sim, xrun)
         return res
     
@@ -221,7 +220,7 @@ class Surrogate(Simulation):
 
         samples_x = pd.DataFrame(x_n).astype(object)
         samples_y = self.mmodel.predict(samples_x.values)
-        fittest_neighbour_index = np.argsort(np.array(samples_y).mean(axis=1))[-1] ## !!
+        fittest_neighbour_index = np.argsort(np.array(samples_y).sum(axis=1))[-1] ## !!
         
         x_fittest = samples_x.iloc[fittest_neighbour_index].to_dict()
         return x_fittest
@@ -233,7 +232,7 @@ class Surrogate(Simulation):
 
         """
 
-        y_obj_vec = np.array(self.y).mean(axis=1)
+        y_obj_vec = np.array(self.y).sum(axis=1)
 
 
         newx = []
@@ -302,7 +301,7 @@ class Surrogate(Simulation):
 
     def optimize(self, max_time, verbose=False) -> None:
     
-        if verbose: print("Start opimization ...")
+        if verbose: print("Start optimization ...")
         optimize_start = time.time()
         
         # generate initial training set X

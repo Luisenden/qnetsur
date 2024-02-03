@@ -22,7 +22,7 @@ for name in glob.glob(f'../../surdata/qswitch/Ax_qswitch_nleafnodes10_0.50h_obje
     with open(name,'rb') as file: axs.append(pickle.load(file))
 
 surs = []
-for name in glob.glob(f'../../surdata/qswitch/Sur_qswitch_nleafnodes10_0.50h_objective-servernode_SEED42_01-24-2024_13:03:15.pkl'): #Sur_qswitch_nleafnodes{nnodes}_{time}*'):
+for name in glob.glob(f'../../surdata/qswitch/Sur_qswitch_nleafnodes3_0.10h_objective-servernode_SEED42_02-01-2024_13:57:59.pkl'): #Sur_qswitch_nleafnodes{nnodes}_{time}*'):
     with open(name,'rb') as file: surs.append(pickle.load(file))
 
 # sas = []
@@ -65,7 +65,6 @@ df_sur_X = pd.concat(dfs_sur_X)
 df_sur_X_plot = df_sur_X.melt('Iteration', var_name='Node', value_name='Buffer size')
 fig, ax = plt.subplots()
 g = sns.lineplot(data = df_sur_X_plot, x='Iteration', y='Buffer size', hue='Node', style='Node', markers='^')
-plt.yscale('symlog')
 plt.show()
 
 # fig, ax = plt.subplots()
@@ -74,20 +73,20 @@ plt.show()
 # plt.show()
 
 
-df_ax = pd.concat([ax[0] for ax in axs]).reset_index()
-df_ax['Method'] = 'Meta Optimization'
-df_ax['Objective'] = df_ax['evaluate'] 
+# df_ax = pd.concat([ax[0] for ax in axs]).reset_index()
+# df_ax['Method'] = 'Meta Optimization'
+# df_ax['Objective'] = df_ax['evaluate'] 
 
 
-df_gs = pd.concat([gs[0] for gs in gss]).reset_index()
-df_gs['Objective'] = df_gs['objective'].apply(lambda x: np.sum(x))
-df_gs['Method'] = 'Random Grid Search'
+# df_gs = pd.concat([gs[0] for gs in gss]).reset_index()
+# df_gs['Objective'] = df_gs['objective'].apply(lambda x: np.sum(x))
+# df_gs['Method'] = 'Random Grid Search'
 
 # df_sa = pd.concat(sas).reset_index()
 # df_sa['mean'] = df_sa['objective']
 # df_sa['Method'] = 'Simulated annealing'
 
-dfs = [df_sur, df_gs, df_ax]#
+dfs = [df_sur]#, df_gs, df_ax]#
 dfs_obj = []
 for df in dfs:
     dfs_obj.append(df[['index', 'Objective', 'Method']])
