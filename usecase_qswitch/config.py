@@ -1,3 +1,11 @@
+"""
+Basis script to simulate 
+* optimziation of two-user-one-server scenario of Vadoyan et al., 2023 with 'sur_vardoyan_netsquid_comparison.py'
+* optimization for more complex scenarios with scripts 'sur.py' and comparison with 'vsax.py', 'vsgridsearch.py', 'vssa.py'
+
+The goal is to find the optimal link bright-state population values (alpha=1-Fidelity) and buffer sizes to maximize
+the given utility function, Distillable Entanglement as defined in the paper.
+"""
 import sys
 sys.path.append('../')
 

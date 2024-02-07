@@ -40,7 +40,6 @@ vals = { # define fixed parameters for given simulation function
         'cutoff': 20
         }
 
-
 input_topo = TOPO.split(',') 
 assert(len(input_topo) in [1,2]), 'Argument must be given for network topology: e.g. "11" yields 11x11 square lattice, while e.g. "2,3" yields 2,3-tree network.'
 
@@ -70,15 +69,11 @@ def simwrapper(simulation, kwargs: dict):
     kwargs['q_swap'] = q_swap
 
     # run simulation
-    print('PARAMETERS: ' , kwargs)
     result = simulation(**kwargs)
     mean_per_node, std_per_node = [node for node in result[1]][-1], [node for node in result[3]][-1] 
-
+    # get user nodes
     user_indices = np.where(kwargs['A'].sum(axis=1) == min(kwargs['A'].sum(axis=1)))[0]
-    
     objectives = [mean_per_node[index] for index in user_indices]
     objectives_std = [std_per_node[index] for index in user_indices]
     raw = mean_per_node
-
-    print('OBJECTIVES', objectives)
     return objectives, objectives_std, raw

@@ -11,8 +11,8 @@ if __name__ == '__main__':
         max_time= MAX_TIME * 3600 # in sec
 
         # instatiate surrogate model and run optimization
-        sim = Surrogate(simwrapper, simulation.simulation_cd, sample_size=initial_model_size)
+        sim = Surrogate(simwrapper, simulation.simulation_cd, vals=vals, vars=vars, sample_size=initial_model_size)
         sim.optimize(max_time=max_time, verbose=False)
 
-        with open(f'../../surdata/Sur_CD_{topo.name}{TOPO}_{MAX_TIME:.2f}h_objective-meanopt_SEED{SEED_OPT}_'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
+        with open(f'../../surdata/cd/SU_{topo.name}{TOPO}_{MAX_TIME:.2f}h_objective-meanopt_SEED{SEED_OPT}_'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
                 pickle.dump(sim, file)

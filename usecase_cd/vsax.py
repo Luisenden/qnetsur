@@ -36,5 +36,5 @@ if __name__ == '__main__':
         time_tracker = np.sum(times_tracked)
         delta = np.mean(times_tracked)
     
-    with open(f'../../surdata/Ax_ND_{topo.name}{TOPO}_{MAX_TIME:.2f}h_objective-meanopt_SEED{SEED_OPT}_'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
+    with open(f'../../surdata/cd/AX_{topo.name}{TOPO}_{MAX_TIME:.2f}h_objective-meanopt_SEED{SEED_OPT}_'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
             pickle.dump([ax_client,time_tracker,vals], file)

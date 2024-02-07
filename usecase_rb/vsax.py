@@ -1,7 +1,6 @@
 from config import *
 from src.utils import get_parameters
 from ax.service.ax_client import AxClient, ObjectiveProperties
-from ax.service.scheduler import SchedulerOptions
 
 from simulation import *
 
@@ -40,5 +39,5 @@ if __name__ == '__main__':
         time_tracker = np.sum(times_tracked)
         delta = np.mean(times_tracked)
     
-    with open(f'../../surdata/Ax_starlight_{MAX_TIME:.1f}h_objective-meanopt_SEED{SEED_OPT}_'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
+    with open(f'../../surdata/rb/AX_starlight_{MAX_TIME:.1f}h_objective-meanopt_SEED{SEED_OPT}_'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
             pickle.dump([ax_client,time_tracker,vals], file)
