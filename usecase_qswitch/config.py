@@ -12,11 +12,13 @@ import argparse
 import torch.multiprocessing as mp
 
 from simulation import simulation_qswitch
+from netsquid_qswitch.aux_functions import distance_to_rate, VARDOYAN_LOSS_COEFFICIENT, VARDOYAN_LOSS_PARAMETER 
+
 
 # get the globals
 parser = argparse.ArgumentParser(description="Import globals")
-parser.add_argument("--nleaf", type=int, default=10, help="Number of leaf nodes")
-parser.add_argument("--time", type=float, default=1, help="Maximum time allowed for optimization (in hours)")
+parser.add_argument("--nleaf", type=int, default=3, help="Number of leaf nodes")
+parser.add_argument("--time", type=float, default=0.1, help="Maximum time allowed for optimization (in hours)")
 parser.add_argument("--seed", type=int, default=42, help="Global seed for random number generation for the optimizer")
 args = parser.parse_args()
 
@@ -25,82 +27,70 @@ MAX_TIME = args.time
 SEED_OPT = args.seed
 
 np.random.seed(SEED_OPT) # set seed for optimization 
+initial_model_size = 5 # number of samples used for initial training 
 
-def simwrapper(simulation, kwargs: dict):
+h = lambda p: -p * np.log2(p) - (1-p) * np.log2(1-p)\
+    if p > 0 and p < 1 else 0 # binary entropy
+D_H = lambda F: 1 + F*np.log2(F) + (1-F) * np.log2((1-F)/3)\
+    if F > 0.81 else 1e-4 # yield of the so-called “hashing” protocol
 
-    buffer_size = []
-    for key,value in list(kwargs.items()):
-        if 'buffer_node' in key:
-            buffer_size.append(value)
-            kwargs.pop(key)
-
-    buffer_size = np.array(buffer_size)
-    print(f'{mp.current_process().name} buffer initial: {buffer_size}')
-    buffer_size = buffer_size[buffer_size.nonzero()]
-
-    surplus = kwargs['connect_size'] - len(buffer_size) # if length of buffer size is n smaller than connect size, then add n nodes with smallest buffer size
-    if surplus > 0: 
-        print(f'{mp.current_process().name} adds {surplus} nodes with buffer size 1') 
-        buffer_size = np.append(buffer_size,[1] * surplus)
-
-    kwargs['buffer_size'] = buffer_size
-    print(f'{mp.current_process().name} buffer actual: {buffer_size}')
-    
-    assert kwargs['nnodes'] - len(buffer_size) >= 0, "Too few nodes specified."
-    
-    spfl = kwargs['nnodes'] - len(buffer_size) # remove superfluous rates 
-    print(f'{mp.current_process().name} thus removes {spfl} rate entries')
-    kwargs['rates'] = kwargs['rates_initial'][:-spfl] if spfl > 0 else kwargs['rates_initial']
-    kwargs.pop('rates_initial')
-
-    kwargs['nnodes'] = len(buffer_size) # number of nodes is reduced to the buffer size 
-
-    # run simulation
-    print('PARAMETERS: ' , kwargs)
-    states_per_node, capacities = simulation(**kwargs)
-    capacities = np.array(capacities) / 1e6 # MHz
-
-    print('STATES: ', states_per_node)
-
-    # define objectives
-    share_of_server_node = kwargs['connect_size'] * (1 + states_per_node['leaf_node_0'] - np.sum(states_per_node.drop(['leaf_node_0'], axis=1), axis=1))
-    
-    obj1 = share_of_server_node
-    obj2 = 0.1 * np.array(capacities) 
-
-    mean_obj1 = np.mean(obj1)
-    mean_obj2 = np.mean(obj2)
-
-    std_obj1 = np.std(obj1)
-    std_obj2 = np.std(obj2)
-
-    objectives = [mean_obj1, mean_obj2]
-    objectives_std = [std_obj1, std_obj2]
-
-    print('OBJECTIVES', objectives)
-    raw = [np.mean(share_of_server_node), np.mean(capacities)]
-    return objectives, objectives_std, raw
-
-
-vals = { # define fixed parameters for given simulation function
-            'nnodes': NLEAF_NODES,
-            'total_runtime_in_seconds': 10 ** -4, # simulation time of 1ms
-            'decoherence_rate': 0,
-            'connect_size': 5,
-            'T2': 10 ** (-7),
-            'include_classical_comm': False,
-            'rates_initial': [2 * 10 ** 6] * NLEAF_NODES, 
-            'num_positions': 1000,
-            'buffer_node0': 1024,
-            'N': 10
-        }
+rep_times = [10 ** -3, 10 ** -3] # repetition time in [s]
 
 vars = { # define variables and bounds for given simulation function
     'range': {},
     'choice':{},
     'ordinal':{}
 } 
-for i in range(1,NLEAF_NODES):
-    vars['ordinal'][f'buffer_node{i}'] = [0]+[2 ** i for i in range(11)]
 
-initial_model_size = 5 # number of samples used for initial training 
+def simwrapper(simulation, kwargs: dict):
+    """
+    Wraps a simulation function to adjust its parameters based on the presence of bright states in the keyword arguments,
+    then runs the simulation with adjusted distances, repetition times, and bright state populations for each node. The 
+    wrapper calculates rates, fidelities, and shares per node, and then computes the utility of the network based on 
+    Distillable Entanglement.
+
+    Parameters
+    ----------
+    simulation : function
+        The simulation function to be wrapped.
+    kwargs : dict
+        A dictionary of keyword arguments for the simulation function. Expected to include 'initial_distances', 
+        'repetition_times', and any number of 'bright_state' entries.
+
+    Returns
+    -------
+    U_D : numpy.ndarray
+        The mean utility of the network across all routes, calculated as the mean of the logarithm of the product of 
+        route rates and fidelities, representing Distillable Entanglement.
+    U_D_std : numpy.ndarray
+        The standard deviation of the utility across all routes, indicating the variability in the utility.
+    raw : list
+        A list containing the mean of the rates and the mean of the fidelities across all simulations."""
+
+    bright_states = []
+    for key,value in list(kwargs.items()):
+        if 'bright_state' in key:
+            bright_states.append(value)
+            kwargs.pop(key)
+
+    kwargs['bright_state_population'] = [bright_states[0]] + [bright_states[1]] * (NLEAF_NODES-1)\
+        if len(bright_states)==2 else bright_states
+    
+    # run simulation
+    rates, fidelities, shares_per_node = simulation(**kwargs)
+    rates = np.array(rates)
+    rates_per_node = ((shares_per_node.T * rates).T) * kwargs['connect_size']
+    rates_per_node.columns = pd.Series(range(0,NLEAF_NODES))
+    rates_per_node = rates_per_node.add_prefix('R_')
+    route_rates = rates_per_node.add(rates_per_node['R_0']/
+                                     kwargs['connect_size'], axis=0).drop(['R_0'], axis=1)
+
+    # Distillable Entanglement (see definition in vardoyan et al.)
+    Ds = fidelities.applymap(D_H)
+    U_Ds = pd.DataFrame(route_rates.values*Ds.values, columns=fidelities.columns,
+                        index=fidelities.index).applymap(np.log)
+
+    U_D = U_Ds.mean(axis=0).values
+    U_D_std = U_Ds.std(axis=0).values
+    raw = [rates.mean(),fidelities.mean()]
+    return U_D, U_D_std, raw
