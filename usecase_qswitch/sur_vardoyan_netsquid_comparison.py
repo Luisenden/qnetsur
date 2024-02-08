@@ -65,7 +65,7 @@ def run(vars:dict, vals:dict, max_optimize_time:float, path:str, bottleneck_leng
         df_result = pd.DataFrame.from_records(result)
         df = df_params.join(df_result, how='left')
         with open(path+
-                  f'Sur_df_qswitch_nleafnodes{NLEAF_NODES}_{MAX_TIME:.3f}h_bottleneck-link_SEED{SEED_OPT}_'
+                  f'Sur_df_qswitch_nleafnodes{NLEAF_NODES}_{MAX_TIME:.3f}h_bottleneck-link_SEED{SEED}_'
                   +datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
                 pickle.dump(df, file)
         return df
@@ -85,16 +85,16 @@ if __name__ == '__main__':
             'T2': 0,
             'beta': 0.2, # link efficiency coefficient
             'loss': 1, # loss parameter
-            'buffer_size': 1,
+            'buffer_size': 5,
             'include_classical_comm': False,
-            'num_positions': 10,
+            'num_positions': 100,
             'repetition_times': [10 ** -3] * NLEAF_NODES, # repetition time in [s]
             'N': 5 # batch size 
         }
         vars['range']['bright_state_server'] = ([0.001, .1], 'float') 
         vars['range']['bright_state_user'] = ([0.001, .1], 'float')
         # run the optimizations over different bottleneck link lengths (1-100km)
-        df = run(vars=vars, vals=vals, max_optimize_time=max_time, path=storage_path, bottleneck_length=100, n=2)
+        df = run(vars=vars, vals=vals, max_optimize_time=max_time, path=storage_path, bottleneck_length=100, n=20)
         print(df)
 
 

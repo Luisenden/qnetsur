@@ -25,6 +25,9 @@ if __name__ == '__main__':
         vars['range']['bright_state_server'] = ([0.001, .1], 'float') 
         vars['range']['bright_state_user1'] = ([0.001, .1], 'float')
         vars['range']['bright_state_user2'] = ([0.001, .1], 'float')
+        vars['range']['buffer_server'] = ([1, 15], 'int')
+        vars['range']['buffer_user1'] = ([1, 15], 'int')
+        vars['range']['buffer_user2'] = ([1, 15], 'int')
 
         # user input:
         max_time= MAX_TIME * 3600 # in sec
@@ -33,5 +36,5 @@ if __name__ == '__main__':
         sim = Surrogate(simwrapper, simulation_qswitch, vals=vals, vars=vars, sample_size=initial_model_size)
         sim.optimize(max_time=max_time, verbose=True)
 
-        with open(f'../../surdata/qswitch/SU_qswitch_nleafnodes{NLEAF_NODES}_{MAX_TIME:.2f}h_objective-servernode_SEED{SEED_OPT}_'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
+        with open(f'../../surdata/qswitch/SU_qswitch_nleafnodes{NLEAF_NODES}_{MAX_TIME:.2f}h_objective-servernode_SEED{SEED}_'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
                 pickle.dump(sim, file)

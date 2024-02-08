@@ -14,8 +14,8 @@ if __name__ == '__main__':
         si = Simulation(simulation, vals, vars)
         simaneal = partial(simulated_annealing, MAXTIME=max_time)
         
-        result = simaneal(si, seed=SEED_OPT)
+        result = simaneal(si, seed=SEED)
         result = pd.DataFrame.from_records(result)
 
-        with open(f'../../surdata/test_{max_time}h_objective-meanopt_SEED{SEED_OPT}'+'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")'+'.pkl', 'wb') as file:
+        with open(f'../../surdata/test_{max_time}h_objective-meanopt_SEED{SEED}'+'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")'+'.pkl', 'wb') as file:
                 pickle.dump(result, file)

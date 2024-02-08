@@ -42,9 +42,9 @@ if __name__ == '__main__':
     objectives = dict()
     objectives["mean"] = ObjectiveProperties(minimize=False)
 
-    ax_client = AxClient(verbose_logging=False, random_seed=SEED_OPT)
+    ax_client = AxClient(verbose_logging=False, random_seed=SEED)
     ax_client.create_experiment( # define variable parameters of quantum network simulation
-        name=f"request-based-simulation-seed{SEED_OPT}",
+        name=f"request-based-simulation-seed{SEED}",
         parameters=get_parameters(vars),
         objectives=objectives,
     )
@@ -61,5 +61,5 @@ if __name__ == '__main__':
         times_tracked.append(time.time()-start)
         time_tracker = sum(times_tracked)
     
-    with open(f'../../surdata/test_{max_time}h_objective-meanopt_SEED{SEED_OPT}'+'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")'+'.pkl', 'wb') as file:
+    with open(f'../../surdata/test_{max_time}h_objective-meanopt_SEED{SEED}'+'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")'+'.pkl', 'wb') as file:
             pickle.dump([ax_client,time_tracker,vals], file)

@@ -17,8 +17,8 @@ args = parser.parse_args()
 MAX_TIME = args.time
 if MAX_TIME is None:
     raise ValueError("Please provide a maximum number of hours (float) using --time argument.")
-SEED_OPT = args.seed
-if SEED_OPT is None:
+SEED = args.seed
+if SEED is None:
     print(f"Warning: No global seed for optimization used. The results might not be reproduceable.")
 
 sample_size = 10

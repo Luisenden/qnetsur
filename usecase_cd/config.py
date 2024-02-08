@@ -19,15 +19,16 @@ args = parser.parse_args()
 
 TOPO = args.topo
 MAX_TIME = args.time
-SEED_OPT = args.seed
+SEED = args.seed
 
+np.random.seed(SEED) # set seed for optimization 
 
 class NetworkTopology: # use case specific topology class defined for convenience
     def __init__(self, size:tuple = None, name:str = None):
             self.size = size
-            self.name = name
+            self.name = name 
 
-vals = { # define fixed parameters for given simulation function
+vals = { # define fixed parameters for given simulation function 
         'protocol':'ndsrs', 
         'p_gen': 0.9, 
         'p_swap': 1,
@@ -37,7 +38,7 @@ vals = { # define fixed parameters for given simulation function
         'N_samples' : 5,
         'p_cons': 0.1,
         'qbits_per_channel': 50,
-        'cutoff': 20
+        'cutoff': 20,
         }
 
 input_topo = TOPO.split(',') 
@@ -47,7 +48,7 @@ topo = NetworkTopology((int(input_topo[0]), ), 'square') if len(input_topo)==1 e
 size = topo.size
 vals['A'] = simulation.adjacency_squared(size[0]) if topo.name == 'square' else simulation.adjacency_tree(size[0], size[1])
 
-vars = { # define variables and bounds for given simulation function
+vars = { # define variables and bounds for given simulation function 
     'range': {
         'M': ([1, 10],'int')
         },
@@ -57,7 +58,7 @@ vars = { # define variables and bounds for given simulation function
 for i in range(np.shape(vals['A'])[0]):
     vars['range'][f'q_swap{i}'] = ([0., 1.], 'float')
 
-initial_model_size = 10 # number of samples used for the initial training of the surrogate model
+initial_model_size = 5 # number of samples used for the initial training of the surrogate model
 
 def simwrapper(simulation, kwargs: dict):
      

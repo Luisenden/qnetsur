@@ -32,9 +32,9 @@ args = parser.parse_args()
 
 NLEAF_NODES = args.nleaf
 MAX_TIME = args.time
-SEED_OPT = args.seed
+SEED = args.seed
 
-np.random.seed(SEED_OPT) # set seed for optimization 
+np.random.seed(SEED) # set seed for optimization 
 initial_model_size = 5 # number of samples used for initial training 
 
 h = lambda p: -p * np.log2(p) - (1-p) * np.log2(1-p)\

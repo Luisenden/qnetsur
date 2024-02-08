@@ -6,7 +6,7 @@ import seaborn as sns
 from netsquid_qswitch.runtools import Scenario, Simulation, SimulationMultiple
 def simulation_qswitch(nnodes, total_runtime_in_seconds, connect_size, server_node_name, num_positions, 
                        buffer_size, bright_state_population, decoherence_rate, beta, loss, T2,
-                       include_classical_comm, distances, repetition_times, N, ret='default'):
+                       include_classical_comm, distances, repetition_times, N, ret='default', seed=42):
     """
     Simulates a quantum switch network to evaluate its performance over a specified runtime. The simulation
     accounts for node connectivity, quantum buffer sizes, state decoherence, and other quantum mechanical properties
@@ -70,7 +70,7 @@ def simulation_qswitch(nnodes, total_runtime_in_seconds, connect_size, server_no
                         loss=loss,
                         decoherence_rate=decoherence_rate,
                         include_classical_comm=include_classical_comm)
-    simulation = Simulation(scenario=scenario, distances=distances, repetition_times=repetition_times)
+    simulation = Simulation(scenario=scenario, distances=distances, repetition_times=repetition_times, seed=seed)
     sm = SimulationMultiple(simulation=simulation, number_of_runs=N)
     sm.run()
     # get results
@@ -127,22 +127,23 @@ if __name__ == "__main__":
 
     """
     distances = [0.001, 0.001]  # in [km]
-    rep_times = [0.1, 0.1]  # in [s] (=10 Hz clock)
+    rep_times = [0.01, 0.01]  # in [s] 
     vals = {  # define fixed parameters for given simulation function
                 'nnodes': 2,  # number of leaf nodes
-                'total_runtime_in_seconds': 50,  # simulation time in [s]
+                'total_runtime_in_seconds': 100,  # simulation time in [s]
                 'decoherence_rate': 0, 
                 'connect_size': 2,  # size of GHZ state (2=bipartide)
                 'server_node_name': 'leaf_node_0',  # server node
                 'T2': 0,  # T2 noise when qubits are idle in memory
-                'beta': -9000,  # loss coefficient, 10 ** (-0.1 * beta * distance) = 8
+                'beta': 0.2,  # loss coefficient as defined in vardoyan et al.
                 'loss': 1,  # other losses of the system (1 means no loss)
                 'include_classical_comm': False,
                 'num_positions': 9,  # number of memory positions in all nodes
                 'distances': distances,  # distances of leaf nodes to switch node
                 'repetition_times':rep_times,  # link generation rate
                 'N': 5,  # batch size 
-                'ret': 'df'  # result format
+                'ret': 'df',  # result format
+                'seed': 42
             }
     
     dfs = []
@@ -151,6 +152,7 @@ if __name__ == "__main__":
             vals['bright_state_population'] = [alpha, alpha]
             vals['buffer_size'] = buffer
             df = simulation_qswitch(**vals)
+            print(df)
             dfs.append(df)
         print(f'done {alpha:.3f}')
     df_result = pd.concat(dfs, axis=0)

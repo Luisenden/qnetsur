@@ -158,7 +158,6 @@ def run(network_topo,n):
         "Wait_time": wait_times, "Throughput": throughputs}
 
     df = pd.DataFrame(log)
-    #df.to_csv("request_with_perfect_network"+datetime.now().strftime("%m-%d-%Y_%H:%M")+".csv")
     return df
 
 
