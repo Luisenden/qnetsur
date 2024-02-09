@@ -189,37 +189,39 @@ def simulation_rb(network_config_file, cavity, total_time, N, mem_size):
 
 
 if __name__ == "__main__":
+
     import pickle
-
-    start = time.time()
-    network_config_file = "starlight.json"
-    total_time = 2e13
-
-    even = [50]*9
-    weighted = [25, 91, 67, 24, 67, 24, 103, 25, 24]
-    surrogate_weighted = [23, 70, 8, 6, 19, 6, 93, 97, 13]
-
-    results = []
-    for i in range(10):
-
-        proc = mp.current_process().ident
-        update_memory_config(network_config_file, surrogate_weighted, total_time,seed=42) #source for weighted: https://github.com/sequence-toolbox/Chicago-metropolitan-quantum-network/blob/master/sec5.4-two-memory-distribution-policies/uneven_memory.json
-        network_topo = RouterNetTopo(str(proc)+'.json')
-        os.remove(str(proc)+'.json')
-
-
-        set_parameters(cavity=500, network_topo=network_topo)
-        nodes = network_topo.get_nodes_by_type(RouterNetTopo.QUANTUM_ROUTER)
-
-        df = run(network_topo,i)
-        completed_requests_per_node = df.groupby('Initiator').size()
-
-        res = np.zeros(len(nodes))
-        for i,node in enumerate(nodes):
-            if node.name in completed_requests_per_node: res[i] = completed_requests_per_node[node.name]
-
-        print(res)
-        results.append(res)
     
-    with open(f'../../surdata/RB/sim_even_'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
-        pickle.dump(results, file)
+    network_config_file = "starlight.json"  # network configuration 
+    total_time = 2e13  # total simulation time in [ps]
+
+    # policy 0: evenly distributed memories
+    even = [50]*9 
+    # policy 1: weighted policy of Wu et al. Table 3
+    weighted = [25, 91, 67, 24, 67, 24, 103, 25, 24]
+    # policy 2: drawn from surrogate optimization results (execute sur.py EXEC TIME = 12 hours)
+    surrogate_weighted = [19, 78, 6, 5, 47, 5, 86, 64, 8]
+
+    results = {0: [], 1: [], 2: []}
+    for i, policy in enumerate([even, weighted, surrogate_weighted]):
+        for j in range(10):
+            proc = mp.current_process().ident
+            update_memory_config(network_config_file, policy, total_time,seed=42) 
+            network_topo = RouterNetTopo(str(proc)+'.json')
+            os.remove(str(proc)+'.json')
+
+            set_parameters(cavity=500, network_topo=network_topo)
+            nodes = network_topo.get_nodes_by_type(RouterNetTopo.QUANTUM_ROUTER)
+
+            df = run(network_topo,j)
+            completed_requests_per_node = df.groupby('Initiator').size()
+            res = np.zeros(len(nodes))
+            for k,node in enumerate(nodes):
+                if node.name in completed_requests_per_node: res[k] = completed_requests_per_node[node.name]
+
+            results[i].append(sum(res))
+            print(f'done policy {i} iteration {j}')
+
+    df = pd.DataFrame.from_records(results)
+    with open(f'../../surdata/rb/sim_policy_comparison_'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
+        pickle.dump(df, file)

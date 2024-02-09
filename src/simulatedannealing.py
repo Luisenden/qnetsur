@@ -1,6 +1,5 @@
 import sys, time
 import numpy as np
-import pandas as pd
 from scipy.stats import truncnorm
 
 from src.utils import *
@@ -8,7 +7,7 @@ from src.utils import *
 
 def objective(s, x :dict) -> float:
     eval = s.run_sim(x)[0] 
-    return -np.mean(eval)
+    return -np.sum(eval)
 
 
 def get_neighbour(s, x :dict) -> dict:
@@ -83,7 +82,8 @@ def simulated_annealing(s, MAX_TIME, temp :int = 10, beta_schedule :int = 5, see
             metropolis = np.exp(-diff / t)
 
             # keep if improvement or metropolis criterion satisfied
-            if diff < 0 or np.random.random() < metropolis:
+            r = np.random.random()
+            if diff < 0 or r < metropolis:
                 current, current_eval = candidate, candidate_eval
             
             time_tracker += time.time()-start
