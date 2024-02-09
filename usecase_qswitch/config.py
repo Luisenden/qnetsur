@@ -3,7 +3,7 @@ Basis script to simulate
 * optimziation of two-user-one-server scenario of Vadoyan et al., 2023 with 'sur_vardoyan_netsquid_comparison.py'
 * optimization for more complex scenarios with scripts 'sur.py' and comparison with 'vsax.py', 'vsgridsearch.py', 'vssa.py'
 
-The goal is to find the optimal link bright-state population values (alpha=1-Fidelity) and buffer sizes to maximize
+The goal is to find the optimal bright-state population (alpha=1-Fidelity) for all links and buffer sizes to maximize
 the given utility function, Distillable Entanglement as defined in the paper.
 """
 import sys
@@ -44,7 +44,8 @@ D_H = lambda F: 1 + F*np.log2(F) + (1-F) * np.log2((1-F)/3)\
 
 rep_times = [10 ** -3, 10 ** -3] # repetition time in [s]
 
-vars = { # define variables and bounds for given simulation function
+ # define variables and bounds skeleton (used in executables sur.py, vsax.py etc.)
+vars = {
     'range': {},
     'choice':{},
     'ordinal':{}
@@ -93,7 +94,7 @@ def simwrapper(simulation, kwargs: dict):
     route_rates = rates_per_node.add(rates_per_node['R_0']/
                                      kwargs['connect_size'], axis=0).drop(['R_0'], axis=1)
 
-    # Distillable Entanglement (see definition in vardoyan et al.)
+    # Distillable Entanglement (see definition vardoyan et al.)
     Ds = fidelities.applymap(D_H)
     U_Ds = pd.DataFrame(route_rates.values*Ds.values, columns=fidelities.columns,
                         index=fidelities.index).applymap(np.log)

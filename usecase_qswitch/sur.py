@@ -25,9 +25,6 @@ if __name__ == '__main__':
         vars['range']['bright_state_server'] = ([0.001, .1], 'float') 
         vars['range']['bright_state_user1'] = ([0.001, .1], 'float')
         vars['range']['bright_state_user2'] = ([0.001, .1], 'float')
-        vars['range']['buffer_server'] = ([1, 15], 'int')
-        vars['range']['buffer_user1'] = ([1, 15], 'int')
-        vars['range']['buffer_user2'] = ([1, 15], 'int')
 
         # user input:
         max_time= MAX_TIME * 3600 # in sec

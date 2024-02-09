@@ -1,6 +1,6 @@
 import numpy as np
 from datetime import datetime
-import json, os, time
+import json, os
 import random
 
 import torch.multiprocessing as mp

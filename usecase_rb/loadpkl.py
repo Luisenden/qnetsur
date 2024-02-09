@@ -81,7 +81,7 @@ df_gs['Method'] = 'Random Grid Search'
 
 df_sa = pd.concat(sas).reset_index()
 paramcolumns = df_sa.columns[df_sa.columns.str.contains('mem_size')]
-df_sa['sum'] = df_sa['objective']*nnodes
+df_sa['sum'] = df_sa['objective']
 df_sa['Objective'] = df_sa['sum'] + df_sa[paramcolumns].sum(axis=1)/config.m_max
 df_sa['Method'] = 'Simulated annealing'
 
