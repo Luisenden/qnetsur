@@ -10,7 +10,6 @@ if __name__ == '__main__':
         'connect_size': 2,
         'server_node_name': 'leaf_node_0',
         'distances': [42, 7, 13],
-        'buffer_size': 1,
         'repetition_times': [10 ** -3] * NLEAF_NODES,  # time between generation attempts
         'beta': 0.2, # link efficiency coefficient
         'loss': 1, # loss parameter
@@ -23,6 +22,10 @@ if __name__ == '__main__':
     vars['range']['bright_state_server'] = ([0.001, .1], 'float') 
     vars['range']['bright_state_user1'] = ([0.001, .1], 'float')
     vars['range']['bright_state_user2'] = ([0.001, .1], 'float')
+
+    vars['range']['buffer_server'] = ([1, 15], 'int') 
+    vars['range']['buffer_user1'] = ([1, 15], 'int')
+    vars['range']['buffer_user2'] = ([1, 15], 'int')
 
     # user input:
     max_time= MAX_TIME * 3600 # in sec

@@ -82,8 +82,16 @@ def simwrapper(simulation, kwargs: dict):
             bright_states.append(value)
             kwargs.pop(key)
 
+    buffer_size = []
+    for key,value in list(kwargs.items()):
+        if 'buffer' in key:
+            buffer_size.append(value)
+            kwargs.pop(key)
+
     kwargs['bright_state_population'] = [bright_states[0]] + [bright_states[1]] * (NLEAF_NODES-1)\
         if len(bright_states)==2 else bright_states
+    
+    kwargs['buffer_size'] = buffer_size if len(buffer_size)>1 else buffer_size[0]
     
     # run simulation
     rates, fidelities, shares_per_node = simulation(**kwargs)
