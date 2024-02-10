@@ -12,11 +12,18 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 from  matplotlib.ticker import FuncFormatter
-# plt.style.use('seaborn')
+plt.style.use("seaborn-v0_8-paper")
+plt.rcParams.update({
+    'text.usetex': True,
+    'font.family': 'serif',
+    'font.size': 12,  
+})
+
+import warnings
+warnings.filterwarnings("ignore")
 
 
 folder = 'rb'
-
 
 axs = []
 for name in glob.glob(f'../../surdata/{folder}/AX_*.pkl'):
@@ -37,6 +44,7 @@ for name in glob.glob(f'../../surdata/{folder}/GS_*.pkl'):
 
 dfs_sur = []
 dfs_sur_X = []
+dfs_sur_X_best = []
 
 nnodes=9
 column_names = pd.Series(range(nnodes)).astype('str')
@@ -45,7 +53,11 @@ for sur in surs:
     df_sur_y_sum = df_sur_y.sum(axis=1)
     df_sur_y_sum.name = 'sum'
     
-    mask = sur.X_df.join(df_sur_y_sum).groupby(['Iteration'])['sum'].idxmax().values
+    grouped_iteration = sur.X_df.join(df_sur_y_sum).groupby(['Iteration'])['sum']
+    best_index = grouped_iteration.idxmax().iloc[-1]
+    df_sur_X_best = sur.X_df.iloc[best_index]
+
+    mask = grouped_iteration.idxmax().values
     df_sur_y = df_sur_y.iloc[mask]
     df_sur_y_sum = df_sur_y_sum.iloc[mask]
     df_sur_X = sur.X_df.iloc[mask]
@@ -57,15 +69,16 @@ for sur in surs:
 
     dfs_sur.append(df_sur_y_obj)
     dfs_sur_X.append(df_sur_X)
+    dfs_sur_X_best.append(df_sur_X_best)
 
 
 df_sur = pd.concat(dfs_sur).reset_index()
 df_sur['Method'] = 'Surrogate Optimization'
 df_sur_X = pd.concat(dfs_sur_X).reset_index(drop=True)
-print(df_sur_X.join(df_sur)['Objective'].max())
-best_index = df_sur_X.join(df_sur)['Objective'].idxmax()
-print(df_sur_X.iloc[best_index])
-print(sum(df_sur_X.iloc[best_index].drop(['Iteration', 'penalty'])))
+
+df_sur_X_best = pd.concat(dfs_sur_X_best, axis=1)
+print('BEST', df_sur_X_best.median(axis=1))
+print('SUM', df_sur_X_best.drop(['Iteration']).median(axis=1).sum())
 
 df_ax = pd.concat([ax[0].get_trials_data_frame() for ax in axs]).reset_index()
 paramcolumns = df_ax.columns[df_ax.columns.str.contains('mem_size')]
@@ -93,21 +106,20 @@ dfs = pd.concat(dfs_obj)
 dfs['# Optimization steps'] = dfs['index']
 
 fig, ax = plt.subplots()
-g = sns.lineplot(data = dfs, x='# Optimization steps', y='Objective', hue='Method', style='Method', markers='^') # plot the Number of Neighbours for all methods
-#g = sns.lineplot(data = dfs, x=r'# Optimization steps', y='Capacity', hue='Method', style='Method', markers='^') 
+g = sns.lineplot(data = dfs, x='# Optimization steps', y='Objective', hue='Method', style='Method', markers='^') 
 plt.title(f'Quantum Network with {nnodes}')
 plt.gcf().set_size_inches(15,7)
-g.grid(which='major', color='w', linewidth=1.0)
-g.grid(which='minor', color='w', linewidth=0.5)
 handles, labels = ax.get_legend_handles_labels()
 ax.legend(handles=handles, labels=labels)
 ax.legend(fancybox=True, framealpha=0.5)
 ax.legend(loc='upper right')
+plt.grid()
 plt.tight_layout()
 plt.show()
 
 df_sur_X_plot = df_sur_X.drop(['penalty'], axis=1).melt('Iteration', var_name='Node', value_name='Buffer size')
 fig, ax = plt.subplots()
 g = sns.lineplot(data = df_sur_X_plot, x='Iteration', y='Buffer size', hue='Node', style='Node', markers='^')
+plt.grid()
 plt.show()
 

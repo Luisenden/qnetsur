@@ -200,7 +200,7 @@ if __name__ == "__main__":
     # policy 1: weighted policy of Wu et al. Table 3
     weighted = [25, 91, 67, 24, 67, 24, 103, 25, 24]
     # policy 2: drawn from surrogate optimization results (execute sur.py EXEC TIME = 12 hours)
-    surrogate_weighted = [19, 78, 6, 5, 47, 5, 86, 64, 8]
+    surrogate_weighted = [59, 99, 20, 19, 41, 19, 100, 65, 21]
 
     results = {0: [], 1: [], 2: []}
     for i, policy in enumerate([even, weighted, surrogate_weighted]):
@@ -225,3 +225,4 @@ if __name__ == "__main__":
     df = pd.DataFrame.from_records(results)
     with open(f'../../surdata/rb/sim_policy_comparison_'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
         pickle.dump(df, file)
+

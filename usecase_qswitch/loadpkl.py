@@ -46,7 +46,7 @@ for sur in surs:
     df_sur_y_sum.name = 'Objective'
 
     
-    mask = sur.X_df.join(df_sur_y_sum).groupby(['Iteration'])['Objective'].idxmin().values
+    mask = sur.X_df.join(df_sur_y_sum).groupby(['Iteration'])['Objective'].idxmax().values
     df_sur_y = df_sur_y.iloc[mask]
     df_sur_y_raw = pd.DataFrame(sur.y_raw, columns=['Rates (MHz)', 'Fidelities']).iloc[mask]
     df_sur_y_sum = df_sur_y_sum.iloc[mask]
