@@ -8,7 +8,7 @@ if __name__ == '__main__':
         # define fixed parameters and set variable ranges
         vals = {  
             'nnodes': NLEAF_NODES,
-            'total_runtime_in_seconds': 50,  # simulation time [s]
+            'total_runtime_in_seconds': 100,  # simulation time [s]
             'connect_size': 2,
             'server_node_name': 'leaf_node_0',
             'distances': [42, 7, 13],
