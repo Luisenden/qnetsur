@@ -20,13 +20,10 @@ import os
 from importlib import import_module
 
 USE_CASE = os.environ.get('USE_CASE') or 'usecase_cd'  # default to usecase_cd if not set
-
 try:
     config = import_module(f'{USE_CASE}.config')
-
 except ImportError:
     raise ImportError(f"Cannot import config.py for '{USE_CASE}'")
-
 
 class Simulation:
     """
@@ -38,7 +35,8 @@ class Simulation:
     Attributes
     ----------
     sim_wrapper : function
-        The wrapper function that preprocesses simulation parameters before execution.
+        The wrapper function that preprocesses simulation
+        parameters before execution.
     sim : function
         The actual simulation function to be executed.
     vals : dict
@@ -51,16 +49,15 @@ class Simulation:
     run_sim(x, vals=None)
         Executes a single simulation run with the given parameters.
     get_random_x(n)
-        Generates `n` sets of random parameters based on the specified variable parameters.
+        Generates `n` sets of random parameters based on the
+        specified variable parameters.
     """
 
     def __init__(self, sim_wrapper, sim, vals, vars):
         # specify fixed parameters
         self.vals = vals
-        
         # specify variable parameters
         self.vars = vars
-
         # simulation function handler
         self.sim_wrapper = sim_wrapper
         self.sim = sim
@@ -78,7 +75,7 @@ class Simulation:
         xrun = {**self.vals, **x} if vals == None else {**vals, **x}
         res = self.sim_wrapper(self.sim, xrun)
         return res
-    
+
     def get_random_x(self,n) -> dict:
         """
         Generates random parameters for the simulation.
@@ -89,37 +86,44 @@ class Simulation:
         Returns:
             dict: Randomly generated parameters.
         """
-        
-        assert all(isinstance(val, tuple) for val in self.vars['range'].values()) and n > 0, f"Dimension types must be a tuple (sample-list, dataype) and n must be greater zero."
+        assert all(isinstance(val, tuple) for val in self.vars['range'].values()) and n > 0,\
+            f"Dimension types must be a tuple (sample-list, dataype) and n must be greater zero."
 
         x = {}
         for dim, par in self.vars['range'].items():
                 vals = par[0]
                 if par[1] == 'int':
-                    x[dim] = np.random.randint(vals[0], vals[1], n) if n > 1 else np.random.randint(vals[0], vals[1])
+                    x[dim] = np.random.randint(vals[0], vals[1], n) if n > 1\
+                        else np.random.randint(vals[0], vals[1])
                 elif par[1] == 'float':
-                    x[dim] = np.random.uniform(vals[0], vals[1], n) if n > 1 else np.random.uniform(vals[0], vals[1])
+                    x[dim] = np.random.uniform(vals[0], vals[1], n) if n > 1\
+                        else np.random.uniform(vals[0], vals[1])
                 else:
                     raise Exception('Datatype must be "int" or "float".')
 
         for dim, vals in self.vars['ordinal'].items():
-                x[dim] = np.random.choice(vals, size=n) if n > 1 else np.random.choice(vals)
+                x[dim] = np.random.choice(vals, size=n) if n > 1\
+                    else np.random.choice(vals)
                     
         for dim, vals in self.vars['choice'].items():
-                x[dim] = np.random.choice(vals, n) if n > 1 else np.random.choice(vals)       
+                x[dim] = np.random.choice(vals, n) if n > 1\
+                    else np.random.choice(vals)       
 
         return x
     
 class Surrogate(Simulation):
     """
-    Initializes the Surrogate model with a simulation wrapper, the actual simulation function, 
-    and a set of fixed and variable parameters. It sets up the environment for running surrogate model-based optimizations, 
+    Initializes the Surrogate model with a simulation wrapper,
+    the actual simulation function, 
+    and a set of fixed and variable parameters. It sets up the 
+    environment for running surrogate model-based optimizations, 
     including the multiprocessing setup for parallel simulations.
 
     Parameters
     ----------
     sim_wrapper : function
-        A function that wraps around the actual simulation to perform pre-processing of simulation parameters.
+        A function that wraps around the actual simulation to 
+        perform pre-processing of simulation parameters.
     sim : function
         The actual simulation function to be optimized.
     vals : dict
@@ -138,13 +142,17 @@ class Surrogate(Simulation):
     y : list
         Simulation results corresponding to each set of parameters in `X`.
     y_std : list
-        Standard deviation of simulation results, providing insight into result variability.
+        Standard deviation of simulation results,
+        providing insight into result variability.
     model : class
-        Regression model used for surrogate modeling. Default is SVR (Support Vector Regression) from scikit-learn.
+        Regression model used for surrogate modeling. 
+        Default is SVR (Support Vector Regression) from scikit-learn.
     mmodel : class
-        Multi-output wrapper for the regression model, allowing it to output multiple predictions.
+        Multi-output wrapper for the regression model,
+        allowing it to output multiple predictions.
     mmodel_std : class
-        Separate multi-output model for predicting the standard deviation of simulation results.
+        Separate multi-output model for predicting the
+        standard deviation of simulation results.
     build_time : list
         Time taken to build or update the surrogate model.
     sim_time : list
@@ -152,9 +160,11 @@ class Surrogate(Simulation):
     optimize_time : list
         Time taken for optimization processes.
     procs : int
-        Number of processes to use for parallel simulations, based on CPU count.
+        Number of processes to use for parallel simulations,
+        based on CPU count.
     improvement : list
-        Record of improvements in objective function value after each optimization step.
+        Record of improvements in objective function
+        value after each optimization step.
 
     Methods
     -------
@@ -169,19 +179,19 @@ class Surrogate(Simulation):
     """
     def __init__(self, sim_wrapper, sim, vals, vars, sample_size, k=4):
         super().__init__(sim_wrapper, sim, vals, vars)
-    
 
         # profiling storage
         self.sim_time = []
         self.build_time = []
         self.optimize_time = []
-    
+
         # multiprocessing
         self.procs = mp.cpu_count()
+        print(f'{self.procs} THREADS AVAILABLE.')
         self.sample_size = sample_size
         if self.procs > sample_size:
             self.procs = sample_size
-        
+
         # storage target value
         self.y = []
         self.y_std = []
@@ -208,49 +218,56 @@ class Surrogate(Simulation):
                 vals = par[0]
                 if par[1] == 'int':
                     std = f * (vals[1] - vals[0])/2
-                    x_n[dim] = truncnorm.rvs((vals[0] - x[dim]) / std, (vals[1] - x[dim]) / std, loc=x[dim], scale=std, size=size).astype(int)
+                    x_n[dim] = truncnorm.rvs((vals[0] - x[dim]) / std, (vals[1] - x[dim]) / std,
+                                             loc=x[dim], scale=std, size=size).astype(int)
                 elif par[1] == 'float':
                     std = f * (vals[1] - vals[0])/2
-                    x_n[dim] = truncnorm.rvs((vals[0] - x[dim]) / std, (vals[1] - x[dim]) / std, loc=x[dim], scale=std, size=size) 
+                    x_n[dim] = truncnorm.rvs((vals[0] - x[dim]) / std, (vals[1] - x[dim]) / std,
+                                             loc=x[dim], scale=std, size=size) 
                 else:
                     raise Exception('Datatype must be "int" or "float".')
 
         for dim, vals in self.vars['ordinal'].items():
                 pos = x[dim] # current position
-                loc = vals.index(pos)/len(vals) # corresponding location between 0 and 1
+                loc = vals.index(pos)/len(vals)  # corresponding location between 0 and 1
                 pval = np.linspace(0,1,len(vals))
                 std = f/2
-                probs = truncnorm.pdf(pval, (0-loc)/std, (1-loc)/std, scale=std, loc=loc)/len(x) # corresponding weights
-                probs /= probs.sum() # normalize probabilities
+                probs = truncnorm.pdf(pval,
+                                      (0-loc)/std, (1-loc)/std, scale=std,
+                                      loc=loc)/len(x)  # corresponding weights
+                probs /= probs.sum()  # normalize probabilities
                 x_n[dim] = np.random.choice(vals, size=size , p=probs)
-                    
+
         for dim, vals in self.vars['choice'].items():
-                x_n[dim] = np.random.choice(vals, size)       
+                x_n[dim] = np.random.choice(vals, size)
 
         # select best prediction as neighbor
         samples_x = pd.DataFrame(x_n).astype(object)
         samples_y = self.mmodel.predict(samples_x.values)
-        fittest_neighbour_index = np.argsort(np.array(samples_y).sum(axis=1))[-1] 
+        fittest_neighbour_index = np.argsort(np.array(samples_y).sum(axis=1))[-1]
         x_fittest = samples_x.iloc[fittest_neighbour_index].to_dict()
         return x_fittest
 
-    def acquisition(self, max_time, current_time, n=8) -> pd.DataFrame:
+    def acquisition(self, max_time, current_time, n=10) -> pd.DataFrame:
         """
-        Computes n new data points according to estimated improvement and degree of exploration and adds the data to the training sample.
+        Computes n new data points according to estimated improvement 
+        and degree of exploration and adds the data to the training sample.
         """
         y_obj_vec = np.array(self.y).sum(axis=1)
         newx = []
         top_selection = self.X_df.iloc[np.argsort(y_obj_vec)[-n:]]  # select top n candidates
         for x in top_selection.iloc:  # get most promising neighbor according to surrogate
-            neighbour = self.get_neighbour(max_time=max_time, current_time=current_time, x=x.to_dict())
+            neighbour = self.get_neighbour(max_time=max_time,
+                                           current_time=current_time,
+                                           x=x.to_dict())
             newx.append(neighbour)
-        self.X_df_add = pd.DataFrame.from_records(newx).astype(object)  # ad promising points to training set
-    
-    def update(self, counter, n=8) -> None:
+        self.X_df_add = pd.DataFrame.from_records(newx).astype(object)
+
+    def update(self, counter, n=10) -> None:
         """
         Updates the model with new data.
         """
-        start = time.time() 
+        start = time.time()
         with Pool(processes=n) as pool:
             y_temp = pool.map(self.run_sim, self.X_df_add.iloc)
             pool.close()
@@ -268,15 +285,19 @@ class Surrogate(Simulation):
 
         # add new data
         for y_i in y_temp:
-            yi,yi_std,*yi_raw = y_i
+            yi, yi_std, *yi_raw = y_i
             self.y.append(yi)
             self.y_std.append(yi_std)
             self.y_raw += yi_raw
-        
+
         # train/update surrogate model
-        score_svr = cross_val_score(MultiOutputRegressor(SVR()), self.X_df.drop('Iteration', axis=1).values, self.y, scoring=make_scorer(mean_absolute_error)).mean()
-        score_tree = cross_val_score(MultiOutputRegressor(DecisionTreeRegressor()), self.X_df.drop('Iteration', axis=1).values, self.y, scoring=make_scorer(mean_absolute_error)).mean()
-        
+        score_svr = cross_val_score(MultiOutputRegressor(SVR()),
+                                    self.X_df.drop('Iteration', axis=1).values,
+                                    self.y, scoring=make_scorer(mean_absolute_error)).mean()
+        score_tree = cross_val_score(MultiOutputRegressor(DecisionTreeRegressor()),
+                                    self.X_df.drop('Iteration', axis=1).values,
+                                    self.y, scoring=make_scorer(mean_absolute_error)).mean()
+
         if score_svr < score_tree:
              self.model = SVR
         else:
@@ -284,7 +305,7 @@ class Surrogate(Simulation):
         print(f'scores: svr = {score_svr} and tree={score_tree}')
         self.model_scores['SVR'].append(score_svr)
         self.model_scores['DecisionTree'].append(score_tree)
-        
+
         self.mmodel = MultiOutputRegressor(self.model())
         self.mmodel_std = MultiOutputRegressor(self.model())
 
@@ -324,8 +345,12 @@ class Surrogate(Simulation):
             self.y_std.append(yi_std)
             self.y_raw += yi_raw
 
-        score_svr = cross_val_score(MultiOutputRegressor(SVR()), self.X_df.drop('Iteration', axis=1).values, self.y, scoring=make_scorer(mean_absolute_error)).mean()
-        score_tree = cross_val_score(MultiOutputRegressor(DecisionTreeRegressor()), self.X_df.drop('Iteration', axis=1).values, self.y, scoring=make_scorer(mean_absolute_error)).mean()
+        score_svr = cross_val_score(MultiOutputRegressor(SVR()),
+                                    self.X_df.drop('Iteration', axis=1).values,
+                                    self.y, scoring=make_scorer(mean_absolute_error)).mean()
+        score_tree = cross_val_score(MultiOutputRegressor(DecisionTreeRegressor()),
+                                     self.X_df.drop('Iteration', axis=1).values,
+                                     self.y, scoring=make_scorer(mean_absolute_error)).mean()
         
         if verbose: print(f'scores: svr = {score_svr} and tree={score_tree}')
         self.model_scores['SVR'].append(score_svr)
@@ -348,12 +373,13 @@ class Surrogate(Simulation):
 
         # optimization
         max_optimize_time = max_time - initial_optimize_time
-        if verbose and max_optimize_time < 0: print("Initial model generated, but no time left for optimization after initial build.")
-        if verbose: print(f'After initial build, time left for optimization: {max_optimize_time:.2f}s')
+        if verbose and max_optimize_time < 0:
+            print("Initial model generated, but no time left for optimization after initial build.")
+        if verbose:
+            print(f'After initial build, time left for optimization: {max_optimize_time:.2f}s')
         current_times = []
         current_time = 0
         delta = 0
-
         counter = 1
         while current_time+delta < max_optimize_time:
             start = time.time()
@@ -365,7 +391,8 @@ class Surrogate(Simulation):
             current_time = np.sum(current_times)
             delta = np.mean(current_times)
             counter +=1
-            if verbose: print(f'Time left for optimization: {max_optimize_time-current_time:.2f}s')
+            if verbose:
+                print(f'Time left for optimization: {max_optimize_time-current_time:.2f}s')
 
         if verbose: print('Optimization finished.')
 
@@ -376,18 +403,21 @@ def get_parameters(variables):
     Parameters
     ----------
     vars : dict
-        A dictionary where keys correspond to parameter types (e.g., 'range', 'ordinal', 'choice') and values provide the definitions of these parameters.
+        A dictionary where keys correspond to parameter types (e.g., 'range', 'ordinal', 'choice')
+        and values provide the definitions of these parameters.
 
     Returns
     -------
     list
-        A list of parameter definitions formatted for use in optimization routines, with each parameter represented as a dictionary detailing its name, type, and constraints or choices.
+        A list of parameter definitions formatted for use in optimization routines,
+        with each parameter represented as a dictionary detailing its name,
+        type, and constraints or choices.
     """
     parameters = []
     for k in variables:
         for key,value in variables[k].items():
             typ = 'choice' if k == 'ordinal' else k
-            if typ != 'choice': 
+            if typ != 'choice':
                 parameters.append(
                     {
                     "name": str(key),
