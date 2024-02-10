@@ -109,5 +109,5 @@ def simwrapper(simulation, kwargs: dict):
 
     U_D = U_Ds.mean(axis=0).values
     U_D_std = U_Ds.std(axis=0).values
-
+    print(U_D, U_D_std)
     return U_D, U_D_std
