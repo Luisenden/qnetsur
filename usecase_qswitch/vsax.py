@@ -13,10 +13,10 @@ if __name__ == '__main__':
     # define fixed parameters and set variable ranges
     vals = {  
         'nnodes': NLEAF_NODES,
-        'total_runtime_in_seconds': 60,  # simulation time [s]
+        'total_runtime_in_seconds': 300,  # simulation time [s]
         'connect_size': 2,
         'server_node_name': 'leaf_node_0',
-        'distances': [42, 7, 13],
+        'distances': np.array([42, 7, 13, 30, 17, 24, 11, 10, 39, 43])[:NLEAF_NODES],
         'repetition_times': [10 ** -3] * NLEAF_NODES,  # time between generation attempts
         'beta': 0.2, # link efficiency coefficient
         'loss': 1, # loss parameter
@@ -26,13 +26,10 @@ if __name__ == '__main__':
         'decoherence_rate': 0,
         'N': 10 # batch size 
     }
-    vars['range']['bright_state_server'] = ([0.001, .1], 'float') 
-    vars['range']['bright_state_user1'] = ([0.001, .1], 'float')
-    vars['range']['bright_state_user2'] = ([0.001, .1], 'float')
-
-    vars['range']['buffer_server'] = ([1, 15], 'int') 
-    vars['range']['buffer_user1'] = ([1, 15], 'int')
-    vars['range']['buffer_user2'] = ([1, 15], 'int')
+    for node in range(NLEAF_NODES):
+        vars['range'][f'bright_state_{node}'] = ([0.001, .1], 'float') 
+    for node in range(NLEAF_NODES):
+        vars['range'][f'buffer_{node}'] = ([1, 15], 'int') 
 
     max_time= MAX_TIME * 3600 # in sec
 
