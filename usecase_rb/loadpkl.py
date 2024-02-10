@@ -16,7 +16,7 @@ plt.style.use("seaborn-v0_8-paper")
 plt.rcParams.update({
     'text.usetex': True,
     'font.family': 'serif',
-    'font.size': 12,  
+    'font.size': 40,  
 })
 
 import warnings
@@ -103,23 +103,22 @@ dfs_obj = []
 for df in dfs:
     dfs_obj.append(df[['index', 'Objective', 'Method']])
 dfs = pd.concat(dfs_obj)
-dfs['# Optimization steps'] = dfs['index']
+dfs['\# Optimization steps'] = dfs['index']
 
 fig, ax = plt.subplots()
-g = sns.lineplot(data = dfs, x='# Optimization steps', y='Objective', hue='Method', style='Method', markers='^') 
+g = sns.lineplot(data = dfs, x='\# Optimization steps', y='Objective', hue='Method', style='Method', markers='^', markersize=5) 
 plt.title(f'Quantum Network with {nnodes}')
-plt.gcf().set_size_inches(15,7)
 handles, labels = ax.get_legend_handles_labels()
 ax.legend(handles=handles, labels=labels)
 ax.legend(fancybox=True, framealpha=0.5)
 ax.legend(loc='upper right')
 plt.grid()
 plt.tight_layout()
-plt.show()
+plt.savefig('test.pdf', dpi=100)
 
-df_sur_X_plot = df_sur_X.drop(['penalty'], axis=1).melt('Iteration', var_name='Node', value_name='Buffer size')
-fig, ax = plt.subplots()
-g = sns.lineplot(data = df_sur_X_plot, x='Iteration', y='Buffer size', hue='Node', style='Node', markers='^')
-plt.grid()
-plt.show()
+# df_sur_X_plot = df_sur_X.drop(['penalty'], axis=1).melt('Iteration', var_name='Node', value_name='Buffer size')
+# fig, ax = plt.subplots()
+# g = sns.lineplot(data = df_sur_X_plot, x='Iteration', y='Buffer size', hue='Node', style='Node', markers='^')
+# plt.grid()
+# plt.show()
 
