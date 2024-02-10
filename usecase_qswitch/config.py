@@ -97,7 +97,8 @@ def simwrapper(simulation, kwargs: dict):
     rates, fidelities, shares_per_node = simulation(**kwargs)
     rates = np.array(rates)
     rates_per_node = ((shares_per_node.T * rates).T) * kwargs['connect_size']
-    rates_per_node.columns = pd.Series(range(0,NLEAF_NODES))
+    print(rates_per_node)
+    rates_per_node.columns = pd.Series(range(NLEAF_NODES))
     rates_per_node = rates_per_node.add_prefix('R_')
     route_rates = rates_per_node.add(rates_per_node['R_0']/
                                      kwargs['connect_size'], axis=0).drop(['R_0'], axis=1)
@@ -109,5 +110,4 @@ def simwrapper(simulation, kwargs: dict):
 
     U_D = U_Ds.mean(axis=0).values
     U_D_std = U_Ds.std(axis=0).values
-    print(U_D, U_D_std)
     return U_D, U_D_std
