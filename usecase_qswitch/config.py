@@ -96,7 +96,6 @@ def simwrapper(simulation, kwargs: dict):
     
     # run simulation
     rates, fidelities, shares_per_node = simulation(**kwargs)
-    print(shares_per_node)
     rates = np.array(rates)
     rates_per_node = ((shares_per_node.T * rates).T) * kwargs['connect_size']
     rates_per_node.columns = [''.join(re.findall(r'\d+', s)) for s in rates_per_node.columns]
