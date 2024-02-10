@@ -11,6 +11,7 @@ sys.path.append('../')
 
 import pickle, time
 import copy
+import re
 from datetime import datetime
 from functools import partial, wraps
 import numpy as np
@@ -98,12 +99,14 @@ def simwrapper(simulation, kwargs: dict):
     print(shares_per_node)
     rates = np.array(rates)
     rates_per_node = ((shares_per_node.T * rates).T) * kwargs['connect_size']
-    rates_per_node.columns = pd.Series(range(NLEAF_NODES))
+    rates_per_node.columns = [''.join(re.findall(r'\d+', s)) for s in rates_per_node.columns]
     rates_per_node = rates_per_node.add_prefix('R_')
     route_rates = rates_per_node.add(rates_per_node['R_0']/
                                      kwargs['connect_size'], axis=0).drop(['R_0'], axis=1)
 
     # Distillable Entanglement (see definition vardoyan et al.)
+    print(route_rates)
+    print(fidelities)
     Ds = fidelities.applymap(D_H)
     U_Ds = pd.DataFrame(route_rates.values*Ds.values, columns=fidelities.columns,
                         index=fidelities.index).applymap(np.log)

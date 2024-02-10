@@ -108,9 +108,9 @@ def collect_results(sm, scenario, nnodes):
     share_per_node = pd.DataFrame.from_records(share_per_node)
     share_per_node = share_per_node.reindex(sorted(share_per_node.columns,
                                                    key=lambda x: int(re.search('_([0-9]+)', x).group(1))), axis=1)
-    bool_involved = np.array([any(share_per_node.columns.str.contains(str(node))) for node in range(nnodes)])
-    for node_not_involved in np.array(range(nnodes))[~bool_involved]:
-        share_per_node[f'leaf_node_{node_not_involved}'] = 0
+    # bool_involved = np.array([any(share_per_node.columns.str.contains(str(node))) for node in range(nnodes)])
+    # for node_not_involved in np.array(range(nnodes))[~bool_involved]:
+    #     share_per_node[f'leaf_node_{node_not_involved}'] = 0
     share_per_node = share_per_node.add_prefix('% ')
     fidelities_per_route = pd.DataFrame.from_records(fidels_per_route)
     return rates, fidelities_per_route, share_per_node
