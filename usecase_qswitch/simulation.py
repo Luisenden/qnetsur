@@ -74,7 +74,7 @@ def simulation_qswitch(nnodes, total_runtime_in_seconds, connect_size, server_no
     sm = SimulationMultiple(simulation=simulation, number_of_runs=N)
     sm.run()
     # get results
-    rates, fidelities_per_route, share_per_node = collect_results(sm=sm, scenario=scenario)
+    rates, fidelities_per_route, share_per_node = collect_results(sm=sm, scenario=scenario, nnodes=nnodes)
     if ret is 'default':
         return np.array(rates), fidelities_per_route, share_per_node
     else:
