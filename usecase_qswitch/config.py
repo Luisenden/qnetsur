@@ -105,11 +105,14 @@ def simwrapper(simulation, kwargs: dict):
                                      kwargs['connect_size'], axis=0).drop(['R_0'], axis=1)
 
     # Distillable Entanglement (see definition vardoyan et al.)
-    print(route_rates)
-    print(fidelities)
     Ds = fidelities.applymap(D_H)
     U_Ds = pd.DataFrame(route_rates.values*Ds.values, columns=fidelities.columns,
                         index=fidelities.index).applymap(np.log)
+
+    print('U_Ds:', U_Ds)
+    bool_involved = np.array([any(U_Ds.columns.str.contains(str(node))) for node in range(NLEAF_NODES)])
+    for node_not_involved in np.array(range(NLEAF_NODES))[~bool_involved]:
+        U_Ds[f'F_leaf_node_{node_not_involved}'] = -100
 
     U_D = U_Ds.mean(axis=0).values
     U_D_std = U_Ds.std(axis=0).values
