@@ -15,7 +15,7 @@ from  matplotlib.ticker import FuncFormatter
 plt.style.use('seaborn')
 
 
-folder = 'qswitch_3nodes_3alphas'
+folder = 'qswitch_3nodes_3alphas_buffers_3h'
 
 
 axs = []
@@ -23,7 +23,7 @@ for name in glob.glob(f'../../surdata/{folder}/AX_*.pkl'):
     with open(name,'rb') as file: axs.append(pickle.load(file))
 
 surs = []
-for name in glob.glob(f'../../surdata/{folder}/SU_*.pkl'): #Sur_qswitch_nleafnodes{nnodes}_{time}*'):
+for name in glob.glob(f'../../surdata/{folder}/SU_*.pkl'): 
     with open(name,'rb') as file: surs.append(pickle.load(file))
 
 sas = []
@@ -96,8 +96,7 @@ dfs['Objective'] = dfs['Objective']
 dfs['# Optimization steps'] = dfs['index']
 
 fig, ax = plt.subplots()
-g = sns.lineplot(data = dfs, x='# Optimization steps', y='Objective', hue='Method', style='Method', markers='^') # plot the Number of Neighbours for all methods
-#g = sns.lineplot(data = dfs, x=r'# Optimization steps', y='Capacity', hue='Method', style='Method', markers='^') 
+g = sns.lineplot(data = dfs[dfs['Objective']>0], x='# Optimization steps', y='Objective', hue='Method', style='Method', markers='^') 
 plt.title(f'Quantum Switch with {nnodes} leaf nodes')
 plt.gcf().set_size_inches(15,7)
 g.grid(which='major', color='w', linewidth=1.0)

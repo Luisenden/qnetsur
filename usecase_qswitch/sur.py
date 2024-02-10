@@ -17,7 +17,7 @@ if __name__ == '__main__':
             'loss': 1, # loss parameter
             'T2': 0,
             'include_classical_comm': False,
-            'num_positions': 100,
+            'num_positions': 300,
             'decoherence_rate': 0,
             'N': 10 # batch size 
         }
