@@ -174,7 +174,6 @@ def simulation_rb(network_config_file, cavity, total_time, N, mem_size):
         set_parameters(cavity=cavity, network_topo=network_topo)
         try:
             df = run(network_topo,n)
-
             completed_requests_per_node = df.groupby('Initiator').size()
             res = np.zeros(len(nodes))
             for i,node in enumerate(nodes):

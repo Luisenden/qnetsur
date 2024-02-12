@@ -253,7 +253,7 @@ class Surrogate(Simulation):
         Computes n new data points according to estimated improvement 
         and degree of exploration and adds the data to the training sample.
         """
-        y_obj_vec = np.array(self.y).sum(axis=1)
+        y_obj_vec = np.sum(self.y, axis=1)
         newx = []
         top_selection = self.X_df.iloc[np.argsort(y_obj_vec)[-n:]]  # select top n candidates
         for x in top_selection.iloc:  # get most promising neighbor according to surrogate
@@ -309,6 +309,8 @@ class Surrogate(Simulation):
         self.mmodel = MultiOutputRegressor(self.model())
         self.mmodel_std = MultiOutputRegressor(self.model())
 
+        self.y = np.nan_to_num(self.y, copy=True, nan=np.min(self.y), posinf=np.min(self.y), neginf=np.min(self.y))
+        self.y_std = np.nan_to_num(self.y_std, copy=True, nan=0, posinf=0, neginf=0)
         self.mmodel.fit(self.X_df.drop('Iteration', axis=1).values, self.y)
         self.mmodel_std.fit(self.X_df.drop('Iteration', axis=1).values, self.y_std)
         self.build_time.append(time.time()-start)
@@ -364,6 +366,8 @@ class Surrogate(Simulation):
         self.mmodel = MultiOutputRegressor(self.model())
         self.mmodel_std = MultiOutputRegressor(self.model())
 
+        self.y = np.nan_to_num(self.y, copy=True, nan=np.min(self.y), posinf=np.min(self.y), neginf=np.min(self.y))
+        self.y_std = np.nan_to_num(self.y_std, copy=True, nan=0, posinf=0, neginf=0)
         self.mmodel.fit(self.X_df.drop('Iteration', axis=1).values, self.y)
         self.mmodel_std.fit(self.X_df.drop('Iteration', axis=1).values, self.y_std)
         
