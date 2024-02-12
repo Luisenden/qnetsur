@@ -291,6 +291,8 @@ class Surrogate(Simulation):
             self.y_raw += yi_raw
 
         # train/update surrogate model
+        self.y = np.nan_to_num(self.y, copy=True, nan=np.min(self.y), posinf=np.min(self.y), neginf=np.min(self.y)).tolist()
+        self.y_std = np.nan_to_num(self.y_std, copy=True, nan=0, posinf=0, neginf=0).tolist()
         score_svr = cross_val_score(MultiOutputRegressor(SVR()),
                                     self.X_df.drop('Iteration', axis=1).values,
                                     self.y, scoring=make_scorer(mean_absolute_error)).mean()
@@ -309,8 +311,6 @@ class Surrogate(Simulation):
         self.mmodel = MultiOutputRegressor(self.model())
         self.mmodel_std = MultiOutputRegressor(self.model())
 
-        self.y = np.nan_to_num(self.y, copy=True, nan=np.min(self.y), posinf=np.min(self.y), neginf=np.min(self.y)).tolist()
-        self.y_std = np.nan_to_num(self.y_std, copy=True, nan=0, posinf=0, neginf=0).tolist()
         self.mmodel.fit(self.X_df.drop('Iteration', axis=1).values, self.y)
         self.mmodel_std.fit(self.X_df.drop('Iteration', axis=1).values, self.y_std)
         self.build_time.append(time.time()-start)
@@ -347,6 +347,9 @@ class Surrogate(Simulation):
             self.y_std.append(yi_std)
             self.y_raw += yi_raw
 
+
+        self.y = np.nan_to_num(self.y, copy=True, nan=np.min(self.y), posinf=np.min(self.y), neginf=np.min(self.y)).tolist()
+        self.y_std = np.nan_to_num(self.y_std, copy=True, nan=0, posinf=0, neginf=0).tolist()
         score_svr = cross_val_score(MultiOutputRegressor(SVR()),
                                     self.X_df.drop('Iteration', axis=1).values,
                                     self.y, scoring=make_scorer(mean_absolute_error)).mean()
@@ -365,13 +368,6 @@ class Surrogate(Simulation):
 
         self.mmodel = MultiOutputRegressor(self.model())
         self.mmodel_std = MultiOutputRegressor(self.model())
-
-        self.y = np.nan_to_num(self.y, copy=True, nan=np.min(self.y), posinf=np.min(self.y), neginf=np.min(self.y)).tolist()
-        self.y_std = np.nan_to_num(self.y_std, copy=True, nan=0, posinf=0, neginf=0).tolist()
-        print(self.X_df.isna().sum().sum())
-        print(self.X_df)
-        print(self.y)
-        print(self.y_std)
         self.mmodel.fit(self.X_df.drop('Iteration', axis=1).values, self.y)
         self.mmodel_std.fit(self.X_df.drop('Iteration', axis=1).values, self.y_std)
         
