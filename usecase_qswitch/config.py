@@ -36,7 +36,7 @@ MAX_TIME = args.time
 SEED = args.seed
 
 np.random.seed(SEED) # set seed for optimization 
-initial_model_size = 5 # number of samples used for initial training 
+initial_model_size = 10 # number of samples used for initial training 
 
 h = lambda p: -p * np.log2(p) - (1-p) * np.log2(1-p)\
     if p > 0 and p < 1 else 0 # binary entropy
