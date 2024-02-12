@@ -309,8 +309,8 @@ class Surrogate(Simulation):
         self.mmodel = MultiOutputRegressor(self.model())
         self.mmodel_std = MultiOutputRegressor(self.model())
 
-        self.y = np.nan_to_num(self.y, copy=True, nan=np.min(self.y), posinf=np.min(self.y), neginf=np.min(self.y))
-        self.y_std = np.nan_to_num(self.y_std, copy=True, nan=0, posinf=0, neginf=0)
+        self.y = np.nan_to_num(self.y, copy=True, nan=np.min(self.y), posinf=np.min(self.y), neginf=np.min(self.y)).tolist()
+        self.y_std = np.nan_to_num(self.y_std, copy=True, nan=0, posinf=0, neginf=0).tolist()
         self.mmodel.fit(self.X_df.drop('Iteration', axis=1).values, self.y)
         self.mmodel_std.fit(self.X_df.drop('Iteration', axis=1).values, self.y_std)
         self.build_time.append(time.time()-start)
@@ -366,8 +366,8 @@ class Surrogate(Simulation):
         self.mmodel = MultiOutputRegressor(self.model())
         self.mmodel_std = MultiOutputRegressor(self.model())
 
-        self.y = np.nan_to_num(self.y, copy=True, nan=np.min(self.y), posinf=np.min(self.y), neginf=np.min(self.y))
-        self.y_std = np.nan_to_num(self.y_std, copy=True, nan=0, posinf=0, neginf=0)
+        self.y = np.nan_to_num(self.y, copy=True, nan=np.min(self.y), posinf=np.min(self.y), neginf=np.min(self.y)).tolist()
+        self.y_std = np.nan_to_num(self.y_std, copy=True, nan=0, posinf=0, neginf=0).tolist()
         self.mmodel.fit(self.X_df.drop('Iteration', axis=1).values, self.y)
         self.mmodel_std.fit(self.X_df.drop('Iteration', axis=1).values, self.y_std)
         

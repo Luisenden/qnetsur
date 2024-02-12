@@ -45,10 +45,9 @@ for sur in surs:
     df_sur_y_sum = df_sur_y.sum(axis=1)
     df_sur_y_sum.name = 'Objective'
 
-    
     mask = sur.X_df.join(df_sur_y_sum).groupby(['Iteration'])['Objective'].idxmax().values
     df_sur_y = df_sur_y.iloc[mask]
-    df_sur_y_raw = pd.DataFrame(sur.y_raw, columns=['Rates (MHz)', 'Fidelities']).iloc[mask]
+    df_sur_y_raw = pd.DataFrame(sur.y_raw, columns=['Rates', 'Fidelities']).iloc[mask]
     df_sur_y_sum = df_sur_y_sum.iloc[mask]
 
     df_sur = pd.concat([df_sur_y_sum.reset_index(drop=True), df_sur_y_raw.reset_index(drop=True)], axis=1)
@@ -82,6 +81,7 @@ df_ax['Objective'] = df_ax['evaluate']
 df_gs = pd.concat([gs[0] for gs in gss]).reset_index()
 df_gs['Objective'] = df_gs['objective'].apply(lambda x: np.sum(x))
 df_gs['Method'] = 'Random Grid Search'
+print(df_gs)
 
 df_sa = pd.concat(sas).reset_index()
 df_sa['Objective'] = df_sa['objective']
