@@ -172,13 +172,17 @@ def simulation_rb(network_config_file, cavity, total_time, N, mem_size):
         nodes = network_topo.get_nodes_by_type(RouterNetTopo.QUANTUM_ROUTER)
 
         set_parameters(cavity=cavity, network_topo=network_topo)
-        df = run(network_topo,n)
+        try:
+            df = run(network_topo,n)
 
-        completed_requests_per_node = df.groupby('Initiator').size()
-
-        res = np.zeros(len(nodes))
-        for i,node in enumerate(nodes):
-            if node.name in completed_requests_per_node: res[i] = completed_requests_per_node[node.name]
+            completed_requests_per_node = df.groupby('Initiator').size()
+            res = np.zeros(len(nodes))
+            for i,node in enumerate(nodes):
+                if node.name in completed_requests_per_node: res[i] = completed_requests_per_node[node.name]
+        except:
+            res = np.zeros(len(nodes))
+            for i,node in enumerate(nodes):
+                if node.name in completed_requests_per_node: res[i] = completed_requests_per_node[node.name]
 
         results.append(res)
         os.remove(str(proc)+'.json')

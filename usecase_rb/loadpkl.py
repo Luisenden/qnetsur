@@ -23,7 +23,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-folder = 'rb'
+folder = 'rb_N10_24h'
 
 axs = []
 for name in glob.glob(f'../../surdata/{folder}/AX_*.pkl'):
