@@ -202,20 +202,19 @@ if __name__ == "__main__":
     even = [50]*9 
     # policy 1: weighted policy of Wu et al. Table 3
     weighted = [25, 91, 67, 24, 67, 24, 103, 25, 24]
-    # policy 2: drawn from surrogate optimization results (execute sur.py EXEC TIME = 12 hours)
-    surrogate_weighted = [59, 99, 20, 19, 41, 19, 100, 65, 21]
+    # policy 2: drawn from surrogate optimization results (execute sur.py EXEC TIME = 24 hours)
+    surrogate_weighted = [5, 11, 9, 5, 9, 5, 30, 5, 5]
 
     results = {0: [], 1: [], 2: []}
     for i, policy in enumerate([even, weighted, surrogate_weighted]):
         for j in range(10):
             proc = mp.current_process().ident
-            update_memory_config(network_config_file, policy, total_time,seed=42) 
+            update_memory_config(network_config_file, policy, total_time, seed=j) 
             network_topo = RouterNetTopo(str(proc)+'.json')
             os.remove(str(proc)+'.json')
 
             set_parameters(cavity=500, network_topo=network_topo)
             nodes = network_topo.get_nodes_by_type(RouterNetTopo.QUANTUM_ROUTER)
-
             df = run(network_topo,j)
             completed_requests_per_node = df.groupby('Initiator').size()
             res = np.zeros(len(nodes))
@@ -223,9 +222,9 @@ if __name__ == "__main__":
                 if node.name in completed_requests_per_node: res[k] = completed_requests_per_node[node.name]
 
             results[i].append(sum(res))
+            print(results)
             print(f'done policy {i} iteration {j}')
 
     df = pd.DataFrame.from_records(results)
-    with open(f'../../surdata/rb/sim_policy_comparison_'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
-        pickle.dump(df, file)
+    df.to_csv('distribution-comparison.csv')
 

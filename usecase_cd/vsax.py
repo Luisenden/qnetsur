@@ -14,7 +14,7 @@ if __name__ == '__main__':
     max_time= MAX_TIME * 3600 # in sec
 
     objectives = dict()
-    objectives["mean"] = ObjectiveProperties(minimize=False)
+    objectives["evaluate"] = ObjectiveProperties(minimize=False)
 
     ax_client = AxClient(verbose_logging=False, random_seed=SEED)
     ax_client.create_experiment( # define variable parameters for simulation function

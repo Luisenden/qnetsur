@@ -3,7 +3,7 @@
     {
       "name": "NU",
       "type": "QuantumRouter",
-      "seed": 51,
+      "seed": 1,
       "memo_size": 50
     },
     {

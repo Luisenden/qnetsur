@@ -49,7 +49,7 @@ def load_from_pkl(folder):
     data = pd.DataFrame()
     data[methods[3]] = [gs[0].objective.apply(lambda x: np.sum(x)).mean() for gs in gss]
     print([gs[0].objective.apply(lambda x: np.sum(x)).mean()  for gs in gss])
-    data[methods[1]] = [np.mean(ax[0].get_trials_data_frame()['mean'])*4 for ax in axs]
+    data[methods[1]] = [np.mean(ax[0].get_trials_data_frame()['evaluate'])*4 for ax in axs]
     data[methods[0]] = [np.sum(sur.y, axis=1).mean() for sur in surs]
     data[methods[2]] = [np.mean(sa.objective) for sa in sas]
     data['folder'] = folder
