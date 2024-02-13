@@ -14,14 +14,19 @@ import matplotlib.pyplot as plt
 from  matplotlib.ticker import FuncFormatter
 
 plt.style.use("seaborn-paper")
+font = 14
 plt.rcParams.update({
     'text.usetex': True,
     'font.family': 'serif',
-    'font.size': 20
+    'font.size': font,
+    'axes.labelsize': font,  
+    'xtick.labelsize': font,  
+    'ytick.labelsize': font, 
+    'legend.fontsize': font,
+    'legend.title_fontsize': font
 })
 
-
-folders = ['qswitch_3nodes_3alphas_buffers_3h', 'qswitch_3nodes_3alphas_0.5h']
+folders = ['qswitch_3nodes_3alphas_0.5h', 'qswitch_3nodes_3alphas_buffers_3h']
 methods = ['Surrogate', 'Meta', 'Simulated Annealing', 'Gridsearch']
 
 def load_from_pkl(folder):
@@ -52,7 +57,8 @@ def load_from_pkl(folder):
 
 dfs = pd.concat([load_from_pkl(folder) for folder in folders], axis=0)
 df_plot = dfs.melt(id_vars='folder', value_name='Utility', var_name='Method')
-sns.boxplot(data=df_plot, x='folder', y='Utility', hue='Method')
+ax = sns.boxplot(data=df_plot, x='folder', y='Utility', hue='Method')
+ax.set_xticklabels(['\# users = 3', '\# users = 3\n incl. buffer'])
 plt.grid()
 plt.show()
 

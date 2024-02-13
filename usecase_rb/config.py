@@ -37,7 +37,7 @@ def simwrapper(simulation, kwargs: dict):
 vals = {
         'cavity': 500,
         'network_config_file': 'starlight.json',
-        'N': 10,
+        'N': 1,
         'total_time': 2e13
         }
 

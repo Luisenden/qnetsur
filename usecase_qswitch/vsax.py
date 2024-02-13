@@ -5,6 +5,8 @@ from ax.service.ax_client import AxClient
 def evaluate(parameters) -> float:
     x = {**vals, **parameters}
     mean_obj, std_obj, _ = simwrapper(simulation=simulation_qswitch, kwargs=x)
+    mean_obj = np.nan_to_num(mean_obj, copy=True, nan=0)
+    std_obj = np.nan_to_num(std_obj, copy=True, nan=0)
     return (np.sum(mean_obj), np.sum(std_obj))
           
 

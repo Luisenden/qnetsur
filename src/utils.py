@@ -291,8 +291,9 @@ class Surrogate(Simulation):
             self.y_raw += yi_raw
 
         # train/update surrogate model
-        current_min = np.nanmin(self.y) 
-        self.y = np.nan_to_num(self.y, copy=True, nan=current_min, posinf=current_min, neginf=current_min).tolist()
+        current_min = np.nanmin(self.y)  # nan value handling
+        self.y = np.nan_to_num(self.y, copy=True, nan=current_min,
+                               posinf=current_min, neginf=current_min).tolist()
         self.y_std = np.nan_to_num(self.y_std, copy=True, nan=0, posinf=0, neginf=0).tolist()
         score_svr = cross_val_score(MultiOutputRegressor(SVR()),
                                     self.X_df.drop('Iteration', axis=1).values,
@@ -348,8 +349,9 @@ class Surrogate(Simulation):
             self.y_std.append(yi_std)
             self.y_raw += yi_raw
 
-        current_min = np.nanmin(self.y) 
-        self.y = np.nan_to_num(self.y, copy=True, nan=current_min, posinf=current_min, neginf=current_min).tolist()
+        current_min = np.nanmin(self.y)  # nan value handling
+        self.y = np.nan_to_num(self.y, copy=True, nan=current_min,
+                               posinf=current_min, neginf=current_min).tolist()
         self.y_std = np.nan_to_num(self.y_std, copy=True, nan=0, posinf=0, neginf=0).tolist()
         score_svr = cross_val_score(MultiOutputRegressor(SVR()),
                                     self.X_df.drop('Iteration', axis=1).values,
@@ -362,7 +364,7 @@ class Surrogate(Simulation):
         self.model_scores['SVR'].append(score_svr)
         self.model_scores['DecisionTree'].append(score_tree)
 
-        if score_svr < score_tree:
+        if score_svr < score_tree:  # choose current more suited model
              self.model = SVR
         else:
              self.model = DecisionTreeRegressor
