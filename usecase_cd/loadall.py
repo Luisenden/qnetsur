@@ -13,7 +13,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from  matplotlib.ticker import FuncFormatter
 
-plt.style.use("seaborn-paper")
+plt.style.use("seaborn-v0_8-paper")
 font = 14
 plt.rcParams.update({
     'text.usetex': True,
@@ -26,7 +26,7 @@ plt.rcParams.update({
     'legend.title_fontsize': font
 })
 
-folders = ['qswitch_3nodes_3alphas_0.5h', 'qswitch_3nodes_3alphas_buffers_3h']
+folders = ['cd_23']
 methods = ['Surrogate', 'Meta', 'Simulated Annealing', 'Gridsearch']
 
 def load_from_pkl(folder):
@@ -48,7 +48,8 @@ def load_from_pkl(folder):
 
     data = pd.DataFrame()
     data[methods[3]] = [gs[0].objective.apply(lambda x: np.sum(x)).mean() for gs in gss]
-    data[methods[1]] = [np.mean(ax[0]['evaluate']) for ax in axs]
+    print([gs[0].objective.apply(lambda x: np.sum(x)).mean()  for gs in gss])
+    data[methods[1]] = [np.mean(ax[0].get_trials_data_frame()['mean'])*4 for ax in axs]
     data[methods[0]] = [np.sum(sur.y, axis=1).mean() for sur in surs]
     data[methods[2]] = [np.mean(sa.objective) for sa in sas]
     data['folder'] = folder
