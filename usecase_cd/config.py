@@ -13,7 +13,7 @@ from optimizingcd import main_cd as simulation
 # get the globals
 parser = argparse.ArgumentParser(description="Import globals")
 parser.add_argument("--topo", type=str, default='2,3', help="Network topology")
-parser.add_argument("--time", type=float, default=1, help="Maximum time allowed for optimization (in hours)")
+parser.add_argument("--time", type=float, default=0.05, help="Maximum time allowed for optimization (in hours)")
 parser.add_argument("--seed", type=int, default=42, help="Global seed for random number generation for the optimizer")
 args = parser.parse_args()
 
@@ -68,7 +68,6 @@ def simwrapper(simulation, kwargs: dict):
             q_swap.append(value)
             kwargs.pop(key)
     kwargs['q_swap'] = q_swap
-
     # run simulation
     result = simulation(**kwargs)
     mean_per_node, std_per_node = [node for node in result[1]][-1], [node for node in result[3]][-1] 
