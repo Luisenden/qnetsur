@@ -6,7 +6,7 @@ from ax.service.ax_client import AxClient, ObjectiveProperties
 def evaluate(parameters) -> float:
     x = {**vals, **parameters}
     mean_per_user_node, std_per_user_node, _ = simwrapper(simulation=simulation.simulation_cd, kwargs=x)
-    return {"mean" : (np.sum(mean_per_user_node), np.sum(std_per_user_node))}
+    return {"evaluate" : (np.sum(mean_per_user_node), np.sum(std_per_user_node))}
           
 if __name__ == '__main__':
 
