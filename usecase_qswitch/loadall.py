@@ -23,10 +23,11 @@ plt.rcParams.update({
     'xtick.labelsize': font,  
     'ytick.labelsize': font, 
     'legend.fontsize': font,
-    'legend.title_fontsize': font
+    'legend.title_fontsize': font,
+    'axes.titlesize': font+2
 })
 
-folders = ['qswitch_3nodes_3alphas_0.5h', 'qswitch_3nodes_3alphas_buffers_3h']
+folders = ['qswitch_3nodes_0.5h', 'qswitch_3nodes_buffers_3h', 'qswitch_5nodes_buffers_6h','qswitch_10nodes_buffers_12h']
 methods = ['Surrogate', 'Meta', 'Simulated Annealing', 'Gridsearch']
 
 def load_from_pkl(folder):
@@ -47,18 +48,21 @@ def load_from_pkl(folder):
         with open(name,'rb') as file: gss.append(pickle.load(file))
 
     data = pd.DataFrame()
-    data[methods[3]] = [gs[0].objective.apply(lambda x: np.sum(x)).mean() for gs in gss]
-    data[methods[1]] = [np.mean(ax[0]['evaluate']) for ax in axs]
-    data[methods[0]] = [np.sum(sur.y, axis=1).mean() for sur in surs]
-    data[methods[2]] = [np.mean(sa.objective) for sa in sas]
+    data[methods[3]] = [gs[0].objective.apply(lambda x: np.sum(x)).max() for gs in gss]
+    data[methods[2]] = [np.max(sa.objective) for sa in sas]
+    data[methods[1]] = [np.max(ax[0]['evaluate']) for ax in axs]
+    data[methods[0]] = [np.sum(sur.y, axis=1).max() for sur in surs]
     data['folder'] = folder
 
     return data
 
 dfs = pd.concat([load_from_pkl(folder) for folder in folders], axis=0)
 df_plot = dfs.melt(id_vars='folder', value_name='Utility', var_name='Method')
-ax = sns.boxplot(data=df_plot, x='folder', y='Utility', hue='Method')
-ax.set_xticklabels(['\# users = 3', '\# users = 3\n incl. buffer'])
+ax = sns.catplot(data=df_plot, x='folder', y='Utility', hue='Method')
+ax.set_xticklabels(['\# users = 3', '\# users = 3\n incl. buffer', '\# users = 5\n incl. buffer', '\# users = 10\n incl. buffer'])
+plt.title('Maximum Utility N=10')
+plt.xlabel('')
+plt.tight_layout(pad=2, rect=[0, 0, 0.75, 1])
 plt.grid()
 plt.show()
 

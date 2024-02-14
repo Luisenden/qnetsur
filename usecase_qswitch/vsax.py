@@ -26,12 +26,13 @@ if __name__ == '__main__':
         'include_classical_comm': False,
         'num_positions': 300,
         'decoherence_rate': 0,
-        'N': 10 # batch size 
+        'N': 10, # batch size
+        'buffer_size': 1
     }
     for node in range(NLEAF_NODES):
         vars['range'][f'bright_state_{node}'] = ([0.001, .1], 'float') 
-    for node in range(NLEAF_NODES):
-        vars['range'][f'buffer_{node}'] = ([1, 15], 'int') 
+    # for node in range(NLEAF_NODES):
+    #     vars['range'][f'buffer_{node}'] = ([1, 15], 'int') 
 
     max_time= MAX_TIME * 3600 # in sec
 
