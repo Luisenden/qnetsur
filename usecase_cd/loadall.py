@@ -26,7 +26,7 @@ plt.rcParams.update({
     'legend.title_fontsize': font
 })
 
-folders = ['cd_23']
+folders = ['cd_23tree_0.5h', 'cd_34tree_1h', 'cd_10square_6h']
 methods = ['Surrogate', 'Meta', 'Simulated Annealing', 'Gridsearch']
 
 def load_from_pkl(folder):
@@ -49,7 +49,7 @@ def load_from_pkl(folder):
     data = pd.DataFrame()
     data[methods[3]] = [gs[0].objective.apply(lambda x: np.sum(x)).mean() for gs in gss]
     print([gs[0].objective.apply(lambda x: np.sum(x)).mean()  for gs in gss])
-    data[methods[1]] = [np.mean(ax[0].get_trials_data_frame()['evaluate'])*4 for ax in axs]
+    data[methods[1]] = [np.mean(ax[0].get_trials_data_frame()['evaluate']) for ax in axs]
     data[methods[0]] = [np.sum(sur.y, axis=1).mean() for sur in surs]
     data[methods[2]] = [np.mean(sa.objective) for sa in sas]
     data['folder'] = folder
@@ -60,6 +60,7 @@ dfs = pd.concat([load_from_pkl(folder) for folder in folders], axis=0)
 df_plot = dfs.melt(id_vars='folder', value_name='Utility', var_name='Method')
 ax = sns.boxplot(data=df_plot, x='folder', y='Utility', hue='Method')
 ax.set_xticklabels(['\# users = 3', '\# users = 3\n incl. buffer'])
+plt.yscale('log')
 plt.grid()
 plt.show()
 

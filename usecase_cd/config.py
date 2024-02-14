@@ -35,7 +35,7 @@ vals = { # define fixed parameters for given simulation function
         'return_data':'avg', 
         'progress_bar': None,
         'total_time': 100,
-        'N_samples' : 5,
+        'N_samples' : 100,
         'p_cons': 0.1,
         'qbits_per_channel': 50,
         'cutoff': 20,
