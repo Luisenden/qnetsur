@@ -98,20 +98,3 @@ def simulated_annealing(s, MAX_TIME, temp :int = 10, beta_schedule :int = 5, see
         count += 1 
 
     return sets
-
-if __name__ == '__main__':
-
-        # user input: network topology type
-        vv = sys.argv[1]
-        v = vv.split(',') 
-
-        # user input: number of maximum iterations during optimiztion
-        MAXITER = int(sys.argv[2]) 
-
-        assert(len(v) in [1,2]), 'Argument must be given for network topology: e.g. "11" yields 11x11 square lattice, while e.g. "2,3" yields 2,3-tree network.'
-        topo = NetworkTopology((int(v[0]), ), 'square') if len(v)==1 else NetworkTopology((int(v[0]), int(v[1])), 'tree')
-
-        start = time.time()
-        s = Simulation(sim.simulation_cd, topo, vals, vars)
-        simulated_annealing(s, MAXITER=MAXITER)
-        print('total time', time.time()-start)

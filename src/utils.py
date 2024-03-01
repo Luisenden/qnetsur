@@ -2,6 +2,7 @@ import numpy as np
 import time
 import pandas as pd
 from scipy.stats import truncnorm
+from functools import partial
 
 import torch.multiprocessing as mp
 from torch.multiprocessing import Pool, set_start_method
@@ -53,7 +54,7 @@ class Simulation:
         specified variable parameters.
     """
 
-    def __init__(self, sim_wrapper, sim, vals, vars):
+    def __init__(self, sim_wrapper, sim, vals=None, vars=None):
         # specify fixed parameters
         self.vals = vals
         # specify variable parameters
@@ -62,7 +63,7 @@ class Simulation:
         self.sim_wrapper = sim_wrapper
         self.sim = sim
 
-    def run_sim(self,x :dict, vals :dict = None) -> list:
+    def run_sim(self, x :dict, vals :dict = None) -> list:
         """
         Runs the quantum network simulation with the provided parameters.
 
@@ -74,6 +75,25 @@ class Simulation:
         """
         xrun = {**self.vals, **x} if vals == None else {**vals, **x}
         res = self.sim_wrapper(self.sim, xrun)
+        return res
+
+    def run_exhaustive(self, x :dict, vals :dict = None, N=10) -> list:
+        """
+        Runs the quantum network simulation with the provided parameters N times in parallel.
+
+        Args:
+            x (dict): Parameters for the simulation.
+            N (int): batch size
+
+        Returns:
+            list: Results of the simulation.
+        """
+        xrun = {**x, **vals}
+        task = partial(self.sim_wrapper, self.sim)
+        with Pool(processes=N) as pool:
+            res = pool.map(task, [xrun for _ in range(N)])
+            pool.close()
+            pool.join()
         return res
 
     def get_random_x(self,n) -> dict:
@@ -93,21 +113,21 @@ class Simulation:
         for dim, par in self.vars['range'].items():
                 vals = par[0]
                 if par[1] == 'int':
-                    x[dim] = np.random.randint(vals[0], vals[1], n) if n > 1\
-                        else np.random.randint(vals[0], vals[1])
+                    x[dim] = config.rng_sur.integers(vals[0], vals[1], n) if n > 1\
+                        else config.rng_sur.integers(vals[0], vals[1])
                 elif par[1] == 'float':
-                    x[dim] = np.random.uniform(vals[0], vals[1], n) if n > 1\
-                        else np.random.uniform(vals[0], vals[1])
+                    x[dim] = config.rng_sur.uniform(vals[0], vals[1], n) if n > 1\
+                        else config.rng_sur.uniform(vals[0], vals[1])
                 else:
                     raise Exception('Datatype must be "int" or "float".')
 
         for dim, vals in self.vars['ordinal'].items():
-                x[dim] = np.random.choice(vals, size=n) if n > 1\
-                    else np.random.choice(vals)
+                x[dim] = config.rng_sur.choice(vals, size=n) if n > 1\
+                    else config.rng_sur.choice(vals)
                     
         for dim, vals in self.vars['choice'].items():
-                x[dim] = np.random.choice(vals, n) if n > 1\
-                    else np.random.choice(vals)       
+                x[dim] = config.rng_sur.choice(vals, n) if n > 1\
+                    else config.rng_sur.choice(vals)       
 
         return x
     
@@ -236,10 +256,10 @@ class Surrogate(Simulation):
                                       (0-loc)/std, (1-loc)/std, scale=std,
                                       loc=loc)/len(x)  # corresponding weights
                 probs /= probs.sum()  # normalize probabilities
-                x_n[dim] = np.random.choice(vals, size=size , p=probs)
+                x_n[dim] = config.rng_sur.random.choice(vals, size=size , p=probs)
 
         for dim, vals in self.vars['choice'].items():
-                x_n[dim] = np.random.choice(vals, size)
+                x_n[dim] = config.rng_sur.random.choice(vals, size)
 
         # select best prediction as neighbor
         samples_x = pd.DataFrame(x_n).astype(object)

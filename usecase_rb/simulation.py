@@ -32,7 +32,7 @@ def update_memory_config(file_path, new_memo_size, total_time,seed):
     # Call the function to update memo_size dynamically
     seeds = random.sample(range(len(data["nodes"])), len(data["nodes"])) 
     for i,node in enumerate(data["nodes"]):
-            node["memo_size"] = new_memo_size[i]
+            node["memo_size"] = int(new_memo_size[i])
             node["seed"] = seeds[i]
 
     # Write the updated JSON back to the file
@@ -109,6 +109,8 @@ def run(network_topo,n):
     apps = []
     routers = network_topo.get_nodes_by_type(RouterNetTopo.QUANTUM_ROUTER)
     router_names = [node.name for node in routers]
+    np.random.seed(n)
+    seeds = np.random.random_integers(1, 10, len(routers))
     for i, node in enumerate(routers):
         app_node_name = node.name
         others = router_names[:]
@@ -116,7 +118,7 @@ def run(network_topo,n):
         max_mem_to_reserve = len(node.get_components_by_type("MemoryArray")[0])//2
         app = RandomRequestApp(node, others,
                             min_dur=1e12, max_dur=2e12, min_size=max(1,max_mem_to_reserve-max_mem_to_reserve//2),
-                            max_size=max_mem_to_reserve, min_fidelity=0.8, max_fidelity=1.0, seed=i*n)
+                            max_size=max_mem_to_reserve, min_fidelity=0.8, max_fidelity=1.0, seed=seeds[i])
         apps.append(app)
         app.start()
 
@@ -167,33 +169,29 @@ def simulation_rb(network_config_file, cavity, total_time, N, mem_size):
     proc = mp.current_process().ident
 
     for n in range(N):
-        update_memory_config(network_config_file, mem_size, total_time,seed=n)
+        update_memory_config(network_config_file, mem_size, total_time, seed=42+n)
         network_topo = RouterNetTopo(str(proc)+'.json')
         nodes = network_topo.get_nodes_by_type(RouterNetTopo.QUANTUM_ROUTER)
 
         set_parameters(cavity=cavity, network_topo=network_topo)
-        try:
-            df = run(network_topo,n)
+
+        try: 
+            df = run(network_topo,42+n)
             completed_requests_per_node = df.groupby('Initiator').size()
             res = np.zeros(len(nodes))
             for i,node in enumerate(nodes):
                 if node.name in completed_requests_per_node: res[i] = completed_requests_per_node[node.name]
         except:
             res = np.zeros(len(nodes))
-            for i,node in enumerate(nodes):
-                if node.name in completed_requests_per_node: res[i] = completed_requests_per_node[node.name]
 
         results.append(res)
         os.remove(str(proc)+'.json')
     mean = np.mean(results, axis=0)
     std = np.std(results, axis=0)
-    print(f'mean {mean} and std {std} from proc {proc}')
     return mean, std
 
 
 if __name__ == "__main__":
-
-    import pickle
     
     network_config_file = "starlight.json"  # network configuration 
     total_time = 2e13  # total simulation time in [ps]
@@ -202,7 +200,7 @@ if __name__ == "__main__":
     even = [50]*9 
     # policy 1: weighted policy of Wu et al. Table 3
     weighted = [25, 91, 67, 24, 67, 24, 103, 25, 24]
-    # policy 2: drawn from surrogate optimization results (execute sur.py EXEC TIME = 24 hours)
+    # policy 2: drawn from surrogate optimization results (execute sur.py with EXEC TIME = 24 hours)
     surrogate_weighted = [5, 11, 9, 5, 9, 5, 30, 5, 5]
 
     results = {0: [], 1: [], 2: []}
@@ -226,5 +224,5 @@ if __name__ == "__main__":
             print(f'done policy {i} iteration {j}')
 
     df = pd.DataFrame.from_records(results)
-    df.to_csv('distribution-comparison.csv')
+    df.to_csv('distribution-policy-comparison.csv')
 

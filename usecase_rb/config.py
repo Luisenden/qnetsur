@@ -9,13 +9,14 @@ sys.path.append('../')
 
 # get the globals
 parser = argparse.ArgumentParser(description="Import globals")
-parser.add_argument("--time", type=float, default=1, help="Maximum time allowed for optimization (in hours)")
+parser.add_argument("--time", type=float, default=0.1, help="Maximum time allowed for optimization (in hours)")
 parser.add_argument("--seed", type=int, default=42, help="Global seed for random number generation for the optimizer")
 args = parser.parse_args()
 MAX_TIME = args.time
 SEED = args.seed
 
-np.random.seed(SEED) # set seed for optimization 
+
+rng_sur = np.random.default_rng(seed=SEED) # set rng for optimization 
 nnodes = 9 # number of nodes
 m_max = 110 # maximum number of memory qubits per node
 sample_size = 5 # number of samples used for the initial training of the surrogate model

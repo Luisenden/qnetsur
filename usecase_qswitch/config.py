@@ -35,7 +35,7 @@ NLEAF_NODES = args.nleaf
 MAX_TIME = args.time
 SEED = args.seed
 
-np.random.seed(SEED) # set seed for optimization 
+rng_sur = np.random.default_rng(seed=SEED) # set rng for optimization 
 initial_model_size = 10 # number of samples used for initial training 
 
 h = lambda p: -p * np.log2(p) - (1-p) * np.log2(1-p)\

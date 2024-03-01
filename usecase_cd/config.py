@@ -21,7 +21,7 @@ TOPO = args.topo
 MAX_TIME = args.time
 SEED = args.seed
 
-np.random.seed(SEED) # set seed for optimization 
+rng_sur = np.random.default_rng(seed=SEED) # set rng for optimization 
 
 class NetworkTopology: # use case specific topology class defined for convenience
     def __init__(self, size:tuple = None, name:str = None):

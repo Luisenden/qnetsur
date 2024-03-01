@@ -12,6 +12,7 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 from  matplotlib.ticker import FuncFormatter
+from cycler import cycler
 
 plt.style.use("seaborn-v0_8-paper")
 font = 14
@@ -26,7 +27,7 @@ plt.rcParams.update({
     'legend.title_fontsize': font
 })
 
-folders = ['cd_23tree_0.5h', 'cd_34tree_1h', 'cd_10square_6h']
+folders = ['cd_N10_23tree_0.2h', 'cd_N10_34tree_1h', 'cd_N10_10square_3h']
 methods = ['Surrogate', 'Meta', 'Simulated Annealing', 'Gridsearch']
 
 def load_from_pkl(folder):
@@ -47,21 +48,26 @@ def load_from_pkl(folder):
         with open(name,'rb') as file: gss.append(pickle.load(file))
 
     data = pd.DataFrame()
-    data[methods[3]] = [gs[0].objective.apply(lambda x: np.sum(x)).mean() for gs in gss]
-    print([gs[0].objective.apply(lambda x: np.sum(x)).mean()  for gs in gss])
-    data[methods[1]] = [np.mean(ax[0].get_trials_data_frame()['evaluate']) for ax in axs]
-    data[methods[0]] = [np.sum(sur.y, axis=1).mean() for sur in surs]
-    data[methods[2]] = [np.mean(sa.objective) for sa in sas]
-    data['folder'] = folder
+    data[methods[3]] = [gs[0].objective.apply(lambda x: np.sum(x)).max() for gs in gss]
+    data[methods[2]] = [np.max(sa.objective) for sa in sas]
+    data[methods[1]] = [np.max(ax[0].get_trials_data_frame()['evaluate']) for ax in axs]
+    data[methods[0]] = [np.sum(sur.y, axis=1).max() for sur in surs]
 
+    data = data/data.max().max()
+    data['folder'] = folder
     return data
 
 dfs = pd.concat([load_from_pkl(folder) for folder in folders], axis=0)
-df_plot = dfs.melt(id_vars='folder', value_name='Utility', var_name='Method')
-ax = sns.boxplot(data=df_plot, x='folder', y='Utility', hue='Method')
-ax.set_xticklabels(['\# users = 3', '\# users = 3\n incl. buffer'])
-plt.yscale('log')
+df_plot = dfs.melt(id_vars='folder', value_name='\# Virtual Neighbors', var_name='Method')
+fig, ax = plt.subplots(figsize=(10, 6))
+sns.boxplot(data=df_plot, x='folder', y='\# Virtual Neighbors', hue='Method', ax=ax, palette="Pastel1")
+sns.stripplot(x='folder', y='\# Virtual Neighbors', hue='Method', data=df_plot, jitter=True, ax=ax, dodge=True, palette='dark:#404040', alpha=0.6, legend=False)
+sns.move_legend(ax, "upper left", bbox_to_anchor=(1, 1))
+ax.set_xticklabels(['(2,3) Tree', '(3,4) Tree', '(10,10) Grid'])
+ax.set_xlabel('')
+ax.set_ylabel('VNM Ratio')
 plt.grid()
+plt.tight_layout(pad=1, rect=[0, 0, 0.75, 1])
 plt.show()
 
 # dfs = [df_sur, df_ax, df_gs, df_sa]#
