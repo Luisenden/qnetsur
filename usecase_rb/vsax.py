@@ -8,7 +8,7 @@ from simulation import *
 def evaluate(parameters) -> float:
     x = {**vals, **parameters}
     mean_obj, std_obj= simwrapper(simulation=simulation_rb, kwargs=x)
-    return (np.sum(mean_obj), np.sqrt(np.sum(np.square(std_obj), axis=1)) ) # std of sum (assuming independent trials)
+    return (np.sum(mean_obj), np.sqrt(np.sum(np.square(std_obj)))) # std of sum (assuming independent trials)
 
 
 if __name__ == '__main__':
