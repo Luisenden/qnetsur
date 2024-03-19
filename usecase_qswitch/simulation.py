@@ -4,9 +4,11 @@ import re
 import matplotlib.pyplot as plt
 import seaborn as sns
 from netsquid_qswitch.runtools import Scenario, Simulation, SimulationMultiple
+
+
 def simulation_qswitch(nnodes, total_runtime_in_seconds, connect_size, server_node_name, num_positions, 
                        buffer_size, bright_state_population, decoherence_rate, beta, loss, T2,
-                       include_classical_comm, distances, repetition_times, N, ret='default', seed=42):
+                       include_classical_comm, distances, repetition_times, N, seed=42):
     """
     Simulates a quantum switch network to evaluate its performance over a specified runtime. The simulation
     accounts for node connectivity, quantum buffer sizes, state decoherence, and other quantum mechanical properties
@@ -74,95 +76,29 @@ def simulation_qswitch(nnodes, total_runtime_in_seconds, connect_size, server_no
     sm = SimulationMultiple(simulation=simulation, number_of_runs=N)
     sm.run()
     # get results
-    rates, fidelities_per_route, share_per_node = collect_results(sm=sm, scenario=scenario)
-    if ret is 'default':
-        return np.array(rates), fidelities_per_route, share_per_node
-    else:
-        res = pd.DataFrame({'Rate [Hz]':rates})
-        res['Number of nodes'] = nnodes
-        res['B'] = buffer_size
-        res[r'$\alpha$'] = bright_state_population[0]
-        res = pd.concat([res, fidelities_per_route], axis=1)
-        return res
+    rates, fidelities_per_route = collect_results(sm=sm, scenario=scenario)
+    return rates, fidelities_per_route
     
 def collect_results(sm, scenario): 
     """
     Helper function to collect results.
     """   
-    share_per_node = []
-    rates = []
-    fidels_per_route = []
+    rates_per_node = []
+    fidels_per_node = []
     for result in sm.results:
         nodes_involved_per_run = pd.Series([x for nodes in result.nodes_involved for x in nodes])
         node_names_involved = nodes_involved_per_run.unique().tolist()
-        node_names_involved.remove(scenario.server_node_name)
-        share_involved_per_run = nodes_involved_per_run.value_counts()\
-            / scenario.total_runtime_in_seconds / result.capacity / scenario.connect_size
-        share_per_node.append( share_involved_per_run )
-        rates.append(result.capacity)
+        rate_per_node = (nodes_involved_per_run.value_counts()\
+            / scenario.total_runtime_in_seconds ).to_dict() 
+        rates_per_node.append(rate_per_node)
         fidels = {}
         for name in node_names_involved:
-            fidels['F_'+name] = np.mean([fidel for fidel, nodes_involved in
-                                         zip(result.fidelities, result.nodes_involved) if name in nodes_involved])
-        fidels_per_route.append(fidels)
-    share_per_node = pd.DataFrame.from_records(share_per_node)
-    share_per_node = share_per_node.reindex(sorted(share_per_node.columns,
-                                                   key=lambda x: int(re.search('_([0-9]+)', x).group(1))), axis=1)
+            fidelities = [fidel for fidel, nodes_involved in
+                                         zip(result.fidelities, result.nodes_involved) if name in nodes_involved]
+            fidels['F_'+name] = np.mean(fidelities)
 
-    share_per_node = share_per_node.add_prefix('% ')
-    fidelities_per_route = pd.DataFrame.from_records(fidels_per_route)
-    return rates, fidelities_per_route, share_per_node
+        fidels_per_node.append(fidels)
 
-
-if __name__ == "__main__":
-    """Simulation for getting the experimental results presented in Figure 2|d-e of
-        'Humphreys, Peter C., et al. "Deterministic delivery of remote 
-        entanglement on a quantum network." Nature 558.7709 (2018): 268-273'.
-
-        Paramter settings
-        * two users generating bipartide entanglement (via switch in the center)
-        * link efficiency (eta in Humphreys, et al.) = 8
-        * clock = 10 Hz
-        * distance between two leaf nodes = 2 meters,
-            i.e., one meter between user node and switch node
-
-    """
-    distances = [0.001, 0.001]  # in [km]
-    rep_times = [0.01, 0.01]  # in [s] 
-    vals = {  # define fixed parameters for given simulation function
-                'nnodes': 2,  # number of leaf nodes
-                'total_runtime_in_seconds': 100,  # simulation time in [s]
-                'decoherence_rate': 0, 
-                'connect_size': 2,  # size of GHZ state (2=bipartide)
-                'server_node_name': 'leaf_node_0',  # server node
-                'T2': 0,  # T2 noise when qubits are idle in memory
-                'beta': 0.2,  # loss coefficient as defined in vardoyan et al.
-                'loss': 1,  # other losses of the system (1 means no loss)
-                'include_classical_comm': False,
-                'num_positions': 9,  # number of memory positions in all nodes
-                'distances': distances,  # distances of leaf nodes to switch node
-                'repetition_times':rep_times,  # link generation rate
-                'N': 5,  # batch size 
-                'ret': 'df',  # result format
-                'seed': 42
-            }
-    
-    dfs = []
-    for alpha in np.linspace(0.001, 0.5, 20):  # different bright-state populations
-        for buffer in range(1, 6):  # vary over different buffer sizes
-            vals['bright_state_population'] = [alpha, alpha]
-            vals['buffer_size'] = buffer
-            df = simulation_qswitch(**vals)
-            print(df)
-            dfs.append(df)
-        print(f'done {alpha:.3f}')
-    df_result = pd.concat(dfs, axis=0)
-
-    # plot
-    fig, ax = plt.subplots(2, figsize=(10, 6))
-    sns.lineplot(x=r'$\alpha$', y='F_leaf_node_1', data=df_result, hue='B', ax=ax[0], marker='^')
-    ax[0].set_ylabel('Fidelity')
-    sns.lineplot(x=r'$\alpha$', y='Rate [Hz]', data=df_result, hue='B', ax=ax[1], marker='^')
-    ax[1].set_ylabel('Rate [Hz]')
-    plt.tight_layout()
-    plt.show()
+    fidelities_per_node = pd.DataFrame.from_records(fidels_per_node)
+    rates_per_node = pd.DataFrame.from_records(rates_per_node)
+    return rates_per_node, fidelities_per_node

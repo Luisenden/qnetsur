@@ -29,23 +29,23 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-folder = 'qswitch_3nodes_0.5h'
+folder = 'qswitch'
 
-axs = []
-for name in glob.glob(f'../../surdata/{folder}/AX_*.pkl'):
-    with open(name,'rb') as file: axs.append(pickle.load(file))
+# axs = []
+# for name in glob.glob(f'../../surdata/{folder}/AX_*.pkl'):
+#     with open(name,'rb') as file: axs.append(pickle.load(file))
 
 surs = []
 for name in glob.glob(f'../../surdata/{folder}/SU_*.pkl'): #Sur_qswitch_nleafnodes{nnodes}_{time}*'):
     with open(name,'rb') as file: surs.append(pickle.load(file))
 
-sas = []
-for name in glob.glob(f'../../surdata/{folder}/SA_*.pkl'):
-    with open(name,'rb') as file: sas.append(pickle.load(file))
+# sas = []
+# for name in glob.glob(f'../../surdata/{folder}/SA_*.pkl'):
+#     with open(name,'rb') as file: sas.append(pickle.load(file))
 
-gss = []
-for name in glob.glob(f'../../surdata/{folder}/GS_*.pkl'):
-    with open(name,'rb') as file: gss.append(pickle.load(file))
+# gss = []
+# for name in glob.glob(f'../../surdata/{folder}/GS_*.pkl'):
+#     with open(name,'rb') as file: gss.append(pickle.load(file))
 
 
 dfs_sur = []
@@ -69,14 +69,14 @@ df_sur['Objective Mean'] = df_sur['Utility']
 print(df_sur)
 
 
-df_ax = pd.concat([ax[0] for ax in axs]).reset_index()
-df_ax['Objective Mean'] = df_ax['evaluate']
-df_ax['Method'] = 'Meta Optimization'
-print(df_ax.columns)
+# df_ax = pd.concat([ax[0] for ax in axs]).reset_index()
+# df_ax['Objective Mean'] = df_ax['evaluate']
+# df_ax['Method'] = 'Meta Optimization'
+# print(df_ax.columns)
 
 df_plot = pd.concat([df_sur.loc[df_sur[df_sur.Trial == trial]['Utility'].idxmax()] for trial in range(10)], axis=1).T.reset_index(drop=True)
-df_plot = (1-df_plot[['bright_state_server', 'bright_state_user1', 'bright_state_user2']])
-df_plot.columns = ['Server Link', 'User 1 Link', 'User 2 Link']
+df_plot = (1-df_plot[[df_plot.columns.contains('bright_state')]])
+df_plot.columns = ['Server Link'] + [f'User {i} Link' for i in range(1,config.NLEAF_NODES)]
 
 fig, axs = plt.subplots(figsize=(20, 10))
 sns.lineplot(data=df_plot, markers='^', markersize=10)

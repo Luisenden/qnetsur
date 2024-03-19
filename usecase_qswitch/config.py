@@ -29,23 +29,23 @@ parser = argparse.ArgumentParser(description="Import globals")
 parser.add_argument("--nleaf", type=int, default=3, help="Number of leaf nodes")
 parser.add_argument("--time", type=float, default=0.1, help="Maximum time allowed for optimization (in hours)")
 parser.add_argument("--seed", type=int, default=42, help="Global seed for random number generation for the optimizer")
-args = parser.parse_args()
+args, _ = parser.parse_known_args()
 
 NLEAF_NODES = args.nleaf
 MAX_TIME = args.time
 SEED = args.seed
 
 rng_sur = np.random.default_rng(seed=SEED) # set rng for optimization 
-initial_model_size = 10 # number of samples used for initial training 
+initial_model_size = 10  # number of samples used for initial training 
 
-h = lambda p: -p * np.log2(p) - (1-p) * np.log2(1-p)\
-    if p > 0 and p < 1 else 0 # binary entropy
+
 D_H = lambda F: 1 + F*np.log2(F) + (1-F) * np.log2((1-F)/3)\
-    if F > 0.81 else 1e-4 # yield of the so-called “hashing” protocol
+    if F > 0.81 else 1e-12  # yield of the so-called “hashing” protocol
+U_D = lambda R,F: np.log(R*D_H(F))  # utility based on distillable entanglemend (as defined in Vardoyan et al.)
 
-rep_times = [10 ** -3, 10 ** -3] # repetition time in [s]
+rep_times = [10 ** -3, 10 ** -3]  # repetition time in [s]
 
- # define variables and bounds skeleton (used in executables sur.py, vsax.py etc.)
+# define variables and bounds skeleton (used in executables sur.py, vsax.py etc.)
 vars = {
     'range': {},
     'choice':{},
@@ -95,26 +95,22 @@ def simwrapper(simulation, kwargs: dict):
     kwargs['buffer_size'] = buffer_size if len(buffer_size)>1 else buffer_size[0]
     
     # run simulation
-    rates, fidelities, shares_per_node = simulation(**kwargs)
-    rates = np.array(rates)
-    rates_per_node = ((shares_per_node.T * rates).T) * kwargs['connect_size']
-    rates_per_node.columns = [''.join(re.findall(r'\d+', s)) for s in rates_per_node.columns]
-    rates_per_node = rates_per_node.add_prefix('R_')
-    route_rates = rates_per_node.add(rates_per_node['R_0']/
-                                     kwargs['connect_size'], axis=0).drop(['R_0'], axis=1)
+    rates, fidelities = simulation(**kwargs)
 
-    # Distillable Entanglement (see definition vardoyan et al.)
+    # Distillable Entanglement 
     Ds = fidelities.applymap(D_H)
-    U_Ds = pd.DataFrame(route_rates.values*Ds.values, columns=fidelities.columns,
-                        index=fidelities.index).applymap(np.log)
+    U_Ds = pd.DataFrame(rates.values*Ds.values, columns=rates.columns,
+                        index=rates.index).applymap(np.log)
 
     # Set NaN for nodes that are not involved
     bool_involved = np.array([any(U_Ds.columns.str.contains(str(node))) for node in range(1,NLEAF_NODES)])
     for node_not_involved in np.array(range(1,NLEAF_NODES))[~bool_involved]:
-        U_Ds[f'F_leaf_node_{node_not_involved}'] = np.nan
+        U_Ds[f'leaf_node_{node_not_involved}'] = np.nan
 
+
+    U_Ds = U_Ds.drop(kwargs['server_node_name'], axis=1)
     U_D = U_Ds.mean(axis=0).values
     U_D_std = U_Ds.std(axis=0).values
 
-    raw = [np.mean(rates), np.mean(fidelities)]    
+    raw = [rates.mean(axis=0).values, rates.std(axis=0).values, fidelities.mean(axis=0).values, fidelities.std(axis=0).values]
     return U_D, U_D_std, raw

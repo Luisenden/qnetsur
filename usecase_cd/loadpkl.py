@@ -20,7 +20,7 @@ def reduce_to_means_per_iteration(df, group_size):
     return pd.DataFrame(df.groupby('Iteration').mean().to_numpy(), columns=['mean']) 
 
 axs = []
-folder = 'cd_N10_34tree_1h'
+folder = 'cd_N10_21tree_0.05h'
 for name in glob.glob(f'../../surdata/{folder}/AX*'):
     with open(name,'rb') as file: axs.append(pickle.load(file))
 

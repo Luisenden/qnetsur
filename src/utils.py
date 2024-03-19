@@ -28,10 +28,10 @@ except ImportError:
 
 class Simulation:
     """
-    Provides a high-level interface for running quantum network simulations. 
+    Object to run quantum network simulations. 
     It allows for the specification of both fixed and variable simulation parameters, 
-    supports the generation of random parameter sets for exploratory simulations, and 
-    facilitates the running of simulations through a user-defined simulation function.
+    supports the generation of random parameter sets, and facilitates the running of simulations 
+    through a user-defined simulation function.
 
     Attributes
     ----------
@@ -59,8 +59,10 @@ class Simulation:
         self.vals = vals
         # specify variable parameters
         self.vars = vars
+
         # simulation function handler
         self.sim_wrapper = sim_wrapper
+        # simulation function
         self.sim = sim
 
     def run_sim(self, x :dict, vals :dict = None) -> list:
@@ -182,14 +184,11 @@ class Surrogate(Simulation):
     procs : int
         Number of processes to use for parallel simulations,
         based on CPU count.
-    improvement : list
-        Record of improvements in objective function
-        value after each optimization step.
 
     Methods
     -------
     get_neighbour(max_time, current_time, x)
-        Generates a neighboring set of parameters based on current optimization state.
+        Generates a neighbouring set of parameters based on current optimization state.
     acquisition(max_time, current_time)
         Selects new parameters for evaluation by balancing exploration and exploitation.
     update()
@@ -200,14 +199,14 @@ class Surrogate(Simulation):
     def __init__(self, sim_wrapper, sim, vals, vars, sample_size, k=4):
         super().__init__(sim_wrapper, sim, vals, vars)
 
-        # profiling storage
+        # storage for time profiling
         self.sim_time = []
         self.build_time = []
+        self.acquisition_time = []
         self.optimize_time = []
 
-        # multiprocessing
+        # set multiprocessing
         self.procs = mp.cpu_count()
-        print(f'{self.procs} THREADS AVAILABLE.')
         self.sample_size = sample_size
         if self.procs > sample_size:
             self.procs = sample_size
@@ -215,20 +214,19 @@ class Surrogate(Simulation):
         # storage target value
         self.y = []
         self.y_std = []
+    
+        # storage raw values
         self.y_raw = []
 
-        # model declaration
+        # storage model declaration
         self.model = SVR
         self.model_scores = {'SVR': [], 'DecisionTree': []}
-        self.k = k  # coefficient in neighbor selection
-
-        # improvement storage
-        self.improvement = []
+        self.k = k  # coefficient in neighbour selection
 
     def get_neighbour(self, max_time, current_time, x :dict) -> dict:
         """
-        Generates most promising parameters in limited neighboring region for the simulation
-        according to current knowledge of surrogate model.
+        Generates most promising parameters in limited neighbouring region 
+        according to current knowledge of surrogate model and depending on time remaining.
         """
         x_n = {}
         f = (1-np.log(1+current_time/max_time)**2)**self.k
@@ -248,7 +246,7 @@ class Surrogate(Simulation):
                     raise Exception('Datatype must be "int" or "float".')
 
         for dim, vals in self.vars['ordinal'].items():
-                pos = x[dim] # current position
+                pos = x[dim]  # current position
                 loc = vals.index(pos)/len(vals)  # corresponding location between 0 and 1
                 pval = np.linspace(0,1,len(vals))
                 std = f/2
@@ -261,7 +259,7 @@ class Surrogate(Simulation):
         for dim, vals in self.vars['choice'].items():
                 x_n[dim] = config.rng_sur.random.choice(vals, size)
 
-        # select best prediction as neighbor
+        # select best prediction as neighbour
         samples_x = pd.DataFrame(x_n).astype(object)
         samples_y = self.mmodel.predict(samples_x.values)
         fittest_neighbour_index = np.argsort(np.array(samples_y).sum(axis=1))[-1]
@@ -273,35 +271,26 @@ class Surrogate(Simulation):
         Computes n new data points according to estimated improvement 
         and degree of exploration and adds the data to the training sample.
         """
+        start = time.time()
         y_obj_vec = np.sum(self.y, axis=1)
         newx = []
         top_selection = self.X_df.iloc[np.argsort(y_obj_vec)[-n:]]  # select top n candidates
-        for x in top_selection.iloc:  # get most promising neighbor according to surrogate
+        for x in top_selection.iloc:  # get most promising neighbour according to surrogate
             neighbour = self.get_neighbour(max_time=max_time,
                                            current_time=current_time,
                                            x=x.to_dict())
             newx.append(neighbour)
         self.X_df_add = pd.DataFrame.from_records(newx).astype(object)
+        self.acquisition_time.append(time.time()-start)       
 
-    def update(self, counter, n=10) -> None:
-        """
-        Updates the model with new data.
-        """
+
+    def run_multiple_and_add_target_values(self, X, n=10) -> None:
         start = time.time()
         with Pool(processes=n) as pool:
-            y_temp = pool.map(self.run_sim, self.X_df_add.iloc)
+            y_temp = pool.map(self.run_sim, X)
             pool.close()
             pool.join()
-        self.sim_time.append(time.time() - start)
-
-        # calculate improvement of new data point to previous best observed point
-        impr = np.max([np.mean(y_i[0]) for y_i in y_temp])-np.max([np.mean(y_i) for y_i in self.y])
-        self.improvement.append(impr)
-
-        # build surrogate model
-        start = time.time()
-        self.X_df_add['Iteration'] = counter
-        self.X_df = pd.concat([self.X_df, self.X_df_add], axis=0, ignore_index=True)
+        self.sim_time.append(time.time() - start)  # measure simulation time
 
         # add new data
         for y_i in y_temp:
@@ -309,20 +298,27 @@ class Surrogate(Simulation):
             self.y.append(yi)
             self.y_std.append(yi_std)
             self.y_raw += yi_raw
+    
 
-        # train/update surrogate model
+    def train_models(self) -> None:
+        """
+        Trains the machine lerning models on current data set
+        and chooses the one with smaller error to use for prediction.
+        """
+        # train/update surrogate models
+        start = time.time()
         current_min = np.nanmin(self.y)  # nan value handling
         self.y = np.nan_to_num(self.y, copy=True, nan=current_min,
                                posinf=current_min, neginf=current_min).tolist()
         self.y_std = np.nan_to_num(self.y_std, copy=True, nan=0, posinf=0, neginf=0).tolist()
-        score_svr = cross_val_score(MultiOutputRegressor(SVR()),
+        score_svr = cross_val_score(MultiOutputRegressor(SVR()),  # get current error of models
                                     self.X_df.drop('Iteration', axis=1).values,
                                     self.y, scoring=make_scorer(mean_absolute_error)).mean()
         score_tree = cross_val_score(MultiOutputRegressor(DecisionTreeRegressor()),
                                     self.X_df.drop('Iteration', axis=1).values,
                                     self.y, scoring=make_scorer(mean_absolute_error)).mean()
 
-        if score_svr < score_tree:
+        if score_svr < score_tree:  # set model that currently performs best (smaller error)
              self.model = SVR
         else:
              self.model = DecisionTreeRegressor
@@ -337,6 +333,23 @@ class Surrogate(Simulation):
         self.mmodel_std.fit(self.X_df.drop('Iteration', axis=1).values, self.y_std)
         self.build_time.append(time.time()-start)
 
+    def update(self, counter) -> None:
+        """
+        Updates the model with new data. Executes simulation on most promising points found and adds 
+        simulation results to training dataset.
+        """
+
+        # execute simulation and add target values
+        self.run_multiple_and_add_target_values(X=self.X_df_add.iloc)
+
+        # add parameter set
+        self.X_df_add['Iteration'] = counter
+        self.X_df = pd.concat([self.X_df, self.X_df_add], axis=0, ignore_index=True)
+
+        # train models
+        self.train_models()
+
+
     def optimize(self, max_time, verbose=False) -> None:
         """
         Conducts the optimization process to find optimal simulation parameters.
@@ -350,70 +363,33 @@ class Surrogate(Simulation):
         self.X_df = pd.DataFrame(X).astype(object)
         self.build_time.append(time.time() - start)
 
-        start = time.time() 
-        with Pool(processes=self.procs) as pool:
-            y_temp = pool.map(self.run_sim, self.X_df.iloc)
-            pool.close()
-            pool.join()
-        
+        self.run_multiple_and_add_target_values(X=self.X_df.iloc)
         self.X_df['Iteration'] = 0
-        self.sim_time.append(time.time() - start)
 
-        # train model
-        start = time.time()
+        # train models
+        self.train_models()
 
-        # add new training values
-        for y_i in y_temp:
-            yi,yi_std,*yi_raw = y_i
-            self.y.append(yi)
-            self.y_std.append(yi_std)
-            self.y_raw += yi_raw
-
-        current_min = np.nanmin(self.y)  # nan value handling
-        self.y = np.nan_to_num(self.y, copy=True, nan=current_min,
-                               posinf=current_min, neginf=current_min).tolist()
-        self.y_std = np.nan_to_num(self.y_std, copy=True, nan=0, posinf=0, neginf=0).tolist()
-        score_svr = cross_val_score(MultiOutputRegressor(SVR()),
-                                    self.X_df.drop('Iteration', axis=1).values,
-                                    self.y, scoring=make_scorer(mean_absolute_error)).mean()
-        score_tree = cross_val_score(MultiOutputRegressor(DecisionTreeRegressor()),
-                                     self.X_df.drop('Iteration', axis=1).values,
-                                     self.y, scoring=make_scorer(mean_absolute_error)).mean()
-        
-        if verbose: print(f'scores: svr = {score_svr} and tree={score_tree}')
-        self.model_scores['SVR'].append(score_svr)
-        self.model_scores['DecisionTree'].append(score_tree)
-
-        if score_svr < score_tree:  # choose current more suited model
-             self.model = SVR
-        else:
-             self.model = DecisionTreeRegressor
-
-        self.mmodel = MultiOutputRegressor(self.model())
-        self.mmodel_std = MultiOutputRegressor(self.model())
-        self.mmodel.fit(self.X_df.drop('Iteration', axis=1).values, self.y)
-        self.mmodel_std.fit(self.X_df.drop('Iteration', axis=1).values, self.y_std)
-        
-        self.build_time.append(time.time()-start)
+        # optimization
         initial_optimize_time = time.time()-optimize_start
         self.optimize_time.append(initial_optimize_time)
 
-        # optimization
         max_optimize_time = max_time - initial_optimize_time
         if verbose and max_optimize_time < 0:
             print("Initial model generated, but no time left for optimization after initial build.")
         if verbose:
             print(f'After initial build, time left for optimization: {max_optimize_time:.2f}s')
+
         current_times = []
         current_time = 0
         delta = 0
         counter = 1
         while current_time+delta < max_optimize_time:
             start = time.time()
-            self.acquisition(max_optimize_time,current_time)
-            self.optimize_time.append(time.time()-start)
 
+            self.acquisition(max_optimize_time, current_time)
             self.update(counter)
+
+            self.optimize_time.append(time.time()-start)
             current_times.append(time.time()-start)
             current_time = np.sum(current_times)
             delta = np.mean(current_times)

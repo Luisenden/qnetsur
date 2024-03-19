@@ -11,7 +11,7 @@ sys.path.append('../')
 parser = argparse.ArgumentParser(description="Import globals")
 parser.add_argument("--time", type=float, default=0.1, help="Maximum time allowed for optimization (in hours)")
 parser.add_argument("--seed", type=int, default=42, help="Global seed for random number generation for the optimizer")
-args = parser.parse_args()
+args, _ = parser.parse_known_args()
 MAX_TIME = args.time
 SEED = args.seed
 
@@ -38,7 +38,7 @@ def simwrapper(simulation, kwargs: dict):
 vals = {
         'cavity': 500,
         'network_config_file': 'starlight.json',
-        'N': 10,
+        'N': 1,
         'total_time': 2e13
         }
 
