@@ -30,7 +30,7 @@ if __name__ == '__main__':
         'N': 20, # batch size
     }
     for node in range(NLEAF_NODES):
-        vars['range'][f'bright_state_{node}'] = ([.0, .1], 'float') 
+        vars['range'][f'bright_state_{node}'] = ([1e-12, .1], 'float') 
 
     max_time= MAX_TIME * 3600 # in sec
 

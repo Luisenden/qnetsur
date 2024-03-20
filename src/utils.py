@@ -93,7 +93,7 @@ class Simulation:
         xrun = {**x, **vals}
         task = partial(self.sim_wrapper, self.sim)
         with Pool(processes=N) as pool:
-            res = pool.map(task, [xrun for _ in range(N)])
+            res = pool.map(task, [{**xrun, **{'seed': (i+1)}} for i in range(N)])
             pool.close()
             pool.join()
         return res

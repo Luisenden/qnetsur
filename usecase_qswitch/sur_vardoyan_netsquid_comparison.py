@@ -19,10 +19,10 @@ def extract_results(result:pd.DataFrame, params:list, sim:Simulation) -> None:
         best = obj_sums[best_index]
         best_std = np.sqrt(np.sum(np.square(sim.y_std), axis=1))[best_index]
         
-        best_e2e_rate = np.sum(sim.y_raw[best_index][0][1:])
-        best_e2e_rate_std = np.sqrt(np.sum(np.square(sim.y_raw[best_index][1][1:])))
-        best_e2e_fidel = np.sum(sim.y_raw[best_index][2][1:])
-        best_e2e_fidel_std = np.sqrt(np.sum(np.square(sim.y_raw[best_index][3][1:])))
+        best_e2e_rate = np.mean(sim.y_raw[best_index][0][1:])
+        best_e2e_rate_std = np.mean(sim.y_raw[best_index][1][1:])
+        best_e2e_fidel = np.mean(sim.y_raw[best_index][2][1:])
+        best_e2e_fidel_std = np.mean(sim.y_raw[best_index][3][1:])
 
         result['Utility'].append(best)
         result['Utility_std'].append(best_std)
