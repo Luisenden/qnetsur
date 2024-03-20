@@ -21,7 +21,7 @@ if __name__ == '__main__':
         'N': 20, # batch size
     }
     for node in range(NLEAF_NODES):
-        vars['range'][f'bright_state_{node}'] = ([.0, .1], 'float') 
+        vars['range'][f'bright_state_{node}'] = ([1e-12, .1], 'float') 
 
     # user input:
     max_time= MAX_TIME * 3600 # in sec
@@ -30,7 +30,7 @@ if __name__ == '__main__':
     times_tracked = [] # time tracking
     time_tracker = 0
     delta = 0
-    
+
     # do grid search until maximum time is reached
     sim = Simulation(simwrapper, simulation_qswitch, vals=vals, vars=vars)
     while time_tracker + delta < max_time:

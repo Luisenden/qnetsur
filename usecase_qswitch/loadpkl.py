@@ -73,25 +73,34 @@ def transform_result(res):
 
 def plotting(df):
     alpha = 0.3
+    size = 2
     fig, axs = plt.subplots(2,2)
-    sns.stripplot(data= df.drop('index', axis=1), x='User', y='Utility', hue='Method', ax=axs.flat[0], legend=False)
-    sns.stripplot(data= df['Aggregated Utility'].unique(), color='tab:blue', ax=axs.flat[1])
+    sns.stripplot(data= df.drop('index', axis=1), x='User', y='Utility', hue='Method', ax=axs.flat[0], legend=False, size=size, dodge=True)
     sns.boxplot(data= df.drop('index', axis=1), x='User', y='Utility', hue='Method', 
                 boxprops=dict(alpha=alpha), flierprops=dict(alpha=alpha), capprops=dict(alpha=alpha), medianprops=dict(alpha=alpha), whiskerprops=dict(alpha=alpha), ax=axs.flat[0])
-    sns.boxplot(data= df['Aggregated Utility'].unique(), color='tab:blue', 
+    
+    sns.stripplot(data= df.drop_duplicates(), x='Method', y='Aggregated Utility', ax=axs.flat[1], palette=sns.color_palette(), legend=False, size=size, dodge=True)
+    sns.boxplot(data= df.drop_duplicates(), x='Method', y='Aggregated Utility', 
             boxprops=dict(alpha=alpha), flierprops=dict(alpha=alpha), capprops=dict(alpha=alpha), medianprops=dict(alpha=alpha), whiskerprops=dict(alpha=alpha), ax=axs.flat[1])
     axs.flat[1].set_xticks([])
     axs.flat[1].set_xlabel('Aggregated Utility')
+    axs.flat[1].set_ylabel('')
 
-    sns.stripplot(data= df.drop('index', axis=1), x='User', y='Rate [Hz]', color='tab:blue', ax=axs.flat[2])
-    sns.stripplot(data= df['Aggregated Rate [Hz]'].unique(), color='tab:blue', ax=axs.flat[3])
-    sns.boxplot(data= df.drop('index', axis=1), x='User', y='Rate [Hz]', color='tab:blue', 
+    sns.stripplot(data= df.drop('index', axis=1), x='User', y='Rate [Hz]', hue='Method', ax=axs.flat[2], legend=False, size=size, dodge=True)
+    sns.boxplot(data= df.drop('index', axis=1), x='User', y='Rate [Hz]', hue='Method', 
                 boxprops=dict(alpha=alpha), flierprops=dict(alpha=alpha), capprops=dict(alpha=alpha), medianprops=dict(alpha=alpha), whiskerprops=dict(alpha=alpha), ax=axs.flat[2])
-    sns.boxplot(data= df['Aggregated Rate [Hz]'].unique(), color='tab:blue', 
+    
+    sns.stripplot(data= df.drop_duplicates(), x='Method', y='Aggregated Rate [Hz]', ax=axs.flat[3], palette=sns.color_palette(), legend=False, size=size, dodge=True)
+    sns.boxplot(data= df.drop_duplicates(), x='Method', y='Aggregated Rate [Hz]', 
             boxprops=dict(alpha=alpha), flierprops=dict(alpha=alpha), capprops=dict(alpha=alpha), medianprops=dict(alpha=alpha), whiskerprops=dict(alpha=alpha), ax=axs.flat[3])
     axs.flat[3].set_xticks([])
     axs.flat[3].set_xlabel('Aggregated Rate [Hz]')
-    plt.grid(alpha=alpha)
+    axs.flat[3].set_ylabel('')
+    
+    sns.move_legend(axs.flat[2], loc='upper right', bbox_to_anchor=(2, 1))
+    sns.move_legend(axs.flat[0], loc='upper right', bbox_to_anchor=(2, 1))
+    for ax in axs.flat:
+        ax.grid(alpha=alpha)
     plt.show()
 
 if __name__ == '__main__':

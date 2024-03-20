@@ -103,7 +103,7 @@ def simwrapper(simulation, kwargs: dict):
                         index=rates.index).applymap(np.log)
 
     # Set NaN for nodes that are not involved
-    bool_involved = np.array([any(U_Ds.columns.str.contains(str(node))) for node in range(1,NLEAF_NODES)])
+    bool_involved = np.array([any(U_Ds.columns.str.contains(str(node))) for node in range(NLEAF_NODES)])
     for node_not_involved in np.array(range(1,NLEAF_NODES))[~bool_involved]:
         U_Ds[f'leaf_node_{node_not_involved}'] = np.nan
 
