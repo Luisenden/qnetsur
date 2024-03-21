@@ -93,7 +93,7 @@ def get_best_x(df):
 
 if __name__ == '__main__':
 
-    folder = 'qswitch_'
+    folder = 'qswitch'
 
     df_sur, vals = read_in_surrogate(folder)
     df_meta = read_in_meta(folder)
@@ -106,7 +106,6 @@ if __name__ == '__main__':
         xs.append(x)  
 
     vals['N'] = 1
-    
     dfs = []
     while True:
         for x,method in zip(xs, ['Surrogate', 'Meta',
