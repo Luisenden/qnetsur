@@ -6,25 +6,7 @@ sys.path.append('../')
 sys.path.append('../src')
 from src.utils import *
 from config import *
-
-import pandas as pd
-import numpy as np
-
-import seaborn as sns
-import matplotlib.pyplot as plt
-from  matplotlib.ticker import FuncFormatter
-plt.style.use("seaborn-paper")
-font = 14
-plt.rcParams.update({
-    'text.usetex': True,
-    'font.family': 'serif',
-    'font.size': font,
-    'axes.labelsize': font,  
-    'xtick.labelsize': font,  
-    'ytick.labelsize': font, 
-    'legend.fontsize': font,
-    'legend.title_fontsize': font
-})
+from tools import *
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -32,7 +14,7 @@ warnings.filterwarnings("ignore")
 
 def read_in_surrogate(folder):
     surs = []
-    for name in glob.glob(f'../../surdata/{folder}/SU_*.pkl'): #Sur_qswitch_nleafnodes{nnodes}_{time}*'):
+    for name in glob.glob(f'../../surdata/{folder}/SU_*.pkl'): 
         with open(name,'rb') as file: surs.append(pickle.load(file))
 
     vals = surs[0].vals
@@ -54,6 +36,40 @@ def read_in_surrogate(folder):
     df = df.join(ys_std)
     return df, vals
 
+def read_in_meta(folder):
+    metas = []
+    for name in glob.glob(f'../../surdata/{folder}/AX_*.pkl'): 
+        with open(name,'rb') as file: metas.append(pickle.load(file))
+    dfs = []
+    for meta in metas:
+        dfs.append(meta[0])
+    df = pd.concat(dfs, axis=0)
+    df['Utility'] = df['evaluate']
+    return df
+
+def read_in_gridsearch(folder):
+    gss = []
+    for name in glob.glob(f'../../surdata/{folder}/GS_*.pkl'): 
+        with open(name,'rb') as file: gss.append(pickle.load(file))
+    dfs = []
+    for gs in gss:
+        dfs.append(gs[0])
+    df = pd.concat(dfs, axis=0)
+    df['Utility'] = df['objective'].apply(np.nansum)
+    return df
+
+def read_in_sa(folder):
+    gss = []
+    for name in glob.glob(f'../../surdata/{folder}/SA_*.pkl'): 
+        with open(name,'rb') as file: gss.append(pickle.load(file))
+    dfs = []
+    for gs in gss:
+        dfs.append(gs)
+    df = pd.concat(dfs, axis=0)
+    df['Utility'] = df['objective'].apply(np.nansum)
+    return df
+
+
 def transform_result(res):
     df = pd.DataFrame.from_records(res)
     df_raw = df[2].transform({i: itemgetter(i) for i in range(4)}).drop([1, 3], axis=1)
@@ -67,65 +83,49 @@ def transform_result(res):
     df = df.join(df_raw)
     df['Aggregated Utility'] = df.groupby('index')['Utility'].transform(np.sum)
     df['Aggregated Rate [Hz]'] = df.groupby('index')['Rate [Hz]'].transform(np.sum)
-    df['Mean Fidelity'] = df.groupby('index')['Fidelity'].transform(np.mean)
+    df['Fidelity Mean'] = df.groupby('index')['Fidelity'].transform(np.mean)
+    df['Fidelity Std'] = df.groupby('index')['Fidelity'].transform(np.std)
     df['User'] = df.groupby('index').cumcount()
     return df
 
-def plotting(df):
-    alpha = 0.3
-    size = 2
-    fig, axs = plt.subplots(2,2)
-    sns.stripplot(data= df.drop('index', axis=1), x='User', y='Utility', hue='Method', ax=axs.flat[0], legend=False, size=size, dodge=True)
-    sns.boxplot(data= df.drop('index', axis=1), x='User', y='Utility', hue='Method', 
-                boxprops=dict(alpha=alpha), flierprops=dict(alpha=alpha), capprops=dict(alpha=alpha), medianprops=dict(alpha=alpha), whiskerprops=dict(alpha=alpha), ax=axs.flat[0])
-    
-    sns.stripplot(data= df.drop_duplicates(), x='Method', y='Aggregated Utility', ax=axs.flat[1], palette=sns.color_palette(), legend=False, size=size, dodge=True)
-    sns.boxplot(data= df.drop_duplicates(), x='Method', y='Aggregated Utility', 
-            boxprops=dict(alpha=alpha), flierprops=dict(alpha=alpha), capprops=dict(alpha=alpha), medianprops=dict(alpha=alpha), whiskerprops=dict(alpha=alpha), ax=axs.flat[1])
-    axs.flat[1].set_xticks([])
-    axs.flat[1].set_xlabel('Aggregated Utility')
-    axs.flat[1].set_ylabel('')
-
-    sns.stripplot(data= df.drop('index', axis=1), x='User', y='Rate [Hz]', hue='Method', ax=axs.flat[2], legend=False, size=size, dodge=True)
-    sns.boxplot(data= df.drop('index', axis=1), x='User', y='Rate [Hz]', hue='Method', 
-                boxprops=dict(alpha=alpha), flierprops=dict(alpha=alpha), capprops=dict(alpha=alpha), medianprops=dict(alpha=alpha), whiskerprops=dict(alpha=alpha), ax=axs.flat[2])
-    
-    sns.stripplot(data= df.drop_duplicates(), x='Method', y='Aggregated Rate [Hz]', ax=axs.flat[3], palette=sns.color_palette(), legend=False, size=size, dodge=True)
-    sns.boxplot(data= df.drop_duplicates(), x='Method', y='Aggregated Rate [Hz]', 
-            boxprops=dict(alpha=alpha), flierprops=dict(alpha=alpha), capprops=dict(alpha=alpha), medianprops=dict(alpha=alpha), whiskerprops=dict(alpha=alpha), ax=axs.flat[3])
-    axs.flat[3].set_xticks([])
-    axs.flat[3].set_xlabel('Aggregated Rate [Hz]')
-    axs.flat[3].set_ylabel('')
-    
-    sns.move_legend(axs.flat[2], loc='upper right', bbox_to_anchor=(2, 1))
-    sns.move_legend(axs.flat[0], loc='upper right', bbox_to_anchor=(2, 1))
-    for ax in axs.flat:
-        ax.grid(alpha=alpha)
-    plt.show()
+def get_best_x(df):
+    return df.iloc[df['Utility'].idxmax()][df.columns.str.contains('bright_state')]
 
 if __name__ == '__main__':
 
     folder = 'qswitch'
-    df, vals = read_in_surrogate(folder=folder)
+
+    df_sur, vals = read_in_surrogate(folder)
+    df_meta = read_in_meta(folder)
+    df_sa = read_in_sa(folder)
+    df_gs = read_in_gridsearch(folder)
+
+    xs = []
+    for df in [df_sur, df_meta, df_sa, df_gs]:
+        x = get_best_x(df)  
+        xs.append(x)  
+
     vals['N'] = 1
-    x = df.iloc[df['Utility'].idxmax()][df.columns.str.contains('bright_state')]
-    sim = Simulation(simwrapper, simulation_qswitch)
-    res = sim.run_exhaustive(x=x, vals=vals, N=3)
+    
+    dfs = []
+    for x,method in zip(xs, ['Surrogate', 'Meta',
+                              'Simulated Annealing', 'Random Gridsearch']):
+        sim = Simulation(simwrapper, simulation_qswitch)
+        res = sim.run_exhaustive(x=x, vals=vals, N=3)
+        df = transform_result(res)
+        df['Method'] = method
+        dfs.append(df)
+    
 
-    x.update({'bright_state_0': 0.01})
-    sim = Simulation(simwrapper, simulation_qswitch)
-    res1 = sim.run_exhaustive(x=x, vals=vals, N=3)
+    df_plot = pd.concat(dfs, axis=0).dropna()
+    df_plot = df_plot.round(6)
 
-    df = transform_result(res)
-    df1 = transform_result(res1)
+    df_plot.to_csv('../../surdata/qswitch/Results_qswitch_5users_T30min.csv')
+    # df_plott = pd.read_csv('Results_qswitch_5users_T30min.csv')
 
-    df['Method'] = 'Surrogate'
-    df1['Method'] = 'Test'
+    # print(df_plott)
 
-    df = pd.concat([df, df1], axis=0)
-    print(df)
-
-    plotting(df)
+    # plotting(df_plott)
     
     
 
