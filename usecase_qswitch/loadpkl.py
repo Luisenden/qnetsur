@@ -93,7 +93,7 @@ def get_best_x(df):
 
 if __name__ == '__main__':
 
-    folder = 'qswitch'
+    folder = 'qswitch_'
 
     df_sur, vals = read_in_surrogate(folder)
     df_meta = read_in_meta(folder)
@@ -108,20 +108,24 @@ if __name__ == '__main__':
     vals['N'] = 1
     
     dfs = []
-    for x,method in zip(xs, ['Surrogate', 'Meta',
-                              'Simulated Annealing', 'Random Gridsearch']):
-        sim = Simulation(simwrapper, simulation_qswitch)
-        res = sim.run_exhaustive(x=x, vals=vals, N=1000)
-        df = transform_result(res)
-        df['Method'] = method
-        dfs.append(df)
+    while True:
+        for x,method in zip(xs, ['Surrogate', 'Meta',
+                                'Simulated Annealing', 'Random Gridsearch']):
+            sim = Simulation(simwrapper, simulation_qswitch)
+            res = sim.run_exhaustive(x=x, vals=vals, N=mp.cpu_count())
+            df = transform_result(res)
+            df['Method'] = method
+            dfs.append(df)
+        if len(dfs)*mp.cpu_count() > 4000:
+            break
     
 
     df_plot = pd.concat(dfs, axis=0).dropna()
     df_plot = df_plot.round(6)
 
     df_plot.to_csv('../../surdata/qswitch/Results_qswitch_5users_T30min.csv')
-    # df_plott = pd.read_csv('Results_qswitch_5users_T30min.csv')
+
+    # df_plott = pd.read_csv('../../surdata/qswitch/Results_qswitch_5users_T30min.csv')
 
     # print(df_plott)
 

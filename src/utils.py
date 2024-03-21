@@ -219,7 +219,7 @@ class Surrogate(Simulation):
         self.y_raw = []
 
         # storage model declaration
-        self.model = SVR
+        self.model = SVR()
         self.model_scores = {'SVR': [], 'DecisionTree': []}
         self.k = k  # coefficient in neighbour selection
 
@@ -237,11 +237,11 @@ class Surrogate(Simulation):
                 if par[1] == 'int':
                     std = f * (vals[1] - vals[0])/2
                     x_n[dim] = truncnorm.rvs((vals[0] - x[dim]) / std, (vals[1] - x[dim]) / std,
-                                             loc=x[dim], scale=std, size=size).astype(int)
+                                             loc=x[dim], scale=std, size=size, random_state=config.rng_sur).astype(int)
                 elif par[1] == 'float':
                     std = f * (vals[1] - vals[0])/2
                     x_n[dim] = truncnorm.rvs((vals[0] - x[dim]) / std, (vals[1] - x[dim]) / std,
-                                             loc=x[dim], scale=std, size=size) 
+                                             loc=x[dim], scale=std, size=size, random_state=config.rng_sur) 
                 else:
                     raise Exception('Datatype must be "int" or "float".')
 
@@ -252,7 +252,7 @@ class Surrogate(Simulation):
                 std = f/2
                 probs = truncnorm.pdf(pval,
                                       (0-loc)/std, (1-loc)/std, scale=std,
-                                      loc=loc)/len(x)  # corresponding weights
+                                      loc=loc, random_state=config.rng_sur)/len(x)  # corresponding weights
                 probs /= probs.sum()  # normalize probabilities
                 x_n[dim] = config.rng_sur.random.choice(vals, size=size , p=probs)
 
@@ -314,20 +314,20 @@ class Surrogate(Simulation):
         score_svr = cross_val_score(MultiOutputRegressor(SVR()),  # get current error of models
                                     self.X_df.drop('Iteration', axis=1).values,
                                     self.y, scoring=make_scorer(mean_absolute_error)).mean()
-        score_tree = cross_val_score(MultiOutputRegressor(DecisionTreeRegressor()),
+        score_tree = cross_val_score(MultiOutputRegressor(DecisionTreeRegressor(random_state=42)),
                                     self.X_df.drop('Iteration', axis=1).values,
                                     self.y, scoring=make_scorer(mean_absolute_error)).mean()
 
         if score_svr < score_tree:  # set model that currently performs best (smaller error)
-             self.model = SVR
+             self.model = SVR()
         else:
-             self.model = DecisionTreeRegressor
+             self.model = DecisionTreeRegressor(random_state=42)
         print(f'scores: svr = {score_svr} and tree={score_tree}')
         self.model_scores['SVR'].append(score_svr)
         self.model_scores['DecisionTree'].append(score_tree)
 
-        self.mmodel = MultiOutputRegressor(self.model())
-        self.mmodel_std = MultiOutputRegressor(self.model())
+        self.mmodel = MultiOutputRegressor(self.model)
+        self.mmodel_std = MultiOutputRegressor(self.model)
 
         self.mmodel.fit(self.X_df.drop('Iteration', axis=1).values, self.y)
         self.mmodel_std.fit(self.X_df.drop('Iteration', axis=1).values, self.y_std)
@@ -350,10 +350,7 @@ class Surrogate(Simulation):
         self.train_models()
 
 
-    def optimize(self, max_time, verbose=False) -> None:
-        """
-        Conducts the optimization process to find optimal simulation parameters.
-        """
+    def gen_initial_set(self, max_time, verbose):
         if verbose: print("Start optimization ...")
         optimize_start = time.time()
         
@@ -373,20 +370,17 @@ class Surrogate(Simulation):
         initial_optimize_time = time.time()-optimize_start
         self.optimize_time.append(initial_optimize_time)
 
-        max_optimize_time = max_time - initial_optimize_time
-        if verbose and max_optimize_time < 0:
-            print("Initial model generated, but no time left for optimization after initial build.")
-        if verbose:
-            print(f'After initial build, time left for optimization: {max_optimize_time:.2f}s')
+        self.max_optimize_time = max_time - initial_optimize_time
 
+    def optimize_with_timer(self, verbose):
         current_times = []
         current_time = 0
         delta = 0
         counter = 1
-        while current_time+delta < max_optimize_time:
+        while current_time+delta < self.max_optimize_time:
             start = time.time()
 
-            self.acquisition(max_optimize_time, current_time)
+            self.acquisition(self.max_optimize_time, current_time)
             self.update(counter)
 
             self.optimize_time.append(time.time()-start)
@@ -395,8 +389,39 @@ class Surrogate(Simulation):
             delta = np.mean(current_times)
             counter +=1
             if verbose:
-                print(f'Time left for optimization: {max_optimize_time-current_time:.2f}s')
+                print(f'Time left for optimization: {self.max_optimize_time-current_time:.2f}s')
 
+    def optimize_with_iteration(self, max_iteration, verbose):
+        counter = 1
+        while counter < max_iteration:
+            start = time.time()
+
+            self.acquisition(max_iteration, counter)
+            self.update(counter)
+
+            self.optimize_time.append(time.time()-start)
+            counter +=1
+            if verbose:
+                print(f'Iteration {counter}/{max_iteration}')
+
+
+    def optimize(self, max_time, verbose=False) -> None:
+        """
+        Conducts the optimization process to find optimal simulation parameters.
+        """
+        if isinstance(max_time, float):
+            self.gen_initial_set(max_time, verbose=verbose)
+            self.optimize_with_timer(verbose=verbose)
+        
+        else:
+            self.gen_initial_set(max_time[0], verbose=verbose)
+            if max_time[1]:
+                print('Optimize with timer.')
+                self.optimize_with_timer(verbose=verbose)
+            else:
+                if verbose: print('Optimize with iterator.')
+                self.optimize_with_iteration(max_time[0], verbose=verbose)
+        
         if verbose: print('Optimization finished.')
 
 def get_parameters(variables):

@@ -59,16 +59,16 @@ def run(vars:dict, vals:dict, max_optimize_time:float, path:str, bottleneck_leng
         best_params = []
         for server_distance in np.linspace(1.5, bottleneck_length, n):
                 #instatiante surrogate model and run optimization
-                try:
-                        vals['distances'] = [server_distance, 2, 2]
-                        sim = Surrogate(simwrapper, simulation_qswitch, vals=vals, vars=vars, sample_size=initial_model_size)
-                        sim.optimize(max_time=max_optimize_time, verbose=True)
+                # try:
+                vals['distances'] = [server_distance, 2, 2]
+                sim = Surrogate(simwrapper, simulation_qswitch, vals=vals, vars=vars, sample_size=initial_model_size)
+                sim.optimize(max_time=max_optimize_time, verbose=True)
 
-                        extract_results(result, best_params, sim)
-                        result['server_distance'].append(server_distance)
-                        print(f'done server distance {server_distance}')
-                except:
-                        print(f'An exception occurred at server distance {server_distance}')
+                extract_results(result, best_params, sim)
+                result['server_distance'].append(server_distance)
+                print(f'done server distance {server_distance}')
+                # except:
+                        # print(f'An exception occurred at server distance {server_distance}')
         
         df_params = pd.DataFrame.from_records(best_params)
         df_result = pd.DataFrame.from_records(result)
@@ -83,7 +83,7 @@ def run(vars:dict, vals:dict, max_optimize_time:float, path:str, bottleneck_leng
 if __name__ == '__main__':
 
         storage_path='examples/'  # storage path
-        max_time=MAX_TIME * 3600  # maximum allowed optimization time in [s]
+        max_time_or_iteration =[20, 0]  # maximum allowed optimization time in [s] [*, 1] or number of iterations [*, 0]
 
         vals = {  # define fixed parameters for given simulation function
             'nnodes': NLEAF_NODES,
@@ -98,12 +98,12 @@ if __name__ == '__main__':
             'include_classical_comm': False,
             'num_positions': 200,
             'repetition_times': [10 ** -3] * NLEAF_NODES, # repetition time in [s]
-            'N': 20 # batch size 
+            'N': 10 # batch size 
         }
         vars['range']['bright_state_server'] = ([.0, .1], 'float') 
         vars['range']['bright_state_user'] = ([.0, .1], 'float')
 
         # optimize at different bottleneck-link lengths (1-100km)
-        df = run(vars=vars, vals=vals, max_optimize_time=max_time, path=storage_path, bottleneck_length=100, n=10)
+        df = run(vars=vars, vals=vals, max_optimize_time=max_time_or_iteration, path=storage_path, bottleneck_length=100, n=3)
 
 
