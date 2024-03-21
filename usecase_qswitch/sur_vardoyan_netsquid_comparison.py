@@ -83,7 +83,7 @@ def run(vars:dict, vals:dict, max_optimize_time:float, path:str, bottleneck_leng
 if __name__ == '__main__':
 
         storage_path='examples/'  # storage path
-        max_time_or_iteration =[20, 0]  # maximum allowed optimization time in [s] [*, 1] or number of iterations [*, 0]
+        max_time_or_iteration =[30, 0]  # maximum allowed optimization time in seconds [*, 1] or number of iterations [*, 0]
 
         vals = {  # define fixed parameters for given simulation function
             'nnodes': NLEAF_NODES,
@@ -98,12 +98,12 @@ if __name__ == '__main__':
             'include_classical_comm': False,
             'num_positions': 200,
             'repetition_times': [10 ** -3] * NLEAF_NODES, # repetition time in [s]
-            'N': 10 # batch size 
+            'N': 20 # batch size 
         }
         vars['range']['bright_state_server'] = ([.0, .1], 'float') 
         vars['range']['bright_state_user'] = ([.0, .1], 'float')
 
         # optimize at different bottleneck-link lengths (1-100km)
-        df = run(vars=vars, vals=vals, max_optimize_time=max_time_or_iteration, path=storage_path, bottleneck_length=100, n=3)
+        df = run(vars=vars, vals=vals, max_optimize_time=max_time_or_iteration, path=storage_path, bottleneck_length=100, n=10)
 
 

@@ -106,27 +106,36 @@ if __name__ == '__main__':
         xs.append(x)  
 
     vals['N'] = 1
+    nprocs = mp.cpu_count()
+
     dfs = []
+    seed_count = 1
     while True:
         for x,method in zip(xs, ['Surrogate', 'Meta',
                                 'Simulated Annealing', 'Random Gridsearch']):
             sim = Simulation(simwrapper, simulation_qswitch)
-            res = sim.run_exhaustive(x=x, vals=vals, N=mp.cpu_count())
+            res = sim.run_exhaustive(x=x, vals=vals, N=nprocs, seed=seed_count)
             df = transform_result(res)
             df['Method'] = method
             dfs.append(df)
-        if len(dfs)*mp.cpu_count() > 4000:
+        seed_count += 1
+        if len(dfs)*nprocs > 4000:
             break
     
 
     df_plot = pd.concat(dfs, axis=0).dropna()
     df_plot = df_plot.round(6)
 
-    df_plot.to_csv('../../surdata/qswitch/Results_qswitch_5users_T30min.csv')
+    df_plot.to_csv('../../surdata/qswitch/Results_qswitch_5users_T30min.csv') 
 
     # df_plott = pd.read_csv('../../surdata/qswitch/Results_qswitch_5users_T30min.csv')
+    # df_plott = df_plott[df_plott.Method!='Random Gridsearch']
+    # df_plott = df_plott.round(6)
+    # df_plott = df_plott.drop_duplicates()
 
-    # print(df_plott)
+    # # print(df_plott.head(50))
+    # print(df_plott.shape)
+    # print(df_plott.drop_duplicates().shape)
 
     # plotting(df_plott)
     

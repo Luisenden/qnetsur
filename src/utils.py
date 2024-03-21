@@ -79,7 +79,7 @@ class Simulation:
         res = self.sim_wrapper(self.sim, xrun)
         return res
 
-    def run_exhaustive(self, x :dict, vals :dict = None, N=10) -> list:
+    def run_exhaustive(self, x :dict, vals :dict = None, N=10, seed=42) -> list:
         """
         Runs the quantum network simulation with the provided parameters N times in parallel.
 
@@ -93,7 +93,7 @@ class Simulation:
         xrun = {**x, **vals}
         task = partial(self.sim_wrapper, self.sim)
         with Pool(processes=N) as pool:
-            res = pool.map(task, [{**xrun, **{'seed': (i+1)}} for i in range(N)])
+            res = pool.map(task, [{**xrun, **{'seed': (i+1)*seed}} for i in range(N)])
             pool.close()
             pool.join()
         return res

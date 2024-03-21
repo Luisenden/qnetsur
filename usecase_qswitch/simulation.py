@@ -72,6 +72,7 @@ def simulation_qswitch(nnodes, total_runtime_in_seconds, connect_size, server_no
                         loss=loss,
                         decoherence_rate=decoherence_rate,
                         include_classical_comm=include_classical_comm)
+
     simulation = Simulation(scenario=scenario, distances=distances, repetition_times=repetition_times, seed=seed)
     sm = SimulationMultiple(simulation=simulation, number_of_runs=N)
     sm.run()
