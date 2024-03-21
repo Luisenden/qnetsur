@@ -111,7 +111,7 @@ if __name__ == '__main__':
     for x,method in zip(xs, ['Surrogate', 'Meta',
                               'Simulated Annealing', 'Random Gridsearch']):
         sim = Simulation(simwrapper, simulation_qswitch)
-        res = sim.run_exhaustive(x=x, vals=vals, N=3)
+        res = sim.run_exhaustive(x=x, vals=vals, N=1000)
         df = transform_result(res)
         df['Method'] = method
         dfs.append(df)
