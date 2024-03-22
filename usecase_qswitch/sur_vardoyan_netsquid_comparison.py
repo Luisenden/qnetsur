@@ -82,7 +82,7 @@ def run(vars:dict, vals:dict, max_optimize_time:float, path:str, bottleneck_leng
 
 if __name__ == '__main__':
 
-        storage_path='examples/'  # storage path
+        storage_path='../../surdata/qswitch/'  # storage path
         max_time_or_iteration =[30, 0]  # maximum allowed optimization time in seconds [*, 1] or number of iterations [*, 0]
 
         vals = {  # define fixed parameters for given simulation function

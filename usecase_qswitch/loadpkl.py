@@ -6,7 +6,6 @@ sys.path.append('../')
 sys.path.append('../src')
 from src.utils import *
 from config import *
-from tools import *
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -70,7 +69,7 @@ def read_in_sa(folder):
     return df
 
 
-def transform_result(res):
+def to_dataframe(res):
     df = pd.DataFrame.from_records(res)
     df_raw = df[2].transform({i: itemgetter(i) for i in range(4)}).drop([1, 3], axis=1)
     df_raw = df_raw.applymap(lambda x: x[1:]) # ignore entry for server node
@@ -94,6 +93,7 @@ def get_best_x(df):
 if __name__ == '__main__':
 
     folder = 'qswitch'
+    result_folder = '../../surdata/qswitch/Results_qswitch_5users_T30min.csv'
 
     df_sur, vals = read_in_surrogate(folder)
     df_meta = read_in_meta(folder)
@@ -115,29 +115,17 @@ if __name__ == '__main__':
                                 'Simulated Annealing', 'Random Gridsearch']):
             sim = Simulation(simwrapper, simulation_qswitch)
             res = sim.run_exhaustive(x=x, vals=vals, N=nprocs, seed=seed_count)
-            df = transform_result(res)
+            df = to_dataframe(res)
             df['Method'] = method
             dfs.append(df)
         seed_count += 1
         if len(dfs)*nprocs > 4000:
             break
     
-
     df_plot = pd.concat(dfs, axis=0).dropna()
     df_plot = df_plot.round(6)
 
-    df_plot.to_csv('../../surdata/qswitch/Results_qswitch_5users_T30min.csv') 
-
-    # df_plott = pd.read_csv('../../surdata/qswitch/Results_qswitch_5users_T30min.csv')
-    # df_plott = df_plott[df_plott.Method!='Random Gridsearch']
-    # df_plott = df_plott.round(6)
-    # df_plott = df_plott.drop_duplicates()
-
-    # # print(df_plott.head(50))
-    # print(df_plott.shape)
-    # print(df_plott.drop_duplicates().shape)
-
-    # plotting(df_plott)
+    df_plot.to_csv(result_folder) 
     
     
 
