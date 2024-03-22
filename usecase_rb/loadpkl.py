@@ -34,7 +34,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-folder = 'rb_N10_24h'
+folder = 'rb'
 
 axs = []
 for name in glob.glob(f'../../surdata/{folder}/AX_*.pkl'):
@@ -53,6 +53,7 @@ for name in glob.glob(f'../../surdata/{folder}/GS_*.pkl'):
     with open(name,'rb') as file: gss.append(pickle.load(file))
 
 
+print(surs[0].vals)
 dfs_sur = []
 nnodes=9
 column_names = pd.Series(range(nnodes)).astype('str')
@@ -62,7 +63,7 @@ for i,sur in enumerate(surs):
     df_sur_y['Objective Std'] = np.sqrt(np.sum(np.square(sur.y_std), axis=1)) # std of sum (assuming independent trials): sqrt of sum of variances 
     df_sur_y['Objective Mean'] = (df_sur_y['sum mean'] + sur.X_df.drop(['Iteration'], axis=1).sum(axis=1)/config.m_max).astype('float')
     df_sur_y[f'Trial'] = i
-    grouped_iteration = sur.X_df.join(df_sur_y).groupby(['Iteration'], as_index=False).apply(lambda x: x.loc[x['Objective Mean'].idxmax()])
+    grouped_iteration = sur.X_df.join(df_sur_y).groupby(['Iteration'], as_index=False).apply(lambda x: x.loc[x['Objective Mean'].idxmin()])
     dfs_sur.append(grouped_iteration)
 
 
@@ -112,7 +113,7 @@ for df in dfs:
 dfs = pd.concat(dfs_obj)
 dfs['\# Optimization steps'] = dfs['index']
 fig, ax = plt.subplots()
-g = sns.lineplot(data = dfs[dfs['index']<90], x='\# Optimization steps', y='Objective Mean', hue='Method', style='Method', markers='^', markersize=5) 
+g = sns.lineplot(data = dfs[dfs['index']<90], x='\# Optimization steps', y='Objective Mean', estimator=None, hue='Method', style='Method', units='Method', markers='^', markersize=5) 
 plt.title(f'Quantum Network with {nnodes}')
 handles, labels = ax.get_legend_handles_labels()
 ax.legend(handles=handles, labels=labels)
