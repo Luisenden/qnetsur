@@ -1,3 +1,8 @@
+"""
+Script to show that link-level as well as end-to-end fidelities of bell states are simulated equivalently 
+to using bell states in the analytical studies of [Vadoyan et al., 2023](https://ieeexplore.ieee.org/abstract/document/10313675).
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 import netsquid as ns
@@ -9,8 +14,7 @@ import netsquid.qubits.operators as ops
 
 ns.set_qstate_formalism(ns.QFormalism.DM)  
 
-
-## elementary link entanglements
+# Link-level fidelities
 fidelities_depol = []
 fidelities_werner_theory = []
 probs = np.linspace(0,1,100)
@@ -33,27 +37,24 @@ plt.title(r'Link-Level Fidelity')
 plt.legend()
 plt.show()
 
-
+# End-to-end fidelities
 fidelities_depol = []
 fidelities_werner = []
 fidelities_werner_theory = []
 alphas = np.linspace(0, 0.1, 100)
 for alpha in alphas:
-    prob = 4/3*alpha
-    # DEPOLARIZE BELL STATES
+    # Create bell pairs
     q1, q2 = qapi.create_qubits(2, 'Q1')
     q3, q4 = qapi.create_qubits(2, 'Q2')
     bell_state1 = qapi.assign_qstate([q1,q2], ks.b00)  
     bell_state2 = qapi.assign_qstate([q3,q4], ks.b00)
 
-    # depolarize
-    # p = 0.25 * prob
-    # qapi.apply_pauli_noise(q1, [1-3*p,p,p,p])
-    # qapi.apply_pauli_noise(q3, [1-3*p,p,p,p])
+    # DEPOLARIZE BELL STATES
+    prob = 4/3*alpha
     qapi.depolarize(q1, prob)
     qapi.depolarize(q3, prob)
 
-    # bell measurement
+    # Bell measurement
     qapi.operate([q2, q3], ops.CX)
     qapi.operate(q2, ops.H)
     outcome_q2, _ = qapi.measure(q2)
@@ -72,7 +73,7 @@ for alpha in alphas:
     w = 1-prob
     bell_statew = qapi.assign_qstate([q1w,q2w], ks.b00).dm
     rhow = w**2*bell_statew + (1-w**2)*np.identity(4)/4
-    #print('IS VALID', ns.qubits.dmutil.is_valid_dm(rhow))
+
     werner_state = qapi.assign_qstate([q1w,q2w], rhow)
 
     fidelity = qapi.fidelity([q1w, q2w], ks.b00, squared=True)  # determine the fidelity 

@@ -24,10 +24,10 @@ def read_in_surrogate(folder):
         Xs.append(sur.X_df)
 
     Xs = pd.concat(Xs, axis=0, ignore_index=True)
-    ys = pd.concat([pd.DataFrame(sur.y, columns = pd.Series(range(sur.vals['nnodes']-1)).astype('str')) 
+    ys = pd.concat([pd.DataFrame(sur.y, columns = pd.Series(range(config.nnodes)).astype('str')) 
                     for sur in surs], axis=0, ignore_index=True)
     ys['Utility'] = ys.sum(axis=1)
-    ys_std = pd.concat([pd.DataFrame(sur.y_std, columns = pd.Series(range(sur.vals['nnodes']-1)).astype('str')).add_suffix('_std') 
+    ys_std = pd.concat([pd.DataFrame(sur.y_std, columns = pd.Series(range(config.nnodes)).astype('str')).add_suffix('_std') 
                         for sur in surs], axis=0, ignore_index=True)
 
     ys_std['Utility Std'] = ys_std.apply(np.square).sum(axis=1).apply(np.sqrt)
@@ -41,9 +41,9 @@ def read_in_meta(folder):
         with open(name,'rb') as file: metas.append(pickle.load(file))
     dfs = []
     for meta in metas:
-        dfs.append(meta[0])
+        dfs.append(meta[0].get_trials_data_frame())
     df = pd.concat(dfs, axis=0)
-    df['Utility'] = df['evaluate']
+    df['Utility'] = df['mean']
     return df
 
 def read_in_gridsearch(folder):
@@ -88,11 +88,11 @@ def to_dataframe(res):
     return df
 
 def get_best_x(df):
-    return df.iloc[df['Utility'].idxmax()][df.columns.str.contains('bright_state')]
+    return df.iloc[df['Utility'].idxmax()][df.columns.str.contains('mem_size')]
 
 if __name__ == '__main__':
 
-    folder = 'qswitch'
+    folder = 'rb'
     result_folder = '../../surdata/qswitch/Results_qswitch_5users_T30min.csv'
 
     df_sur, vals = read_in_surrogate(folder)
@@ -105,27 +105,28 @@ if __name__ == '__main__':
         x = get_best_x(df)  
         xs.append(x)  
 
-    vals['N'] = 1
-    nprocs = mp.cpu_count()
+    print(xs)
+    # vals['N'] = 1
+    # nprocs = mp.cpu_count()
 
-    dfs = []
-    seed_count = 1
-    while True:
-        for x,method in zip(xs, ['Surrogate', 'Meta',
-                                'Simulated Annealing', 'Random Gridsearch']):
-            sim = Simulation(simwrapper, simulation_qswitch)
-            res = sim.run_exhaustive(x=x, vals=vals, N=nprocs, seed=seed_count)
-            df = to_dataframe(res)
-            df['Method'] = method
-            dfs.append(df)
-        seed_count += 1
-        if len(dfs)*nprocs > 4000:
-            break
+    # dfs = []
+    # seed_count = 1
+    # while True:
+    #     for x,method in zip(xs, ['Surrogate', 'Meta',
+    #                             'Simulated Annealing', 'Random Gridsearch']):
+    #         sim = Simulation(simwrapper, simulation_qswitch)
+    #         res = sim.run_exhaustive(x=x, vals=vals, N=nprocs, seed=seed_count)
+    #         df = to_dataframe(res)
+    #         df['Method'] = method
+    #         dfs.append(df)
+    #     seed_count += 1
+    #     if len(dfs)*nprocs > 4000:
+    #         break
     
-    df_plot = pd.concat(dfs, axis=0).dropna()
-    df_plot = df_plot.round(6)
+    # df_plot = pd.concat(dfs, axis=0).dropna()
+    # df_plot = df_plot.round(6)
 
-    df_plot.to_csv(result_folder) 
+    # df_plot.to_csv(result_folder) 
     
     
 

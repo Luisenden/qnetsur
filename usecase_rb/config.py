@@ -32,7 +32,9 @@ def simwrapper(simulation, kwargs: dict):
     kwargs['mem_size'] = np.array(mem_size)
     objectives = mean-np.array(mem_size)/m_max
     objectives_std = std
-    return objectives, objectives_std
+
+    raw = mean
+    return objectives, objectives_std, raw
 
 # specify fixed parameters of quantum network simulation
 vals = {

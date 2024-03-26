@@ -1,10 +1,10 @@
 """
-Basis script to simulate 
-* optimziation of two-user-one-server scenario of Vadoyan et al., 2023 with 'sur_vardoyan_netsquid_comparison.py'
-* optimization for more complex scenarios with scripts 'sur.py' and comparison with 'vsax.py', 'vsgridsearch.py', 'vssa.py'
+Configuration script to run qswitch simulations (builds on `simulation.py`)
+* optimziation of two-user-one-server scenario of [Vadoyan et al., 2023](https://ieeexplore.ieee.org/abstract/document/10313675) with 'sur_vardoyan_netsquid_comparison.py'
+* optimization for more complex scenarios with scripts 'sur.py' and comparison with 'vs_ax.py', 'vs_gridsearch.py', 'vs_simulatedannealing.py'
 
-The goal is to find the optimal bright-state population (alpha=1-Fidelity) for all links and buffer sizes to maximize
-the given utility function, Distillable Entanglement as defined in the paper.
+The goal is to find the optimal bright-state population (alpha=1-Fidelity) for all links to maximize
+the given utility function (based on Distillable Entanglement) as defined in the paper.
 """
 import sys
 sys.path.append('../')
@@ -21,7 +21,6 @@ import argparse
 import torch.multiprocessing as mp
 
 from simulation import simulation_qswitch
-from netsquid_qswitch.aux_functions import distance_to_rate, VARDOYAN_LOSS_COEFFICIENT, VARDOYAN_LOSS_PARAMETER 
 
 
 # get the globals
