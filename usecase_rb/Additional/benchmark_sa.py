@@ -1,6 +1,6 @@
 
 
-from test_config import *
+from usecase_rb.Additional.benchmark_config import *
 from src.simulatedannealing import * 
 import matplotlib.pyplot as plt
 

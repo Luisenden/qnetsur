@@ -13,11 +13,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from  matplotlib.ticker import FuncFormatter
 plt.style.use("seaborn-v0_8-paper")
-# plt.rcParams.update({
-#     'text.usetex': True,
-#     'font.family': 'serif',
-#     'font.size': 40,  
-# })
+
 font = 14
 plt.rcParams.update({
     'text.usetex': True,
@@ -89,31 +85,31 @@ print(df_sur)
 
 df_ax = pd.concat([ax[0].get_trials_data_frame() for ax in axs]).reset_index()
 paramcolumns = df_ax.columns[df_ax.columns.str.contains('mem_size')]
-df_ax['Objective Mean'] = df_ax['mean'] + df_ax[paramcolumns].sum(axis=1)/config.m_max
+df_ax['Objective Mean'] = df_ax['mean']
 df_ax['Method'] = 'Meta Optimization'
-print(df_ax)
 
 
 df_gs = pd.concat([gs[0] for gs in gss]).reset_index()
 paramcolumns = df_gs.columns[df_gs.columns.str.contains('mem_size')]
 df_gs['sum'] = df_gs['objective'].apply(lambda x: np.sum(x))
-df_gs['Objective Mean'] = df_gs['sum'] + df_gs[paramcolumns].sum(axis=1)/config.m_max
+df_gs['Objective Mean'] = df_gs['sum']
 df_gs['Method'] = 'Random Grid Search'
 
 df_sa = pd.concat(sas).reset_index()
 paramcolumns = df_sa.columns[df_sa.columns.str.contains('mem_size')]
 df_sa['sum'] = df_sa['objective']
-df_sa['Objective Mean'] = df_sa['sum'] + df_sa[paramcolumns].sum(axis=1)/config.m_max
-df_sa['Method'] = 'Simulated annealing'
+df_sa['Objective Mean'] = df_sa['sum']
+df_sa['Method'] = 'Simulated Annealing'
 
 dfs = [df_sur, df_ax, df_gs, df_sa]#
 dfs_obj = []
 for df in dfs:
     dfs_obj.append(df[['index', 'Objective Mean', 'Method']])
 dfs = pd.concat(dfs_obj)
+print(dfs)
 dfs['\# Optimization steps'] = dfs['index']
 fig, ax = plt.subplots()
-g = sns.lineplot(data = dfs[dfs['index']<90], x='\# Optimization steps', y='Objective Mean', estimator=None, hue='Method', style='Method', units='Method', markers='^', markersize=5) 
+g = sns.lineplot(data = dfs, x='\# Optimization steps', y='Objective Mean', hue='Method', style='Method', markers='^', markersize=5) 
 plt.title(f'Quantum Network with {nnodes}')
 handles, labels = ax.get_legend_handles_labels()
 ax.legend(handles=handles, labels=labels)

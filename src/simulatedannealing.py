@@ -1,4 +1,8 @@
-import sys, time
+"""
+Global optimizing method Simulated Annealing (Kirkpatrick et al., 1983)
+"""
+
+import time
 import numpy as np
 from scipy.stats import truncnorm
 
@@ -74,7 +78,7 @@ def get_neighbour(s, x :dict, rng) -> dict:
 
 def simulated_annealing(s, MAX_TIME, temp :int = 10, beta_schedule :int = 5, seed=42):
 
-    
+    start_initial = time.time()
     rng = np.random.default_rng(seed=seed)
     
     # generate an initial point
@@ -84,7 +88,9 @@ def simulated_annealing(s, MAX_TIME, temp :int = 10, beta_schedule :int = 5, see
     current_eval = objective(s,current)
     current_set = current.copy()
     current_set['objective'] = -current_eval
-
+    dt_init = time.time()-start_initial
+    current_set['time'] = dt_init
+    
     sets = []
     sets.append(current_set)
 
@@ -100,7 +106,7 @@ def simulated_annealing(s, MAX_TIME, temp :int = 10, beta_schedule :int = 5, see
         start = time.time()
         # repeat
         for _ in range(beta_schedule):
-
+            start_beta = time.time()
             # choose a different point and evaluate
             candidate = get_neighbour(s, current, rng)
             candidate_eval = objective(s, candidate)
@@ -109,6 +115,11 @@ def simulated_annealing(s, MAX_TIME, temp :int = 10, beta_schedule :int = 5, see
             if candidate_eval < current_eval:
                 # store new best point
                 current, current_eval = candidate, candidate_eval
+            dt_beta = time.time() - start_beta
+            time_tracker += dt_beta
+
+            if time_tracker >= MAX_TIME:
+                break
 
         # calculate metropolis acceptance criterion
         diff = candidate_eval - current_eval
@@ -122,7 +133,6 @@ def simulated_annealing(s, MAX_TIME, temp :int = 10, beta_schedule :int = 5, see
             current, current_eval = candidate, candidate_eval
         
         dt = time.time()-start
-        time_tracker += dt
 
         current_set = current.copy()
         current_set['objective'] = -current_eval

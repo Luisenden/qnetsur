@@ -1,3 +1,7 @@
+"""
+Central script containing objects for surrogate optimization and helper function to retrieve format of parameters for Ax-platform.
+"""
+
 import numpy as np
 import time
 import pandas as pd
@@ -37,7 +41,7 @@ class Simulation:
     ----------
     sim_wrapper : function
         The wrapper function that preprocesses simulation
-        parameters before execution.
+        parameters before execution and adapts outputs according to needs of use case.
     sim : function
         The actual simulation function to be executed.
     vals : dict
@@ -49,6 +53,8 @@ class Simulation:
     -------
     run_sim(x, vals=None)
         Executes a single simulation run with the given parameters.
+    run_exhaustive(x, N=10)
+        Executes `N` simulations in parallel.
     get_random_x(n)
         Generates `n` sets of random parameters based on the
         specified variable parameters.
@@ -82,13 +88,6 @@ class Simulation:
     def run_exhaustive(self, x :dict, vals :dict = None, N=10, seed=42) -> list:
         """
         Runs the quantum network simulation with the provided parameters N times in parallel.
-
-        Args:
-            x (dict): Parameters for the simulation.
-            N (int): batch size
-
-        Returns:
-            list: Results of the simulation.
         """
         xrun = {**x, **vals}
         task = partial(self.sim_wrapper, self.sim)
@@ -98,15 +97,9 @@ class Simulation:
             pool.join()
         return res
 
-    def get_random_x(self,n) -> dict:
+    def get_random_x(self, n :int) -> dict:
         """
         Generates random parameters for the simulation.
-
-        Args:
-            n (int): Number of random parameter sets to generate.
-
-        Returns:
-            dict: Randomly generated parameters.
         """
         assert all(isinstance(val, tuple) for val in self.vars['range'].values()) and n > 0,\
             f"Dimension types must be a tuple (sample-list, dataype) and n must be greater zero."
@@ -154,6 +147,8 @@ class Surrogate(Simulation):
         The number of samples to use for the initial surrogate model training.
     vars : dict, optional
         Variable parameters for the simulation that can be optimized.
+    k : int, optional
+        Exponent in acquisition transition function.
 
     Attributes
     ----------
@@ -226,7 +221,7 @@ class Surrogate(Simulation):
     def get_neighbour(self, max_time, current_time, x :dict) -> dict:
         """
         Generates most promising parameters in limited neighbouring region 
-        according to current knowledge of surrogate model and depending on time remaining.
+        according to current knowledge of surrogate model and depending on the time left.
         """
         x_n = {}
         f = (1-np.log(1+current_time/max_time)**2)**self.k
@@ -351,6 +346,9 @@ class Surrogate(Simulation):
 
 
     def gen_initial_set(self, max_time, verbose):
+        """
+        Generates the initial training set.
+        """
         if verbose: print("Start optimization ...")
         optimize_start = time.time()
         
@@ -373,6 +371,9 @@ class Surrogate(Simulation):
         self.max_optimize_time = max_time - initial_optimize_time
 
     def optimize_with_timer(self, verbose):
+        """
+        Optimization with a set maximum number of seconds.
+        """
         current_times = []
         current_time = 0
         delta = 0
@@ -392,6 +393,9 @@ class Surrogate(Simulation):
                 print(f'Time left for optimization: {self.max_optimize_time-current_time:.2f}s')
 
     def optimize_with_iteration(self, max_iteration, verbose):
+        """
+        Optimization with a set maximum number of iterations.
+        """
         counter = 1
         while counter < max_iteration:
             start = time.time()

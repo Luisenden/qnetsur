@@ -33,7 +33,6 @@ def plotting(df):
     sns.pointplot(data= df, x='Method', y='Aggregated Rate [Hz]', ax=axs.flat[3], hue='Method', errorbar='se', markers=markers)
 
     sns.pointplot(data=df, x='User', y='Fidelity', hue='Method', ax=axs.flat[4], errorbar='se', markers=markers, linestyles=linestyles)
-    sns.pointplot(data=df, x='Method', y='Fidelity', hue='Method', ax=axs.flat[5], errorbar='sd', markers=markers)
 
     for i in range(len(axs.flat)):
         axs.flat[i].grid(alpha=0.3)
@@ -49,9 +48,11 @@ def plotting(df):
     axs.flat[3].set_title('Aggregated Rate [Hz]')
     axs.flat[4].set_title('Fidelity per User')
     axs.flat[4].set_xlabel('User')
-    axs.flat[5].set_title('Average Fidelity')
-    axs.flat[5].set_xlabel('Method')
-    axs.flat[1].legend()
+    axs.flat[-1].axis('off')
+
+    handles, labels = axs.flat[1].get_legend_handles_labels()
+
+    fig.legend(handles, labels, loc='lower right', bbox_to_anchor=(0.85, 0.1))
     plt.tight_layout()
     plt.show()
 
@@ -59,7 +60,7 @@ def plotting(df):
     
 if __name__ == '__main__':    
     
-    df_plot = pd.read_csv('../../../surdata/qswitch/Results_qswitch_5users_T30min.csv')
+    df_plot = pd.read_csv('../../surdata/qswitch/Results_qswitch_5users_T30min.csv')
     plotting(df_plot)
 
     

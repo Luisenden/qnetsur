@@ -163,20 +163,20 @@ def run(network_topo,n):
     return df
 
 
-def simulation_rb(network_config_file, cavity, total_time, N, mem_size):
+def simulation_rb(network_config_file, cavity, total_time, N, mem_size, seed=42):
     
     results = []
     proc = mp.current_process().ident
 
     for n in range(N):
-        update_memory_config(network_config_file, mem_size, total_time, seed=42+n)
+        update_memory_config(network_config_file, mem_size, total_time, seed=seed+n)
         network_topo = RouterNetTopo(str(proc)+'.json')
         nodes = network_topo.get_nodes_by_type(RouterNetTopo.QUANTUM_ROUTER)
 
         set_parameters(cavity=cavity, network_topo=network_topo)
 
         try: 
-            df = run(network_topo,42+n)
+            df = run(network_topo, seed+n)
             completed_requests_per_node = df.groupby('Initiator').size()
             res = np.zeros(len(nodes))
             for i,node in enumerate(nodes):
@@ -189,40 +189,4 @@ def simulation_rb(network_config_file, cavity, total_time, N, mem_size):
     mean = np.mean(results, axis=0)
     std = np.std(results, axis=0)
     return mean, std
-
-
-if __name__ == "__main__":
-    
-    network_config_file = "starlight.json"  # network configuration 
-    total_time = 2e13  # total simulation time in [ps]
-
-    # policy 0: evenly distributed memories
-    even = [50]*9 
-    # policy 1: weighted policy of Wu et al. Table 3
-    weighted = [25, 91, 67, 24, 67, 24, 103, 25, 24]
-    # policy 2: drawn from surrogate optimization results (execute sur.py with EXEC TIME = 24 hours)
-    surrogate_weighted = [5, 11, 9, 5, 9, 5, 30, 5, 5]
-
-    results = {0: [], 1: [], 2: []}
-    for i, policy in enumerate([even, weighted, surrogate_weighted]):
-        for j in range(10):
-            proc = mp.current_process().ident
-            update_memory_config(network_config_file, policy, total_time, seed=j) 
-            network_topo = RouterNetTopo(str(proc)+'.json')
-            os.remove(str(proc)+'.json')
-
-            set_parameters(cavity=500, network_topo=network_topo)
-            nodes = network_topo.get_nodes_by_type(RouterNetTopo.QUANTUM_ROUTER)
-            df = run(network_topo,j)
-            completed_requests_per_node = df.groupby('Initiator').size()
-            res = np.zeros(len(nodes))
-            for k,node in enumerate(nodes):
-                if node.name in completed_requests_per_node: res[k] = completed_requests_per_node[node.name]
-
-            results[i].append(sum(res))
-            print(results)
-            print(f'done policy {i} iteration {j}')
-
-    df = pd.DataFrame.from_records(results)
-    df.to_csv('distribution-policy-comparison.csv')
 
