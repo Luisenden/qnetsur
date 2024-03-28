@@ -102,9 +102,7 @@ if __name__ == '__main__':
     for df in [df_sur, df_meta, df_sa, df_gs]:
         x = get_best_x(df)  
         xs.append(x)  
-    xs.append({'mem_size_node_0': 25, 'mem_size_node_1': 91, 'mem_size_node_2': 67,
-               'mem_size_node_3': 24, 'mem_size_node_4': 67, 'mem_size_node_5': 24, 
-               'mem_size_node_6': 103, 'mem_size_node_7': 25, 'mem_size_node_8':24})
+
     # even distribution
     even = dict()
     for i in range(9):
