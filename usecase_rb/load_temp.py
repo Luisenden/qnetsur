@@ -6,7 +6,7 @@ sys.path.append('../src')
 import src
 import config
 
-from extract_best_params_and_run_exhaustive import *
+from plotting_tools import *
 
 import pandas as pd
 import numpy as np
@@ -24,7 +24,8 @@ plt.rcParams.update({
     'xtick.labelsize': font,  
     'ytick.labelsize': font, 
     'legend.fontsize': font,
-    'legend.title_fontsize': font
+    'legend.title_fontsize': font,
+    'axes.titlesize': font
 })
 
 import warnings
@@ -33,27 +34,17 @@ warnings.filterwarnings("ignore")
 
 folder = '../../surdata/rb'
 
+# plot results of optimization (Utility)
+# plot_optimization_results(folder)
 
-target_columns = ['Trial', 'Utility', 'Method']
+# plot from exhaustive run
+df = pd.read_csv(f'{folder}/Results_starlight.csv').drop('Unnamed: 0', axis=1)
+df_compare = pd.read_csv(f'{folder}/Results_starlight_compare.csv').drop('Unnamed: 0', axis=1)
+df_compare['Method'] = df_compare['Method'].apply(lambda x: 'Even' if x == 'Random Gridsearch' else x)
+print(df_compare.Method.unique)
+print(df_compare)
 
-df = pd.concat([read_pkl_sa(folder)[target_columns], read_pkl_surrogate(folder)[0][target_columns],
-                read_pkl_gridsearch(folder)[target_columns], read_pkl_meta(folder)[target_columns]], axis=0, ignore_index=True)
-
-# grouped = df.groupby(['Method', 'Trial']).max()
-# sns.pointplot(data=grouped, x='Method', y='Utility', errorbar='se', linestyles='None', hue='Method')
-# plt.xlabel('')
-# plt.title('Maximum Utility of N=10 Trials (per Method)')
-# plt.xticks(rotation=45)
-# plt.grid()
-# plt.tight_layout()
-# plt.show()
-
-df_sur = read_pkl_surrogate(folder)[0]
-x_best = df_sur[df_sur.Trial==df_sur.iloc[df_sur['Utility'].idxmax()].Trial].reset_index()
-
-param_cols = df_sur.columns[df_sur.columns.str.contains('mem_size')]
-sns.lineplot(x_best[param_cols])
-plt.show()
-
-
+df_plot = pd.concat([df, df_compare], axis=0)
+print(df_plot)
+plot_from_exhaustive(df_plot)
 

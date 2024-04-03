@@ -254,7 +254,7 @@ class Surrogate(Simulation):
         for dim, vals in self.vars['choice'].items():
                 x_n[dim] = config.rng_sur.random.choice(vals, size)
 
-        # select best prediction as neighbour
+        # select best prediction as next neighbour
         samples_x = pd.DataFrame(x_n).astype(object)
         samples_y = self.mmodel.predict(samples_x.values)
         fittest_neighbour_index = np.argsort(np.array(samples_y).sum(axis=1))[-1]

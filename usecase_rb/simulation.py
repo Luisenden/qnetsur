@@ -67,10 +67,10 @@ def set_parameters(cavity:int, network_topo):
     bsm_nodes = network_topo.get_nodes_by_type(RouterNetTopo.BSM_NODE)
 
     # set memory parameters
-    MEMO_FREQ = 2e3
+    MEMO_FREQ = 2e5
     MEMO_EXPIRE = 1.3
     MEMO_EFFICIENCY = 0.75
-    MEMO_FIDELITY = get_fidelity_by_efficiency(C) #0.9349367588934053
+    MEMO_FIDELITY = 0.9349367588934053 # get_fidelity_by_efficiency(C) #0.9349367588934053
     for node in routers:
         memory_array = node.get_components_by_type("MemoryArray")[0]  # assume only 1 memory array
         memory_array.update_memory_params("frequency", MEMO_FREQ)
@@ -90,7 +90,7 @@ def set_parameters(cavity:int, network_topo):
 
     # set quantum channel parameters
     ATTENUATION = 0.0002
-    QC_FREQ = 1e11
+    QC_FREQ = 5e7
     for qc in network_topo.get_qchannels():
         qc.attenuation = ATTENUATION
         qc.frequency = QC_FREQ
@@ -117,7 +117,7 @@ def run(network_topo,n):
         others.remove(app_node_name)
         max_mem_to_reserve = len(node.get_components_by_type("MemoryArray")[0])//2
         app = RandomRequestApp(node, others,
-                            min_dur=1e12, max_dur=2e12, min_size=max(1,max_mem_to_reserve-max_mem_to_reserve//2),
+                            min_dur=1e12, max_dur=2e12, min_size=10,
                             max_size=max_mem_to_reserve, min_fidelity=0.8, max_fidelity=1.0, seed=seeds[i])
         apps.append(app)
         app.start()
@@ -175,14 +175,12 @@ def simulation_rb(network_config_file, cavity, total_time, N, mem_size, seed=42)
 
         set_parameters(cavity=cavity, network_topo=network_topo)
 
-        try: 
-            df = run(network_topo, seed+n)
-            completed_requests_per_node = df.groupby('Initiator').size()
-            res = np.zeros(len(nodes))
-            for i,node in enumerate(nodes):
-                if node.name in completed_requests_per_node: res[i] = completed_requests_per_node[node.name]
-        except:
-            res = np.zeros(len(nodes))
+
+        df = run(network_topo, seed+n)
+        completed_requests_per_node = df.groupby('Initiator').size()
+        res = np.zeros(len(nodes))
+        for i,node in enumerate(nodes):
+            if node.name in completed_requests_per_node: res[i] = completed_requests_per_node[node.name]
 
         results.append(res)
         os.remove(str(proc)+'.json')

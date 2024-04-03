@@ -18,7 +18,7 @@ SEED = args.seed
 
 rng_sur = np.random.default_rng(seed=SEED) # set rng for optimization 
 nnodes = 9 # number of nodes
-m_max = 110 # maximum number of memory qubits per node
+m_max = 105 # maximum number of memory qubits per node
 sample_size = 5 # number of samples used for the initial training of the surrogate model
 
 def simwrapper(simulation, kwargs: dict):
@@ -32,7 +32,6 @@ def simwrapper(simulation, kwargs: dict):
     kwargs['mem_size'] = np.array(mem_size)
     objectives = mean-np.array(mem_size)/m_max
     objectives_std = std
-
     raw = mean
     return objectives, objectives_std, raw
 
@@ -40,8 +39,8 @@ def simwrapper(simulation, kwargs: dict):
 vals = {
         'cavity': 500,
         'network_config_file': 'starlight.json',
-        'N': 10,
-        'total_time': 2e13
+        'N': 1,
+        'total_time': 2e12
         }
 
 # specify variables and bounds of quantum network simulation
@@ -52,4 +51,4 @@ vars = {
         } 
 
 for i in range(nnodes):
-    vars['range'][f'mem_size_node_{i}'] = ([5, m_max], 'int')
+    vars['range'][f'mem_size_node_{i}'] = ([25, m_max], 'int')
