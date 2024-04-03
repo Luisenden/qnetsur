@@ -9,6 +9,11 @@ from plotting_tools import *
 import warnings
 warnings.filterwarnings("ignore")
 
+parser.add_argument("--method", type=str, default='Surrogate', 
+                    help="Choose one of the following methods: 'Surrogate', 'Meta', 'Simulated Annealing', 'Random Gridsearch', 'Even', 'Budget 450'")
+args, _ = parser.parse_known_args()
+METHOD = args.method
+
 def get_best_x(df):
     return df.iloc[df['Utility'].idxmax()][df.columns.str.contains('mem_size')]
 
@@ -39,21 +44,27 @@ if __name__ == '__main__':
                'mem_size_node_3': 24, 'mem_size_node_4': 67, 'mem_size_node_5': 24, 
                'mem_size_node_6': 103, 'mem_size_node_7': 25, 'mem_size_node_8':24})
 
+    
+    select_dict = dict()
+    for i, method in enumerate(['Surrogate', 'Meta',
+                                'Simulated Annealing', 'Random Gridsearch', 'Even', 'Budget 450']):
+        select_dict[method] = xs[i]
+
     vals['N'] = 1
     nprocs = mp.cpu_count()
+    x = select_dict[METHOD]
 
     dfs = []
     seed_count = 1
     while True:
-        for x, method in zip(xs[-2:], ['Surrogate', 'Meta',
-                                'Simulated Annealing', 'Random Gridsearch', 'Even', 'Budget 450'][-2:]):
-            sim = Simulation(simwrapper, simulation_rb)
-            res = sim.run_exhaustive(x=x, vals=vals, N=nprocs, seed=seed_count)
+        sim = Simulation(simwrapper, simulation_rb)
+        res = sim.run_exhaustive(x=x, vals=vals, N=nprocs, seed=seed_count)
 
-            df = to_dataframe(res)
-            print(df)
-            df['Method'] = method
-            dfs.append(df)
+        df = to_dataframe(res)
+        print(df)
+        df['Method'] = METHOD
+        dfs.append(df)
+
         seed_count += 1
         if len(dfs)*nprocs >= 10:
             break

@@ -39,8 +39,8 @@ def simwrapper(simulation, kwargs: dict):
 vals = {
         'cavity': 500,
         'network_config_file': 'starlight.json',
-        'N': 1,
-        'total_time': 2e12
+        'N': 10,
+        'total_time': 2e13
         }
 
 # specify variables and bounds of quantum network simulation

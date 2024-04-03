@@ -32,4 +32,4 @@ if __name__ == '__main__':
     
     gridsearch = pd.DataFrame.from_records(evals)
     with open(f'../../surdata/rb/GS_starlight_{MAX_TIME:.1f}h_objective-meanopt_SEED{SEED}_'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
-            pickle.dump([gridsearch,time_tracker,vals], file)
+            pickle.dump([gridsearch, time_tracker, vals], file)
