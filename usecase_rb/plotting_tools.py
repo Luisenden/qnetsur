@@ -59,7 +59,7 @@ def read_pkl_meta(folder):
         with open(name,'rb') as file: metas.append(pickle.load(file))
     dfs = []
     for i, meta in enumerate(metas):
-        data = meta[0].get_trials_data_frame()
+        data = meta[0]#.get_trials_data_frame()
         data['Trial'] = i
         dfs.append(data)
     df = pd.concat(dfs, axis=0)
@@ -86,8 +86,8 @@ def read_pkl_sa(folder):
         with open(name,'rb') as file: gss.append(pickle.load(file))
     dfs = []
     for i, gs in enumerate(gss):
-        gs['Trial'] = i
-        dfs.append(gs)
+        gs[0]['Trial'] = i
+        dfs.append(gs[0])
     df = pd.concat(dfs, axis=0)
     df['Utility'] = df['objective'].apply(np.nansum)
     df['Method'] = 'Simulated Annealing'

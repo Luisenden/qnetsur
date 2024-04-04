@@ -32,17 +32,18 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-folder = '../../surdata/rb'
+folder = '../../surdata/rb_'
 
-# plot results of optimization (Utility)
+#plot results of optimization (Utility)
 # plot_optimization_results(folder)
 
 # plot from exhaustive run
 df = pd.read_csv(f'{folder}/Results_starlight.csv').drop('Unnamed: 0', axis=1)
 df_compare = pd.read_csv(f'{folder}/Results_starlight_compare.csv').drop('Unnamed: 0', axis=1)
-df_compare['Method'] = df_compare['Method'].apply(lambda x: 'Even' if x == 'Random Gridsearch' else x)
-print(df_compare.Method.unique)
+df_compare['Method'] = df_compare['Method'].apply(lambda x: 'Budget 450' if x == 'Random Gridsearch' else x)
 print(df_compare)
+# print(df_compare.Method.unique)
+# print(df_compare)
 
 df_plot = pd.concat([df, df_compare], axis=0)
 print(df_plot)
