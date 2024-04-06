@@ -15,7 +15,7 @@ args, _ = parser.parse_known_args()
 METHOD = args.method
 
 def get_best_x(df):
-    return df.iloc[df['Utility'].idxmax()][df.columns.str.contains('mem_size')]
+    return df.iloc[df['Utility'].idxmax()][df.columns.str.contains('mem_size|Method')]
 
 
 if __name__ == '__main__':
@@ -28,31 +28,25 @@ if __name__ == '__main__':
     df_sa = read_pkl_sa(folder)
     df_gs = read_pkl_gridsearch(folder)
 
-    xs = []
+    xs = dict()
     for df in [df_sur, df_meta, df_sa, df_gs]:
-        x = get_best_x(df)  
-        xs.append(x)  
-        print(x)
+        xmethod = get_best_x(df)  
+        xs[xmethod['Method']] = xmethod.drop('Method')
 
     # even distribution
     even = dict()
     for i in range(9):
         even[f'mem_size_node_{i}'] = 50
-    xs.append(even)
-    # weighted distribution according to Wu X. et al., 2021
-    xs.append({'mem_size_node_0': 25, 'mem_size_node_1': 91, 'mem_size_node_2': 67,
-               'mem_size_node_3': 24, 'mem_size_node_4': 67, 'mem_size_node_5': 24, 
-               'mem_size_node_6': 103, 'mem_size_node_7': 25, 'mem_size_node_8':24})
-
+    xs['even'] = even
     
-    select_dict = dict()
-    for i, method in enumerate(['Surrogate', 'Meta',
-                                'Simulated Annealing', 'Random Gridsearch', 'Even', 'Budget 450']):
-        select_dict[method] = xs[i]
-
+    # weighted distribution according to Wu X. et al., 2021
+    xs['Budget 450'] = {'mem_size_node_0': 25, 'mem_size_node_1': 91, 'mem_size_node_2': 67,
+               'mem_size_node_3': 24, 'mem_size_node_4': 67, 'mem_size_node_5': 24, 
+               'mem_size_node_6': 103, 'mem_size_node_7': 25, 'mem_size_node_8':24}
+    
     vals['N'] = 1
     nprocs = mp.cpu_count()
-    x = select_dict[METHOD]
+    x = xs[METHOD]
 
     dfs = []
     seed_count = 1
@@ -61,12 +55,11 @@ if __name__ == '__main__':
         res = sim.run_exhaustive(x=x, vals=vals, N=nprocs, seed=seed_count)
 
         df = to_dataframe(res)
-        print(df)
         df['Method'] = METHOD
         dfs.append(df)
 
         seed_count += 1
-        if len(dfs)*nprocs >= 10:
+        if len(dfs)*nprocs >= 1000:
             break
     
     df_exhaustive = pd.concat(dfs, axis=0)
