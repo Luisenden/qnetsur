@@ -42,7 +42,7 @@ for name in glob.glob(f'../../surdata/{folder}/SU_*.pkl'): #Sur_qswitch_nleafnod
 
 sas = []
 for name in glob.glob(f'../../surdata/{folder}/SA_*.pkl'):
-    with open(name,'rb') as file: sas.append(pickle.load(file))
+    with open(name,'rb') as file: sas.append(pickle.load(file)[0])
 
 gss = []
 for name in glob.glob(f'../../surdata/{folder}/GS_*.pkl'):
@@ -83,7 +83,7 @@ print(df_sur)
 # plt.tight_layout()
 # plt.show() 
 
-df_ax = pd.concat([ax[0].get_trials_data_frame() for ax in axs]).reset_index()
+df_ax = pd.concat([ax[0] for ax in axs]).reset_index()
 paramcolumns = df_ax.columns[df_ax.columns.str.contains('mem_size')]
 df_ax['Objective Mean'] = df_ax['mean']
 df_ax['Method'] = 'Meta Optimization'
@@ -109,7 +109,7 @@ dfs = pd.concat(dfs_obj)
 print(dfs)
 dfs['\# Optimization steps'] = dfs['index']
 fig, ax = plt.subplots()
-g = sns.lineplot(data = dfs, x='\# Optimization steps', y='Objective Mean', hue='Method', style='Method', markers='^', markersize=5) 
+g = sns.lineplot(data = dfs, x='\# Optimization steps', y='Objective Mean', hue='Method', style='Method', markers='^', markersize=5, units='Method', estimator=None) 
 plt.title(f'Quantum Network with {nnodes}')
 handles, labels = ax.get_legend_handles_labels()
 ax.legend(handles=handles, labels=labels)

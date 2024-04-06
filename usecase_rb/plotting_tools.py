@@ -50,8 +50,8 @@ def read_pkl_surrogate(folder):
     ys_std['Utility Std'] = ys_std.apply(np.square).sum(axis=1).apply(np.sqrt)
     df = Xs.join(ys)
     df = df.join(ys_std)
-    df['Method'] = 'Surrogate Optimization'
-    return df, vals
+    df['Method'] = 'Surrogate'
+    return df.reset_index(), vals
 
 def read_pkl_meta(folder):
     metas = []
@@ -65,7 +65,7 @@ def read_pkl_meta(folder):
     df = pd.concat(dfs, axis=0)
     df['Utility'] = df['mean']
     df['Method'] = 'Meta'
-    return df
+    return df.reset_index()
 
 def read_pkl_gridsearch(folder):
     gss = []
@@ -78,7 +78,7 @@ def read_pkl_gridsearch(folder):
     df = pd.concat(dfs, axis=0)
     df['Utility'] = df['objective'].apply(np.nansum)
     df['Method'] = 'Random Gridsearch'
-    return df
+    return df.reset_index()
 
 def read_pkl_sa(folder):
     gss = []
@@ -91,12 +91,12 @@ def read_pkl_sa(folder):
     df = pd.concat(dfs, axis=0)
     df['Utility'] = df['objective'].apply(np.nansum)
     df['Method'] = 'Simulated Annealing'
-    return df
+    return df.reset_index()
 
 
 def to_dataframe(res):
     df = pd.DataFrame.from_records(res)
-    df_raw = df[2].transform({i: itemgetter(i) for i in range(9)}) # get mean per node
+    df_raw = df[2].transform({i: itemgetter(i) for i in range(9)}) # get raw mean per node
     df_raw = df_raw.add_prefix('Node')
     df_raw['Aggregated Completed Requests'] = df_raw.sum(axis=1)
     return df_raw
