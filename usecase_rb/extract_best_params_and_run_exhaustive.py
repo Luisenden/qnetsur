@@ -21,7 +21,6 @@ def get_best_x(df):
 if __name__ == '__main__':
 
     folder = '../../surdata/rb'
-    result_folder = '../../surdata/rb/Results_starlight_compare.csv'
 
     df_sur, vals = read_pkl_surrogate(folder)
     df_meta = read_pkl_meta(folder)
@@ -62,9 +61,10 @@ if __name__ == '__main__':
         dfs.append(df)
 
         seed_count += 1
-        print(len(dfs)*nprocs)
         if len(dfs)*nprocs >= 10:
             break
     
     df_exhaustive = pd.concat(dfs, axis=0)
+
+    result_folder = f'../../surdata/rb/Results_starlight_compare{METHOD}.csv'
     df_exhaustive.to_csv(result_folder) 
