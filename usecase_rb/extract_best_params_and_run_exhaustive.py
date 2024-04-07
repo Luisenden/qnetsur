@@ -61,7 +61,7 @@ if __name__ == '__main__':
         dfs.append(df)
 
         seed_count += 1
-        if len(dfs)*nprocs >= 10:
+        if len(dfs)*nprocs >= 1000:
             break
     
     df_exhaustive = pd.concat(dfs, axis=0)
