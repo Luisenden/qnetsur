@@ -85,7 +85,7 @@ print(df_sur)
 
 df_ax = pd.concat([ax[0] for ax in axs]).reset_index()
 paramcolumns = df_ax.columns[df_ax.columns.str.contains('mem_size')]
-df_ax['Objective Mean'] = df_ax['mean']
+df_ax['Objective Mean'] = df_ax['sum']
 df_ax['Method'] = 'Meta Optimization'
 
 

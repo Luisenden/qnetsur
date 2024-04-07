@@ -32,7 +32,6 @@ if __name__ == '__main__':
     for df in [df_sur, df_meta, df_sa, df_gs]:
         xmethod = get_best_x(df)  
         xs[xmethod['Method']] = xmethod.drop('Method')
-    
 
     # even distribution
     even = dict()
@@ -52,19 +51,20 @@ if __name__ == '__main__':
     print(x)
     print(vals)
 
-    # dfs = []
-    # seed_count = 1
-    # while True:
-    #     sim = Simulation(simwrapper, simulation_rb)
-    #     res = sim.run_exhaustive(x=x, vals=vals, N=nprocs, seed=seed_count)
+    dfs = []
+    seed_count = 1
+    while True:
+        sim = Simulation(simwrapper, simulation_rb)
+        res = sim.run_exhaustive(x=x, vals=vals, N=nprocs, seed=seed_count)
 
-    #     df = to_dataframe(res)
-    #     df['Method'] = METHOD
-    #     dfs.append(df)
+        df = to_dataframe(res)
+        df['Method'] = METHOD
+        dfs.append(df)
 
-    #     seed_count += 1
-    #     if len(dfs)*nprocs >= 1000:
-    #         break
+        seed_count += 1
+        print(len(dfs)*nprocs)
+        if len(dfs)*nprocs >= 10:
+            break
     
-    # df_exhaustive = pd.concat(dfs, axis=0)
-    # df_exhaustive.to_csv(result_folder) 
+    df_exhaustive = pd.concat(dfs, axis=0)
+    df_exhaustive.to_csv(result_folder) 

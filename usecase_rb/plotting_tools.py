@@ -63,7 +63,7 @@ def read_pkl_meta(folder):
         data['Trial'] = i
         dfs.append(data)
     df = pd.concat(dfs, axis=0)
-    df['Utility'] = df['mean']
+    df['Utility'] = df['sum']
     df['Method'] = 'Meta'
     return df.reset_index()
 

@@ -40,7 +40,7 @@ vals = {
         'cavity': 500,
         'network_config_file': 'starlight.json',
         'N': 5,
-        'total_time': 2e13
+        'total_time': 2e11
         }
 
 # specify variables and bounds of quantum network simulation
