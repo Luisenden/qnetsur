@@ -103,16 +103,18 @@ def to_dataframe(res):
 
 
 def plot_from_exhaustive(df):
+    lst = ['-', '--', '-.', ':', (0, (1, 10)), (0, (5, 10)), (0, (3, 5, 1, 5)), (0, (5, 1)), (0, (3, 10, 1, 10))]
+
     df = df.melt(id_vars=['Method', 'Aggregated Completed Requests'], var_name='User', value_name='Number of Completed Requests')
     df['User'] = df['User'].apply(lambda x: str.replace(x, 'Node', ''))
     markers = ['o', '^', 'v', 's', 'd', 'P']
     fig, axs = plt.subplots(1,2, figsize=(10,7))
-    sns.pointplot(data= df, x='User', y='Number of Completed Requests', hue='Method', ax=axs[0], errorbar='se', markers=markers, linestyles=['']*9, legend=False)
+    sns.pointplot(data= df, x='User', y='Number of Completed Requests', hue='Method', ax=axs[0], errorbar='se', markers=markers, linestyles=lst, legend=False)
     sns.pointplot(data= df, x='Method', y='Aggregated Completed Requests', hue='Method', ax=axs[1], errorbar='se', markers=markers, legend=True, linestyles=['']*6)
     axs[0].set_title('Number of Completed Requests per User')
+    axs[0].grid()
     axs[1].set_title('Aggregated Number of Completed Requests')
     plt.xticks(['']*9)
-    plt.tight_layout()
     plt.grid()
     plt.show()
 

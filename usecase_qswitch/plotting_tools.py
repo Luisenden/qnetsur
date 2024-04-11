@@ -21,8 +21,8 @@ warnings.filterwarnings("ignore")
 plt.style.use("seaborn-paper")
 font = 18
 plt.rcParams.update({
-    'text.usetex': True,
-    'font.family': 'serif',
+    'text.usetex': False,
+    'font.family': 'arial',
     'font.size': font,
     'axes.labelsize': font,  
     'xtick.labelsize': font,  
@@ -166,10 +166,10 @@ def plot_surrogate_linklevelfidels(folder):
 
 if __name__ == '__main__':
 
-    folder = '../../surdata/qswitch'
-    plot_surrogate_linklevelfidels(folder)
+    # folder = '../../surdata/qswitch'
+    # plot_surrogate_linklevelfidels(folder)
 
-    # df = pd.read_csv('../../surdata/qswitch/Results_qswitch_5users_T30min.csv')
-    # plotting(df)
+    df = pd.read_csv('../../surdata/qswitch/Results_qswitch_5users_T30min.csv')
+    plotting(df)
 
     

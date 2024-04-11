@@ -17,8 +17,8 @@ from  matplotlib.ticker import FuncFormatter
 plt.style.use("seaborn-v0_8-paper")
 font = 14
 plt.rcParams.update({
-    'text.usetex': True,
-    'font.family': 'serif',
+    'text.usetex': False,
+    'font.family': 'arial',
     'font.size': font,
     'axes.labelsize': font,  
     'xtick.labelsize': font,  
@@ -32,20 +32,23 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-folder = '../../surdata/rb_'
+folder = 'rb'
 
 #plot results of optimization (Utility)
 # plot_optimization_results(folder)
 
 # plot from exhaustive run
-df = pd.read_csv(f'{folder}/Results_starlight.csv').drop('Unnamed: 0', axis=1)
-df_compare = pd.read_csv(f'{folder}/Results_starlight_compare.csv').drop('Unnamed: 0', axis=1)
-df_compare['Method'] = df_compare['Method'].apply(lambda x: 'Budget 450' if x == 'Random Gridsearch' else x)
-print(df_compare)
-# print(df_compare.Method.unique)
-# print(df_compare)
+method_names = ['Surrogate', 'Meta', 'Simulated Annealing', 'Random Gridsearch', 'Budget 450', 'even']
+dfs = [None]*6
+for name in glob.glob(f'../../surdata/{folder}/Results_*.csv'):
+    df = pd.read_csv(name)
+    method = df.Method[0]
+    index = method_names.index(method)
+    dfs[index] = df
 
-df_plot = pd.concat([df, df_compare], axis=0)
-print(df_plot)
-plot_from_exhaustive(df_plot)
+df = pd.concat(dfs, axis=0)
+df['Method'] = df['Method'].apply(lambda x: 'Even' if x == 'even' else x)
+df['Method'] = df['Method'].apply(lambda x: 'Wu et. al, 2021' if x == 'Budget 450' else x)
+df = df.drop('Unnamed: 0', axis=1)
+plot_from_exhaustive(df)
 

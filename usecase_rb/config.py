@@ -28,9 +28,13 @@ def simwrapper(simulation, kwargs: dict):
             mem_size.append(value)
             kwargs.pop(key)
     kwargs['mem_size'] = mem_size
+
+    slackbudget = kwargs['slackbudget']
+    kwargs.pop(slackbudget)
+
     mean, std = simulation(**kwargs)
     kwargs['mem_size'] = np.array(mem_size)
-    objectives = mean-np.array(mem_size)/m_max
+    objectives = mean - (np.sum(mem_size) - slackbudget)
     objectives_std = std
     raw = mean
     return objectives, objectives_std, raw
@@ -50,5 +54,6 @@ vars = {
         'ordinal':{}
         } 
 
+vars['slackbudget'] = ([225, 450], 'int')
 for i in range(nnodes):
     vars['range'][f'mem_size_node_{i}'] = ([25, m_max], 'int')

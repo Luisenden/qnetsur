@@ -36,10 +36,10 @@ if __name__ == '__main__':
     even = dict()
     for i in range(9):
         even[f'mem_size_node_{i}'] = 50
-    xs['even'] = even
+    xs['Even'] = even
     
     # weighted distribution according to Wu X. et al., 2021
-    xs['Budget 450'] = {'mem_size_node_0': 25, 'mem_size_node_1': 91, 'mem_size_node_2': 67,
+    xs['Wu et. al, 2021'] = {'mem_size_node_0': 25, 'mem_size_node_1': 91, 'mem_size_node_2': 67,
                'mem_size_node_3': 24, 'mem_size_node_4': 67, 'mem_size_node_5': 24, 
                'mem_size_node_6': 103, 'mem_size_node_7': 25, 'mem_size_node_8':24}
     
@@ -47,24 +47,25 @@ if __name__ == '__main__':
     nprocs = mp.cpu_count()
     x = xs[METHOD]
 
-    print(x)
+    x_df = pd.DataFrame.from_records(xs)
+    print(x_df.sum(axis=0))
     print(vals)
 
-    dfs = []
-    seed_count = 1
-    while True:
-        sim = Simulation(simwrapper, simulation_rb)
-        res = sim.run_exhaustive(x=x, vals=vals, N=nprocs, seed=seed_count)
+    # dfs = []
+    # seed_count = 1
+    # while True:
+    #     sim = Simulation(simwrapper, simulation_rb)
+    #     res = sim.run_exhaustive(x=x, vals=vals, N=nprocs, seed=seed_count)
 
-        df = to_dataframe(res)
-        df['Method'] = METHOD
-        dfs.append(df)
+    #     df = to_dataframe(res)
+    #     df['Method'] = METHOD
+    #     dfs.append(df)
 
-        seed_count += 1
-        if len(dfs)*nprocs >= 1000:
-            break
+    #     seed_count += 1
+    #     if len(dfs)*nprocs >= 1000:
+    #         break
     
-    df_exhaustive = pd.concat(dfs, axis=0)
+    # df_exhaustive = pd.concat(dfs, axis=0)
 
-    result_folder = f'../../surdata/rb/Results_starlight_compare{METHOD}.csv'
-    df_exhaustive.to_csv(result_folder) 
+    # result_folder = f'../../surdata/rb/Results_starlight_compare{METHOD}.csv'
+    # df_exhaustive.to_csv(result_folder) 
