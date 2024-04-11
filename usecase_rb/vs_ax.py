@@ -40,5 +40,5 @@ if __name__ == '__main__':
         delta = np.mean(times_tracked)
     
     result = ax_client.get_trials_data_frame()
-    with open(f'../../surdata/rb/AX_starlight_{MAX_TIME:.1f}h_objective-meanopt_SEED{SEED}_'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
+    with open(f'../../surdata/rb/AX_starlight_{MAX_TIME:.1f}h_objective-budget_SEED{SEED}_'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
             pickle.dump([result, time_tracker, vals], file)
