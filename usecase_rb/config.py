@@ -28,10 +28,8 @@ def simwrapper(simulation, kwargs: dict):
             mem_size.append(value)
             kwargs.pop(key)
     kwargs['mem_size'] = mem_size
-
     
-    #slackbudget = kwargs.pop('slackbudget')
-    slackbudget = 0
+    slackbudget = kwargs.pop('slackbudget')
 
     mean, std = simulation(**kwargs)
     kwargs['mem_size'] = np.array(mem_size)
