@@ -98,7 +98,8 @@ def simulated_annealing(s, MAX_TIME, temp :int = 10, beta_schedule :int = 5, see
     count = 0
     time_tracker = 0
     t = temp 
-    while t > 1e-5 and time_tracker < MAX_TIME:
+    dt_beta = 0
+    while t > 1e-5 and time_tracker+dt_beta < MAX_TIME:
 
         # cooling 
         t = temp / (count + 1)
@@ -118,7 +119,7 @@ def simulated_annealing(s, MAX_TIME, temp :int = 10, beta_schedule :int = 5, see
             dt_beta = time.time() - start_beta
             time_tracker += dt_beta
 
-            if time_tracker >= MAX_TIME:
+            if time_tracker+dt_beta >= MAX_TIME:
                 break
 
         # calculate metropolis acceptance criterion
@@ -138,10 +139,6 @@ def simulated_annealing(s, MAX_TIME, temp :int = 10, beta_schedule :int = 5, see
         current_set['objective'] = -current_eval
         current_set['time'] = dt
         sets.append(current_set)
-
-        if time_tracker >= MAX_TIME:
-            break
-
         count += 1 
 
     return sets
