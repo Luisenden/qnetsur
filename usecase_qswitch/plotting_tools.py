@@ -32,63 +32,85 @@ plt.rcParams.update({
     'axes.titlesize': font
 })
 
-def read_in_surrogate(folder):
+def read_pkl_surrogate_timeprofiling(folder):
+    surs = []
+    for name in glob.glob(f'{folder}/SU_*.pkl'): 
+        with open(name,'rb') as file: surs.append(pickle.load(file))
+    
+    times = {'Simulation':[], 'Build':[], 'Acquisition':[]}
+    for sur in surs:
+        times['Simulation'].append(np.sum(sur.sim_time))
+        times['Build'].append(np.sum(sur.build_time))
+        times['Acquisition'].append(np.sum(sur.acquisition_time))
+
+    times = pd.DataFrame.from_dict(times)
+    times['Total'] = times.sum(axis=1)
+    times_relative = times.div(times['Total'], axis=0)
+    return times, times_relative
+
+def read_pkl_surrogate(folder):
     surs = []
     for name in glob.glob(f'{folder}/SU_*.pkl'): 
         with open(name,'rb') as file: surs.append(pickle.load(file))
 
     vals = surs[0].vals
-
     Xs = []
     for i, sur in enumerate(surs):
         sur.X_df['Trial'] = i
         Xs.append(sur.X_df)
 
     Xs = pd.concat(Xs, axis=0, ignore_index=True)
-    ys = pd.concat([pd.DataFrame(sur.y, columns = pd.Series(range(sur.vals['nnodes']-1)).astype('str')) 
+    ys = pd.concat([pd.DataFrame(sur.y, columns = pd.Series(range(vals['nnodes']-1)).astype('str')) 
                     for sur in surs], axis=0, ignore_index=True)
     ys['Utility'] = ys.sum(axis=1)
-    ys_std = pd.concat([pd.DataFrame(sur.y_std, columns = pd.Series(range(sur.vals['nnodes']-1)).astype('str')).add_suffix('_std') 
+    ys_std = pd.concat([pd.DataFrame(sur.y_std, columns = pd.Series(range(vals['nnodes']-1)).astype('str')).add_suffix('_std') 
                         for sur in surs], axis=0, ignore_index=True)
 
     ys_std['Utility Std'] = ys_std.apply(np.square).sum(axis=1).apply(np.sqrt)
     df = Xs.join(ys)
     df = df.join(ys_std)
-    return df, vals
+    df['Method'] = 'Surrogate'
+    return df.reset_index(), vals
 
-def read_in_meta(folder):
+def read_pkl_meta(folder):
     metas = []
     for name in glob.glob(f'{folder}/AX_*.pkl'): 
         with open(name,'rb') as file: metas.append(pickle.load(file))
     dfs = []
-    for meta in metas:
-        dfs.append(meta[0])
+    for i, meta in enumerate(metas):
+        data = meta[0]#.get_trials_data_frame()
+        data['Trial'] = i
+        dfs.append(data)
     df = pd.concat(dfs, axis=0)
     df['Utility'] = df['evaluate']
-    return df
+    df['Method'] = 'Meta'
+    return df.reset_index()
 
-def read_in_gridsearch(folder):
+def read_pkl_gridsearch(folder):
     gss = []
     for name in glob.glob(f'{folder}/GS_*.pkl'): 
         with open(name,'rb') as file: gss.append(pickle.load(file))
     dfs = []
-    for gs in gss:
+    for i, gs in enumerate(gss):
+        gs[0]['Trial'] = i
         dfs.append(gs[0])
     df = pd.concat(dfs, axis=0)
     df['Utility'] = df['objective'].apply(np.nansum)
-    return df
+    df['Method'] = 'Random Gridsearch'
+    return df.reset_index()
 
-def read_in_sa(folder):
+def read_pkl_sa(folder):
     gss = []
     for name in glob.glob(f'{folder}/SA_*.pkl'): 
         with open(name,'rb') as file: gss.append(pickle.load(file))
     dfs = []
-    for gs in gss:
+    for i, gs in enumerate(gss):
+        gs['Trial'] = i
         dfs.append(gs)
     df = pd.concat(dfs, axis=0)
     df['Utility'] = df['objective'].apply(np.nansum)
-    print(df)
-    return df
+    df['Method'] = 'Simulated Annealing'
+    return df.reset_index()
 
 
 def to_dataframe(res):
@@ -147,7 +169,7 @@ def plotting(df):
     plt.show()
 
 def plot_surrogate_linklevelfidels(folder):
-    df, _ = read_in_surrogate(folder)
+    df, _ = read_pkl_surrogate(folder)
     
     cols_i =df.columns.str.contains('bright_state')
     cols_names = ['Server']+[f'User {i}' for i in range(4,-1,-1)]
@@ -164,12 +186,30 @@ def plot_surrogate_linklevelfidels(folder):
     plt.tight_layout()
     plt.show()
 
+def get_performance_distribution_per_method(folder):
+    df_sur, _ = read_pkl_surrogate(folder)
+    df_meta = read_pkl_meta(folder)
+    df_sa = read_pkl_sa(folder)
+    df_gs = read_pkl_gridsearch(folder)
+    columns = ['Trial', 'Method', 'Utility']
+    df = pd.concat([df_sur[columns], df_meta[columns], df_sa[columns], df_gs[columns]])
+    max_per_trial = df.groupby(['Method', 'Trial'])['Utility'].max()
+    mean_std = max_per_trial.groupby(level='Method').agg(['min', 'max', 'mean', 'std'])
+    mean_std['rel_std'] = mean_std['std']/mean_std['mean']
+    return mean_std
+
 if __name__ == '__main__':
 
-    # folder = '../../surdata/qswitch'
+    folder = '../../surdata/qswitch'
     # plot_surrogate_linklevelfidels(folder)
 
-    df = pd.read_csv('../../surdata/qswitch/Results_qswitch_5users_T30min.csv')
-    plotting(df)
+    # df = pd.read_csv('../../surdata/qswitch/Results_qswitch_5users_T30min.csv')
+    # plotting(df)
+
+    # time_profile, rel_time_profile = read_pkl_surrogate_timeprofiling(folder)
+    # print(rel_time_profile)
+
+    # df = get_performance_distribution_per_method(folder)
+    # print(df)
 
     

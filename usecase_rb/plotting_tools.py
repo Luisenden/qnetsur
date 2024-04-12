@@ -29,6 +29,26 @@ plt.rcParams.update({
 import warnings
 warnings.filterwarnings("ignore")
 
+def read_pkl_surrogate_timeprofiling(folder):
+    surs = []
+    for name in glob.glob(f'{folder}/SU_*.pkl'): 
+        with open(name,'rb') as file: surs.append(pickle.load(file))
+    
+    times = {'Simulation':[], 'Build':[], 'Acquisition':[], 'Simulation per Iteration Mean':[]}
+    print(surs[0].vals)
+    for sur in surs:
+        times['Simulation'].append(np.sum(sur.sim_time))
+        print(sur.sim_time)
+        times['Simulation per Iteration Mean'].append(np.mean(sur.sim_time))
+        times['Build'].append(np.sum(sur.build_time))
+        times['Acquisition'].append(np.sum(sur.acquisition_time))
+
+    times = pd.DataFrame.from_dict(times)
+    times['Total'] = times.sum(axis=1)
+    times_relative = times.div(times['Total'], axis=0)
+    return times, times_relative
+
+
 def read_pkl_surrogate(folder):
     surs = []
     for name in glob.glob(f'{folder}/SU_*.pkl'): 
@@ -131,3 +151,15 @@ def plot_optimization_results(folder):
     plt.grid()
     plt.tight_layout()
     plt.show()
+
+def get_performance_distribution_per_method(folder):
+    df_sur, _ = read_pkl_surrogate(folder)
+    df_meta = read_pkl_meta(folder)
+    df_sa = read_pkl_sa(folder)
+    df_gs = read_pkl_gridsearch(folder)
+    columns = ['Trial', 'Method', 'Utility']
+    df = pd.concat([df_sur[columns], df_meta[columns], df_sa[columns], df_gs[columns]])
+    max_per_trial = df.groupby(['Method', 'Trial'])['Utility'].max()
+    mean_std = max_per_trial.groupby(level='Method').agg(['min', 'max', 'mean', 'std'])
+    mean_std['rel_std'] = mean_std['std']/mean_std['mean']
+    return mean_std

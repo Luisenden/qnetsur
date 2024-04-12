@@ -59,4 +59,4 @@ if __name__ == '__main__':
     result = ax_client.get_trials_data_frame()
     best_parameters, metrics = ax_client.get_best_parameters()
     with open(f'../../surdata/qswitch/AX_qswitch_nleafnodes{NLEAF_NODES}_{MAX_TIME:.2f}h_objective-servernode_SEED{SEED}_'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
-            pickle.dump([result,time_tracker,vals], file)
+            pickle.dump([result, times_tracked, vals], file)

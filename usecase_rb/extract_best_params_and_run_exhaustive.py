@@ -10,7 +10,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 parser.add_argument("--method", type=str, default='Surrogate', 
-                    help="Choose one of the following methods: 'Surrogate', 'Meta', 'Simulated Annealing', 'Random Gridsearch', 'Even', 'Budget 450'")
+                    help="Choose one of the following methods: 'Surrogate', 'Meta', 'Simulated Annealing', 'Random Gridsearch', 'Even', 'Wu et. al, 2021'")
 args, _ = parser.parse_known_args()
 METHOD = args.method
 
@@ -48,24 +48,27 @@ if __name__ == '__main__':
     x = xs[METHOD]
 
     x_df = pd.DataFrame.from_records(xs)
-    print(x_df.sum(axis=0))
+    print(x_df)
     print(vals)
 
-    # dfs = []
-    # seed_count = 1
-    # while True:
-    #     sim = Simulation(simwrapper, simulation_rb)
-    #     res = sim.run_exhaustive(x=x, vals=vals, N=nprocs, seed=seed_count)
+    dfs = []
+    seed_count = 1
+    while True:
+        sim = Simulation(simwrapper, simulation_rb)
+        start = time.time()
+        res = sim.run_exhaustive(x=x, vals=vals, N=nprocs, seed=seed_count)
+        print(time.time()-start)
 
-    #     df = to_dataframe(res)
-    #     df['Method'] = METHOD
-    #     dfs.append(df)
+        df = to_dataframe(res)
+        df['Method'] = METHOD
+        dfs.append(df)
 
-    #     seed_count += 1
-    #     if len(dfs)*nprocs >= 1000:
-    #         break
+        seed_count += 1
+        if len(dfs)*nprocs >= 10:
+            break
     
-    # df_exhaustive = pd.concat(dfs, axis=0)
+    df_exhaustive = pd.concat(dfs, axis=0)
+    print(df_exhaustive)
 
     # result_folder = f'../../surdata/rb/Results_starlight_compare{METHOD}.csv'
     # df_exhaustive.to_csv(result_folder) 

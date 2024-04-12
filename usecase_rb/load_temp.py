@@ -32,23 +32,31 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-folder = 'rb'
+folder = '../../surdata/rb_budget'
 
 #plot results of optimization (Utility)
 # plot_optimization_results(folder)
 
 # plot from exhaustive run
-method_names = ['Surrogate', 'Meta', 'Simulated Annealing', 'Random Gridsearch', 'Budget 450', 'even']
-dfs = [None]*6
-for name in glob.glob(f'../../surdata/{folder}/Results_*.csv'):
-    df = pd.read_csv(name)
-    method = df.Method[0]
-    index = method_names.index(method)
-    dfs[index] = df
+# method_names = ['Surrogate', 'Meta', 'Simulated Annealing', 'Random Gridsearch', 'Wu et. al, 2021', 'Even']
+# dfs = [None]*6
+# for name in glob.glob(f'../../surdata/{folder}/Results_*.csv'):
+#     df = pd.read_csv(name)
+#     method = df.Method[0]
+#     index = method_names.index(method)
+#     dfs[index] = df
 
-df = pd.concat(dfs, axis=0)
-df['Method'] = df['Method'].apply(lambda x: 'Even' if x == 'even' else x)
-df['Method'] = df['Method'].apply(lambda x: 'Wu et. al, 2021' if x == 'Budget 450' else x)
-df = df.drop('Unnamed: 0', axis=1)
-plot_from_exhaustive(df)
+# df = pd.concat(dfs, axis=0)
+# df['Method'] = df['Method'].apply(lambda x: 'Even' if x == 'even' else x)
+# df['Method'] = df['Method'].apply(lambda x: 'Wu et. al, 2021' if x == 'Budget 450' else x)
+# df = df.drop('Unnamed: 0', axis=1)
+# plot_from_exhaustive(df)
+
+time_profile, rel_time_profile = read_pkl_surrogate_timeprofiling(folder)
+print(time_profile)
+
+# df = get_performance_distribution_per_method(folder)
+# print(df)
+
+df = read_pkl_surrogate(folder)
 

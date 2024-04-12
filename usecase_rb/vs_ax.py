@@ -41,4 +41,4 @@ if __name__ == '__main__':
     
     result = ax_client.get_trials_data_frame()
     with open(f'../../surdata/rb_budget/AX_starlight_{MAX_TIME:.1f}h_objective-budget_SEED{SEED}_'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
-            pickle.dump([result, time_tracker, vals], file)
+            pickle.dump([result, times_tracked, vals], file)

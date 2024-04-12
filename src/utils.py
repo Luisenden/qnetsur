@@ -364,7 +364,6 @@ class Surrogate(Simulation):
         # train models
         self.train_models()
 
-        # optimization
         initial_optimize_time = time.time()-optimize_start
         self.optimize_time.append(initial_optimize_time)
 
