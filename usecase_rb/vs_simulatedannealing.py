@@ -16,5 +16,5 @@ if __name__ == '__main__':
         result = simaneal(si)
         result = pd.DataFrame.from_records(result)
 
-        with open(f'../../surdata/rb_budget/SA_starlight_{MAX_TIME:.1f}h_objective-budget_SEED{SEED}_'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
+        with open(f'../../surdata/rb/SA_starlight_{MAX_TIME:.1f}h_objective-penal_SEED{SEED}_'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
                 pickle.dump([result, vals], file)

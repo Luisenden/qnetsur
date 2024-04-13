@@ -15,12 +15,12 @@ args, _ = parser.parse_known_args()
 METHOD = args.method
 
 def get_best_x(df):
-    return df.iloc[df['Utility'].idxmax()][df.columns.str.contains('mem_size|Method')]
+    return df.iloc[df['Utility'].idxmax()][df.columns.str.contains('mem_size|slack|Method')]
 
 
 if __name__ == '__main__':
 
-    folder = '../../surdata/rb'
+    folder = '../../surdata/rb_budget'
 
     df_sur, vals = read_pkl_surrogate(folder)
     df_meta = read_pkl_meta(folder)
@@ -36,12 +36,13 @@ if __name__ == '__main__':
     even = dict()
     for i in range(9):
         even[f'mem_size_node_{i}'] = 50
+    even['slackbudget'] = 0
     xs['Even'] = even
     
     # weighted distribution according to Wu X. et al., 2021
     xs['Wu et. al, 2021'] = {'mem_size_node_0': 25, 'mem_size_node_1': 91, 'mem_size_node_2': 67,
                'mem_size_node_3': 24, 'mem_size_node_4': 67, 'mem_size_node_5': 24, 
-               'mem_size_node_6': 103, 'mem_size_node_7': 25, 'mem_size_node_8':24}
+               'mem_size_node_6': 103, 'mem_size_node_7': 25, 'mem_size_node_8':24, 'slackbudget': 0}
     
     vals['N'] = 1
     nprocs = mp.cpu_count()

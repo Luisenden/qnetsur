@@ -37,15 +37,16 @@ def read_pkl_surrogate_timeprofiling(folder):
     for name in glob.glob(f'{folder}/SU_*.pkl'): 
         with open(name,'rb') as file: surs.append(pickle.load(file))
     
-    times = {'Simulation':[], 'Build':[], 'Acquisition':[]}
+    times = {'Simulation':[], 'Build':[], 'Acquisition':[], '# Iterations': []}
     for sur in surs:
         times['Simulation'].append(np.sum(sur.sim_time))
+        times['# Iterations'].append(len(sur.sim_time))
         times['Build'].append(np.sum(sur.build_time))
         times['Acquisition'].append(np.sum(sur.acquisition_time))
 
     times = pd.DataFrame.from_dict(times)
     times['Total'] = times.sum(axis=1)
-    times_relative = times.div(times['Total'], axis=0)
+    times_relative = times.drop('# Iterations', axis=1).div(times['Total'], axis=0)
     return times, times_relative
 
 def read_pkl_surrogate(folder):
@@ -206,10 +207,10 @@ if __name__ == '__main__':
     # df = pd.read_csv('../../surdata/qswitch/Results_qswitch_5users_T30min.csv')
     # plotting(df)
 
-    # time_profile, rel_time_profile = read_pkl_surrogate_timeprofiling(folder)
-    # print(rel_time_profile)
+    time_profile, rel_time_profile = read_pkl_surrogate_timeprofiling(folder)
+    print(time_profile)
 
-    # df = get_performance_distribution_per_method(folder)
-    # print(df)
+    df = get_performance_distribution_per_method(folder)
+    print(df)
 
     
