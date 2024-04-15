@@ -5,10 +5,10 @@ if __name__ == '__main__':
     folder = '../../surdata/qswitch'
     result_folder = '../../surdata/qswitch/Results_qswitch_5users_T30min.csv'
 
-    df_sur, vals = read_in_surrogate(folder)
-    df_meta = read_in_meta(folder)
-    df_sa = read_in_sa(folder)
-    df_gs = read_in_gridsearch(folder)
+    df_sur, vals = read_pkl_surrogate(folder)
+    df_meta = read_pkl_meta(folder)
+    df_sa = read_pkl_sa(folder)
+    df_gs = read_pkl_gridsearch(folder)
 
     xs = []
     for df in [df_sur, df_meta, df_sa, df_gs]:

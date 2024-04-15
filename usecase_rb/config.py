@@ -20,6 +20,7 @@ rng_sur = np.random.default_rng(seed=SEED) # set rng for optimization
 nnodes = 9 # number of nodes
 m_max = 105 # maximum number of memory qubits per node
 sample_size = 10 # number of samples used for the initial training of the surrogate model
+budget = 450
 
 def simwrapper(simulation, kwargs: dict):
     mem_size = []
@@ -28,13 +29,10 @@ def simwrapper(simulation, kwargs: dict):
             mem_size.append(value)
             kwargs.pop(key)
     kwargs['mem_size'] = mem_size
-    
-    #slackbudget = kwargs.pop('slackbudget')
 
     mean, std = simulation(**kwargs)
     kwargs['mem_size'] = np.array(mem_size)
-    #objectives = mean - abs(np.sum(mem_size) - slackbudget)/len(mem_size)
-    objectives = mean - 1.25 * np.array(mem_size)/m_max
+    objectives = mean - max(np.sum(mem_size)-budget, 0)
     objectives_std = std
     raw = mean
     return objectives, objectives_std, raw
@@ -54,6 +52,5 @@ vars = {
         'ordinal':{}
         } 
 
-#vars['range']['slackbudget'] = ([nnodes*10, 450], 'int')
 for i in range(nnodes):
     vars['range'][f'mem_size_node_{i}'] = ([10, m_max], 'int')

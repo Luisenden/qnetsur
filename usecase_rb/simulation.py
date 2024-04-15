@@ -39,19 +39,6 @@ def update_memory_config(file_path, new_memo_size, total_time,seed):
     with open(str(proc)+'.json', 'w') as file:
         json.dump(data, file, indent=2)
 
-def get_fidelity_by_efficiency(C: int):
-    """
-    C: the cavity cooperativity
-    50 <= C <= 500
-    """
-    gama = 14
-    gama_star = 32
-    delta_omega = 0
-    gama_prime = (C+1)*gama
-    tau = gama_prime + 2*gama_star
-    F_e = 0.5 * (1 + gama_prime**2 / (tau**2 + delta_omega**2))
-    return F_e
-
 
 def get_component(node: "Node", component_type: str):
     for comp in node.components.values():
@@ -70,7 +57,7 @@ def set_parameters(cavity:int, network_topo):
     MEMO_FREQ = 2e5
     MEMO_EXPIRE = 1.3
     MEMO_EFFICIENCY = 0.75
-    MEMO_FIDELITY = 0.9349367588934053 # get_fidelity_by_efficiency(C) #0.9349367588934053
+    MEMO_FIDELITY = 0.9349367588934053 
     for node in routers:
         memory_array = node.get_components_by_type("MemoryArray")[0]  # assume only 1 memory array
         memory_array.update_memory_params("frequency", MEMO_FREQ)

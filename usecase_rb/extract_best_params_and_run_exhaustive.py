@@ -15,12 +15,12 @@ args, _ = parser.parse_known_args()
 METHOD = args.method
 
 def get_best_x(df):
-    return df.iloc[df['Utility'].idxmax()][df.columns.str.contains('mem_size|slack|Method')]
+    return df.iloc[df['Utility'].idxmax()][df.columns.str.contains('mem_size|Method')]
 
 
 if __name__ == '__main__':
 
-    folder = '../../surdata/rb_budget'
+    folder = '../../surdata/rb'
 
     df_sur, vals = read_pkl_surrogate(folder)
     df_meta = read_pkl_meta(folder)
