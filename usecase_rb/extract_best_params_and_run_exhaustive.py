@@ -20,7 +20,7 @@ def get_best_x(df):
 
 if __name__ == '__main__':
 
-    folder = '../../surdata/rb'
+    folder = '../../surdata/rb_budget'
 
     df_sur, vals = read_pkl_surrogate(folder)
     df_meta = read_pkl_meta(folder)
@@ -36,21 +36,20 @@ if __name__ == '__main__':
     even = dict()
     for i in range(9):
         even[f'mem_size_node_{i}'] = 50
-    even['slackbudget'] = 0
     xs['Even'] = even
     
     # weighted distribution according to Wu X. et al., 2021
     xs['Wu et. al, 2021'] = {'mem_size_node_0': 25, 'mem_size_node_1': 91, 'mem_size_node_2': 67,
                'mem_size_node_3': 24, 'mem_size_node_4': 67, 'mem_size_node_5': 24, 
-               'mem_size_node_6': 103, 'mem_size_node_7': 25, 'mem_size_node_8':24, 'slackbudget': 0}
+               'mem_size_node_6': 103, 'mem_size_node_7': 25, 'mem_size_node_8':24}
     
     vals['N'] = 1
     nprocs = mp.cpu_count()
     x = xs[METHOD]
 
-    x_df = pd.DataFrame.from_records(xs)
-    print(x_df)
-    print(vals)
+    x_df = pd.DataFrame.from_records(xs).T
+    x_df['SUM'] = x_df.sum(axis=1)
+    #print(x_df.T)
 
     dfs = []
     seed_count = 1
@@ -65,11 +64,11 @@ if __name__ == '__main__':
         dfs.append(df)
 
         seed_count += 1
-        if len(dfs)*nprocs >= 10:
+        if len(dfs)*nprocs >= 1000:
             break
     
     df_exhaustive = pd.concat(dfs, axis=0)
     print(df_exhaustive)
 
-    # result_folder = f'../../surdata/rb/Results_starlight_compare{METHOD}.csv'
-    # df_exhaustive.to_csv(result_folder) 
+    result_folder = f'../../surdata/rb_budget/Results_starlight_compare{METHOD}.csv'
+    df_exhaustive.to_csv(result_folder) 

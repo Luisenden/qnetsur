@@ -109,7 +109,7 @@ dfs = pd.concat(dfs_obj)
 print(dfs)
 dfs['\# Optimization steps'] = dfs['index']
 fig, ax = plt.subplots()
-g = sns.lineplot(data = dfs, x='\# Optimization steps', y='Objective Mean', hue='Method', style='Method', markers='^', markersize=5, units='Method', estimator=None) 
+g = sns.lineplot(data = dfs[dfs.Method != 'Meta Optimization'], x='\# Optimization steps', y='Objective Mean', hue='Method', style='Method', markers='^', markersize=5) #units='Method', estimator=None
 plt.title(f'Quantum Network with {nnodes}')
 handles, labels = ax.get_legend_handles_labels()
 ax.legend(handles=handles, labels=labels)

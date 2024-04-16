@@ -55,8 +55,8 @@ folder = '../../surdata/rb_budget'
 time_profile, rel_time_profile = read_pkl_surrogate_timeprofiling(folder)
 print(time_profile)
 
-# df = get_performance_distribution_per_method(folder)
-# print(df)
+df = get_performance_distribution_per_method(folder)
+print(df)
 
 df = read_pkl_surrogate(folder)
 
