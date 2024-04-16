@@ -68,7 +68,6 @@ if __name__ == '__main__':
             break
     
     df_exhaustive = pd.concat(dfs, axis=0)
-    print(df_exhaustive)
 
     result_folder = f'../../surdata/rb_budget/Results_starlight_compare{METHOD}.csv'
     df_exhaustive.to_csv(result_folder) 
