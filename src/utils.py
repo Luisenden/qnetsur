@@ -218,15 +218,15 @@ class Surrogate(Simulation):
         self.model_scores = {'SVR': [], 'DecisionTree': []}
         self.k = k  # coefficient in neighbour selection
 
-    def get_neighbour(self, max_time, current_time, x :dict) -> dict:
+    def get_neighbour(self, x :dict) -> dict:
         """
         Generates most promising parameters in limited neighbouring region 
         according to current knowledge of surrogate model and depending on the time left.
         """
         x_n = {}
-        f = (1-np.log(1+current_time/max_time)**2)**self.k
+        f = (1-np.log(1+self.current_time_counter/self.limit)**2)**self.k
 
-        size = int(current_time/max_time*10000 + 10)
+        size = int(self.current_time_counter/self.limit*10000 + 10)
         for dim, par in self.vars['range'].items():
                 vals = par[0]
                 if par[1] == 'int':
@@ -261,7 +261,7 @@ class Surrogate(Simulation):
         x_fittest = samples_x.iloc[fittest_neighbour_index].to_dict()
         return x_fittest
 
-    def acquisition(self, max_time, current_time, n=10) -> pd.DataFrame:
+    def acquisition(self, n=10) -> pd.DataFrame:
         """
         Computes n new data points according to estimated improvement 
         and degree of exploration and adds the data to the training sample.
@@ -271,9 +271,7 @@ class Surrogate(Simulation):
         newx = []
         top_selection = self.X_df.iloc[np.argsort(y_obj_vec)[-n:]]  # select top n candidates
         for x in top_selection.iloc:  # get most promising neighbour according to surrogate
-            neighbour = self.get_neighbour(max_time=max_time,
-                                           current_time=current_time,
-                                           x=x.to_dict())
+            neighbour = self.get_neighbour(x=x.to_dict())
             newx.append(neighbour)
         self.X_df_add = pd.DataFrame.from_records(newx).astype(object)
         self.acquisition_time.append(time.time()-start)       
@@ -345,7 +343,7 @@ class Surrogate(Simulation):
         self.train_models()
 
 
-    def gen_initial_set(self, max_time, verbose):
+    def gen_initial_set(self, verbose):
         """
         Generates the initial training set.
         """
@@ -367,63 +365,67 @@ class Surrogate(Simulation):
         initial_optimize_time = time.time()-optimize_start
         self.optimize_time.append(initial_optimize_time)
 
-        self.max_optimize_time = max_time - initial_optimize_time
+        self.max_optimize_time = self.limit - initial_optimize_time
 
     def optimize_with_timer(self, verbose):
         """
-        Optimization with a set maximum number of seconds.
+        Optimization until a set maximum number of seconds.
         """
         current_times = []
-        current_time = 0
+        self.current_time_counter = 0
         delta = 0
         counter = 1
-        while current_time+delta < self.max_optimize_time:
+        while (self.current_time_counter + delta) < self.max_optimize_time:
             start = time.time()
 
-            self.acquisition(self.max_optimize_time, current_time)
+            self.acquisition()
             self.update(counter)
 
             self.optimize_time.append(time.time()-start)
             current_times.append(time.time()-start)
-            current_time = np.sum(current_times)
+            self.current_time_counter = np.sum(current_times)
             delta = np.mean(current_times)
             counter +=1
             if verbose:
-                print(f'Time left for optimization: {self.max_optimize_time-current_time:.2f}s')
+                print(f'Time left for optimization: {self.max_optimize_time-self.current_time_counter:.2f}s')
 
-    def optimize_with_iteration(self, max_iteration, verbose):
+    def optimize_with_iteration(self, verbose):
         """
-        Optimization with a set maximum number of iterations.
+        Optimization until a set maximum number of iterations.
         """
-        counter = 1
-        while counter < max_iteration:
+        self.current_time_counter = 1
+        while self.current_time_counter < self.limit:
             start = time.time()
 
-            self.acquisition(max_iteration, counter)
-            self.update(counter)
+            self.acquisition()
+            self.update(self.current_time_counter)
 
             self.optimize_time.append(time.time()-start)
-            counter +=1
-            if verbose: print(f'Iteration {counter}/{max_iteration}')
+            if verbose: print(f'Iteration {self.current_time_counter}/{self.limit-1}')
+            self.current_time_counter +=1
 
 
-    def optimize(self, max_time, verbose=False) -> None:
+    def optimize(self, limit, verbose=False) -> None:
         """
         Conducts the optimization process to find optimal simulation parameters.
         """
-        if isinstance(max_time, float):
+        if isinstance(limit, float):
+            self.limit = limit
             if verbose: print('Optimize with timer.')
-            self.gen_initial_set(max_time, verbose=verbose)
+            self.gen_initial_set(verbose=verbose)
             self.optimize_with_timer(verbose=verbose)
         
         else:
-            self.gen_initial_set(max_time[0], verbose=verbose)
-            if max_time[1]:
+            self.limit = limit[0]
+            self.gen_initial_set(verbose=verbose)
+            if limit[1] == 'timer':
                 if verbose: print('Optimize with timer.')
                 self.optimize_with_timer(verbose=verbose)
-            else:
+            elif limit[1] == 'iterator':
                 if verbose: print('Optimize with iterator.')
-                self.optimize_with_iteration(max_time[0], verbose=verbose)
+                self.optimize_with_iteration(verbose=verbose)
+            else:
+                raise Exception('Configuration must be either "timer" or "iterator".')
         
         if verbose: print('Optimization finished.')
 

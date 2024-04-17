@@ -12,14 +12,14 @@ the given utility function, Distillable Entanglement as defined in the paper.
 from config import *
 from src.utils import *
 
-def extract_results(result:pd.DataFrame, params:list, sim:Simulation) -> None:
+def get_results(result:pd.DataFrame, params:list, sim:Simulation) -> None:
         obj_sums = np.sum(sim.y, axis=1)
         best_index = np.argmax(obj_sums)
 
         best = obj_sums[best_index]
-        best_std = np.sqrt(np.sum(np.square(sim.y_std), axis=1))[best_index]
+        best_std = np.sqrt(np.sum(np.square(sim.y_std), axis=1))[best_index] # calc standard deviation
         
-        best_e2e_rate = np.mean(sim.y_raw[best_index][0][1:])
+        best_e2e_rate = np.mean(sim.y_raw[best_index][0][1:]) # server_node is left out
         best_e2e_rate_std = np.mean(sim.y_raw[best_index][1][1:])
         best_e2e_fidel = np.mean(sim.y_raw[best_index][2][1:])
         best_e2e_fidel_std = np.mean(sim.y_raw[best_index][3][1:])
@@ -34,7 +34,7 @@ def extract_results(result:pd.DataFrame, params:list, sim:Simulation) -> None:
         params.append(sim.X_df.iloc[best_index])
 
 
-def run(vars:dict, vals:dict, max_optimize_time:float, path:str, bottleneck_length:int, n=20):
+def run(vars:dict, vals:dict, limit:list, path:str, bottleneck_length:int, n=20):
         """
         Executes a series of optimizations over a range of server distances from 1-100km to evaluate the performance of a quantum switch network.
         This function iterates through specified server distances, instantiates a surrogate model for each, and runs optimization 
@@ -62,9 +62,9 @@ def run(vars:dict, vals:dict, max_optimize_time:float, path:str, bottleneck_leng
                 # try:
                 vals['distances'] = [server_distance, 2, 2]
                 sim = Surrogate(simwrapper, simulation_qswitch, vals=vals, vars=vars, sample_size=initial_model_size)
-                sim.optimize(max_time=max_optimize_time, verbose=True)
+                sim.optimize(limit=limit, verbose=True)
 
-                extract_results(result, best_params, sim)
+                get_results(result, best_params, sim)
                 result['server_distance'].append(server_distance)
                 print(f'done server distance {server_distance}')
                 # except:
@@ -75,7 +75,7 @@ def run(vars:dict, vals:dict, max_optimize_time:float, path:str, bottleneck_leng
         df = df_params.join(df_result, how='left')
 
         df.to_csv(path+
-                  f'Sur_df_qswitch_nleafnodes{NLEAF_NODES}_{MAX_TIME:.3f}h_bottleneck-link_SEED{SEED}_'+
+                  f'Sur_df_qswitch_nleafnodes{NLEAF_NODES}_{limit[0]:.1f}{limit[1]}_bottleneck-link_SEED{SEED}_'+
                   datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.csv')
         return df
 
@@ -83,7 +83,7 @@ def run(vars:dict, vals:dict, max_optimize_time:float, path:str, bottleneck_leng
 if __name__ == '__main__':
 
         storage_path='../../surdata/qswitch/'  # storage path
-        max_time_or_iteration =[30, 0]  # maximum allowed optimization time in seconds [*, 1] or number of iterations [*, 0]
+        max_time_or_iteration =[30, 'iterator']  # maximum allowed optimization time in seconds [*, 'timer'] or number of iterations [*, 'iterator']
 
         vals = {  # define fixed parameters for given simulation function
             'nnodes': NLEAF_NODES,
@@ -104,6 +104,4 @@ if __name__ == '__main__':
         vars['range']['bright_state_user'] = ([.0, .1], 'float')
 
         # optimize at different bottleneck-link lengths (1-100km)
-        df = run(vars=vars, vals=vals, max_optimize_time=max_time_or_iteration, path=storage_path, bottleneck_length=100, n=10)
-
-
+        df = run(vars=vars, vals=vals, limit=max_time_or_iteration, path=storage_path, bottleneck_length=100, n=20)
