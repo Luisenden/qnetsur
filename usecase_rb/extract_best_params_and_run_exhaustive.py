@@ -49,7 +49,7 @@ if __name__ == '__main__':
 
     x_df = pd.DataFrame.from_records(xs).T
     x_df['SUM'] = x_df.sum(axis=1)
-    #print(x_df.T)
+    print(x_df.T.to_latex())
 
     dfs = []
     seed_count = 1

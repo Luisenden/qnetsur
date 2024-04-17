@@ -404,8 +404,7 @@ class Surrogate(Simulation):
 
             self.optimize_time.append(time.time()-start)
             counter +=1
-            if verbose:
-                print(f'Iteration {counter}/{max_iteration}')
+            if verbose: print(f'Iteration {counter}/{max_iteration}')
 
 
     def optimize(self, max_time, verbose=False) -> None:
@@ -413,13 +412,14 @@ class Surrogate(Simulation):
         Conducts the optimization process to find optimal simulation parameters.
         """
         if isinstance(max_time, float):
+            if verbose: print('Optimize with timer.')
             self.gen_initial_set(max_time, verbose=verbose)
             self.optimize_with_timer(verbose=verbose)
         
         else:
             self.gen_initial_set(max_time[0], verbose=verbose)
             if max_time[1]:
-                print('Optimize with timer.')
+                if verbose: print('Optimize with timer.')
                 self.optimize_with_timer(verbose=verbose)
             else:
                 if verbose: print('Optimize with iterator.')
