@@ -225,7 +225,6 @@ class Surrogate(Simulation):
         """
         x_n = {}
         f = (1-np.log(1+self.current_time_counter/self.limit)**2)**self.k
-
         size = int(self.current_time_counter/self.limit*10000 + 10)
         for dim, par in self.vars['range'].items():
                 vals = par[0]

@@ -10,7 +10,6 @@ import sys
 sys.path.append('../')
 
 import pickle, time
-import copy
 import re
 from datetime import datetime
 from functools import partial, wraps
@@ -36,7 +35,6 @@ SEED = args.seed
 
 rng_sur = np.random.default_rng(seed=SEED) # set rng for optimization 
 initial_model_size = 10  # number of samples used for initial training 
-
 
 D_H = lambda F: 1 + F*np.log2(F) + (1-F) * np.log2((1-F)/3)\
     if F > 0.81 else 1e-12  # yield of the so-called “hashing” protocol

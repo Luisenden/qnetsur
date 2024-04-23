@@ -1,5 +1,5 @@
 """
-Plotting script for results from `extract_best_params_and_run_exhaustive.py`.
+Plotting tools for metropolitan network use case.
 """
 
 import pandas as pd
@@ -11,12 +11,12 @@ import glob
 import pickle
 
 import config
-plt.style.use("seaborn-v0_8-paper")
 
+plt.style.use("seaborn-v0_8-paper")
 font = 14
 plt.rcParams.update({
-    'text.usetex': True,
-    'font.family': 'serif',
+    'text.usetex': False,
+    'font.family': 'arial',
     'font.size': font,
     'axes.labelsize': font,  
     'xtick.labelsize': font,  
@@ -25,7 +25,6 @@ plt.rcParams.update({
     'legend.title_fontsize': font,
     'axes.titlesize': font
 })
-
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -34,17 +33,15 @@ def read_pkl_surrogate_timeprofiling(folder):
     for name in glob.glob(f'{folder}/SU_*.pkl'): 
         with open(name,'rb') as file: surs.append(pickle.load(file))
     
-    times = {'Simulation':[], 'Build':[], 'Acquisition':[], 'Simulation per Iteration Mean':[]}
-    print(surs[0].vals)
+    times = {'Simulation':[], 'Build':[], 'Acquisition':[], 'Simulation per Iteration Mean':[] }
     for sur in surs:
         times['Simulation'].append(np.sum(sur.sim_time))
-        print(sur.sim_time)
         times['Simulation per Iteration Mean'].append(np.mean(sur.sim_time))
         times['Build'].append(np.sum(sur.build_time))
         times['Acquisition'].append(np.sum(sur.acquisition_time))
 
     times = pd.DataFrame.from_dict(times)
-    times['Total'] = times.sum(axis=1)
+    times['Total'] = times.drop('Simulation per Iteration Mean', axis=1).sum(axis=1)
     times_relative = times.div(times['Total'], axis=0)
     return times, times_relative
 
@@ -122,22 +119,6 @@ def to_dataframe(res):
     return df_raw
 
 
-def plot_from_exhaustive(df):
-    lst = ['-', '--', '-.', ':', (0, (1, 10)), (0, (5, 10)), (0, (3, 5, 1, 5)), (0, (5, 1)), (0, (3, 10, 1, 10))]
-
-    df = df.melt(id_vars=['Method', 'Aggregated Completed Requests'], var_name='User', value_name='Number of Completed Requests')
-    df['User'] = df['User'].apply(lambda x: str.replace(x, 'Node', ''))
-    markers = ['o', '^', 'v', 's', 'd', 'P']
-    fig, axs = plt.subplots(1,2, figsize=(10,7))
-    sns.pointplot(data= df, x='User', y='Number of Completed Requests', hue='Method', ax=axs[0], errorbar='se', markers=markers, linestyles=lst, legend=False)
-    sns.pointplot(data= df, x='Method', y='Aggregated Completed Requests', hue='Method', ax=axs[1], errorbar='se', markers=markers, legend=True, linestyles=['']*6)
-    axs[0].set_title('Number of Completed Requests per User')
-    axs[0].grid()
-    axs[1].set_title('Aggregated Number of Completed Requests')
-    plt.xticks(['']*9)
-    plt.grid()
-    plt.show()
-
 def plot_optimization_results(folder):
     target_columns = ['Trial', 'Utility', 'Method']
     df = pd.concat([read_pkl_surrogate(folder)[0][target_columns], read_pkl_meta(folder)[target_columns],
@@ -163,3 +144,52 @@ def get_performance_distribution_per_method(folder):
     mean_std = max_per_trial.groupby(level='Method').agg(['min', 'max', 'mean', 'std'])
     mean_std['rel_std'] = mean_std['std']/mean_std['mean']
     return mean_std
+
+def get_policies(folder):
+    df_sur, vals = read_pkl_surrogate(folder)
+    df_meta = read_pkl_meta(folder)
+    df_sa = read_pkl_sa(folder)
+    df_gs = read_pkl_gridsearch(folder)
+
+    xs = dict()
+    for df in [df_sur, df_meta, df_sa, df_gs]:
+        xmethod = df.iloc[df['Utility'].idxmax()][df.columns.str.contains('mem_size|Method')] 
+        xs[xmethod['Method']] = xmethod.drop('Method')
+
+    # even distribution
+    even = dict()
+    for i in range(9):
+        even[f'mem_size_node_{i}'] = 50
+    xs['Even'] = even
+    
+    # weighted distribution according to Wu X. et al., 2021
+    xs['Wu et. al, 2021'] = {'mem_size_node_0': 25, 'mem_size_node_1': 91, 'mem_size_node_2': 67,
+               'mem_size_node_3': 24, 'mem_size_node_4': 67, 'mem_size_node_5': 24, 
+               'mem_size_node_6': 103, 'mem_size_node_7': 25, 'mem_size_node_8':24}
+
+    x_df = pd.DataFrame.from_records(xs).T
+    x_df['Total Number of Allocated Memories'] = x_df.sum(axis=1).astype(int)
+    return x_df, xs, vals
+
+def plot_from_exhaustive(folder):
+    x_df, _, _ = get_policies(folder)
+    method_names = ['Surrogate', 'Meta', 'Simulated Annealing', 'Random Gridsearch', 'Even', 'Wu et. al, 2021']
+    dfs = [None]*6
+    for name in glob.glob(f'{folder}/Results_*.csv'):
+        df = pd.read_csv(name)
+        method = df.Method[0]
+        index = method_names.index(method)
+        dfs[index] = df
+
+    df = pd.concat(dfs, axis=0)
+    df = df.drop('Unnamed: 0' , axis=1)
+    df = df.melt(id_vars=['Method', 'Aggregated Completed Requests'], var_name='User', value_name='Number of Completed Requests')
+    df['User'] = df['User'].apply(lambda x: str.replace(x, 'Node', ''))
+    df = df.merge(x_df, left_on='Method', right_index=True, how='left')
+    markers = ['o', '^', 'v', 's', 'd', 'P']
+    fig, axs = plt.subplots(1,1, figsize=(5,3))
+    sns.pointplot(data= df, x='Total Number of Allocated Memories', y='Aggregated Completed Requests', hue='Method', ax=axs, errorbar='se', markers=markers, legend=True, linestyles=['']*6, native_scale=True)
+    axs.grid()
+    plt.title('Aggregated Number of Completed Requests')
+    plt.tight_layout()
+    plt.show()

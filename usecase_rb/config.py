@@ -39,10 +39,10 @@ def simwrapper(simulation, kwargs: dict):
 
 # specify fixed parameters of quantum network simulation
 vals = {
-        'cavity': 500,
-        'network_config_file': 'starlight.json',
-        'N': 5,
-        'total_time': 2e13
+        'network_config_file': 'starlight.json', # network configuration file
+        'N': 5, # simulation sample size
+        'total_time': 2e13, # simulation time
+        'cavity': 500 # experimental parameter for atom-cavity cooperativity
         }
 
 # specify variables and bounds of quantum network simulation

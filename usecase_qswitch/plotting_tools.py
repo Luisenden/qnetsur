@@ -135,7 +135,7 @@ def to_dataframe(res):
 def get_best_x(df):
     return df.iloc[df['Utility'].idxmax()][df.columns.str.contains('bright_state')]
 
-def plotting(df):
+def plot_from_exhaustive(df):
     markers = ['o', '^', 'x', 's']
     linestyles = '-', '--', '-.', ':'
     fig, axs = plt.subplots(3,2, figsize=(10,7))
@@ -169,7 +169,7 @@ def plotting(df):
     plt.tight_layout()
     plt.show()
 
-def plot_surrogate_linklevelfidels(folder):
+def plot_surrogate_linklevelfidels(folder, trial=0):
     df, _ = read_pkl_surrogate(folder)
     
     cols_i =df.columns.str.contains('bright_state')
@@ -179,7 +179,7 @@ def plot_surrogate_linklevelfidels(folder):
     df = pd.melt(df, value_vars=cols_names, var_name='Node', value_name='Link-level Fidelity', id_vars=['Iteration', 'Trial'])
     
     fig, ax = plt.subplots(figsize = (10,4))
-    sns.lineplot(data=df[df.Trial==0], x='Iteration', y='Link-level Fidelity', hue='Node', style='Node')
+    sns.lineplot(data=df[df.Trial==trial], x='Iteration', y='Link-level Fidelity', hue='Node', style='Node')
     sns.move_legend(ax, "center right", bbox_to_anchor=(1.3, 0.5))
     plt.title('Link-level Fidelity per Node')
     plt.ylabel('Fidelity')
@@ -202,10 +202,10 @@ def get_performance_distribution_per_method(folder):
 if __name__ == '__main__':
 
     folder = '../../surdata/qswitch'
-    # plot_surrogate_linklevelfidels(folder)
+    plot_surrogate_linklevelfidels(folder, trial=7)
 
-    # df = pd.read_csv('../../surdata/qswitch/Results_qswitch_5users_T30min.csv')
-    # plotting(df)
+    df = pd.read_csv('../../surdata/qswitch/Results_qswitch_5users_T30min.csv')
+    plot_from_exhaustive(df)
 
     time_profile, rel_time_profile = read_pkl_surrogate_timeprofiling(folder)
     print(time_profile)

@@ -13,5 +13,6 @@ if __name__ == '__main__':
         sur.optimize(max_time=max_time, verbose=False)
 
         
-        with open(f'../../surdata/rb_budget/SU_starlight_{MAX_TIME:.1f}h_objective-budget_SEED{SEED}_'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
+        with open(f'../../surdata/rb_budget/SU_starlight_{MAX_TIME:.1f}h_objective-budget_SEED{SEED}_'
+                  +datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
                 pickle.dump(sur, file)

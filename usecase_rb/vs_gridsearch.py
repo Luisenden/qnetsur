@@ -31,5 +31,6 @@ if __name__ == '__main__':
         delta = np.mean(times_tracked)
     
     gridsearch = pd.DataFrame.from_records(evals)
-    with open(f'../../surdata/rb_budget/GS_starlight_{MAX_TIME:.1f}h_objective-budget_SEED{SEED}_'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
+    with open(f'../../surdata/rb_budget/GS_starlight_{MAX_TIME:.1f}h_objective-budget_SEED{SEED}_'
+              +datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
             pickle.dump([gridsearch, times_tracked, vals], file)
