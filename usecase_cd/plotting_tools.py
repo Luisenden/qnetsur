@@ -1,5 +1,5 @@
 """
-Plotting tools for metropolitan network use case.
+Plotting tools for continuous-protocols use case.
 """
 
 import pandas as pd
@@ -33,16 +33,17 @@ def read_pkl_surrogate_timeprofiling(folder):
     for name in glob.glob(f'{folder}/SU_*.pkl'): 
         with open(name,'rb') as file: surs.append(pickle.load(file))
     
-    times = {'Simulation':[], 'Build':[], 'Acquisition':[], 'Simulation per Iteration Mean':[] }
+    times = {'Simulation':[], 'Build':[], 'Acquisition':[], 'Simulation per Iteration Mean':[], 'Number of Iterations':[] }
     for sur in surs:
         times['Simulation'].append(np.sum(sur.sim_time))
         times['Simulation per Iteration Mean'].append(np.mean(sur.sim_time))
+        times['Number of Iterations'].append(len(sur.sim_time))
         times['Build'].append(np.sum(sur.build_time))
         times['Acquisition'].append(np.sum(sur.acquisition_time))
 
     times = pd.DataFrame.from_dict(times)
-    times['Total'] = times.drop('Simulation per Iteration Mean', axis=1).sum(axis=1)
-    times_relative = times.div(times['Total'], axis=0)
+    times['Total'] = times.drop(['Simulation per Iteration Mean', 'Number of Iterations'], axis=1).sum(axis=1)
+    times_relative = times.drop(['Simulation per Iteration Mean', 'Number of Iterations'], axis=1).div(times['Total'], axis=0)
     return times, times_relative
 
 
@@ -58,10 +59,10 @@ def read_pkl_surrogate(folder):
         Xs.append(sur.X_df)
 
     Xs = pd.concat(Xs, axis=0, ignore_index=True)
-    ys = pd.concat([pd.DataFrame(sur.y, columns = pd.Series(range(config.nnodes)).astype('str')) 
+    ys = pd.concat([pd.DataFrame(sur.y, columns = pd.Series(range(len(vals['user'][0]))).astype('str')) 
                     for sur in surs], axis=0, ignore_index=True)
     ys['Utility'] = ys.sum(axis=1)
-    ys_std = pd.concat([pd.DataFrame(sur.y_std, columns = pd.Series(range(config.nnodes)).astype('str')).add_suffix('_std') 
+    ys_std = pd.concat([pd.DataFrame(sur.y_std, columns = pd.Series(range(len(vals['user'][0]))).astype('str')).add_suffix('_std') 
                         for sur in surs], axis=0, ignore_index=True)
 
     ys_std['Utility Std'] = ys_std.apply(np.square).sum(axis=1).apply(np.sqrt)
@@ -76,11 +77,11 @@ def read_pkl_meta(folder):
         with open(name,'rb') as file: metas.append(pickle.load(file))
     dfs = []
     for i, meta in enumerate(metas):
-        data = meta[0]#.get_trials_data_frame()
+        data = meta[0]
         data['Trial'] = i
         dfs.append(data)
     df = pd.concat(dfs, axis=0)
-    df['Utility'] = df['sum']
+    df['Utility'] = df['evaluate']
     df['Method'] = 'Meta'
     return df.reset_index()
 
@@ -103,35 +104,22 @@ def read_pkl_sa(folder):
         with open(name,'rb') as file: gss.append(pickle.load(file))
     dfs = []
     for i, gs in enumerate(gss):
-        gs[0]['Trial'] = i
-        dfs.append(gs[0])
+        gs['Trial'] = i
+        dfs.append(gs)
     df = pd.concat(dfs, axis=0)
     df['Utility'] = df['objective'].apply(np.nansum)
     df['Method'] = 'Simulated Annealing'
     return df.reset_index()
 
 
-def to_dataframe(res):
+def to_dataframe(res, users):
     df = pd.DataFrame.from_records(res)
-    df_raw = df[2].transform({i: itemgetter(i) for i in range(9)}) # get raw mean per node
-    df_raw = df_raw.add_prefix('Node')
-    df_raw['Aggregated Completed Requests'] = df_raw.sum(axis=1)
-    return df_raw
+    df = df[0].apply(pd.Series)
+    df.columns = users
+    df = df.add_prefix('User')
+    df['Aggregated Number of Virtual Neighbors'] = df.sum(axis=1)
+    return df
 
-
-def plot_optimization_results(folder):
-    target_columns = ['Trial', 'Utility', 'Method']
-    df = pd.concat([read_pkl_surrogate(folder)[0][target_columns], read_pkl_meta(folder)[target_columns],
-                    read_pkl_sa(folder)[target_columns], read_pkl_gridsearch(folder)[target_columns]], axis=0, ignore_index=True)
-
-    grouped = df.groupby(['Method', 'Trial'], sort=False).max()
-    sns.pointplot(data=grouped, x='Method', y='Utility', errorbar='se', linestyles='None', hue='Method')
-    plt.xlabel('')
-    plt.title(r'Maximum Utility ($K=10$ Trials per Method)')
-    plt.xticks(rotation=45)
-    plt.grid()
-    plt.tight_layout()
-    plt.show()
 
 def get_performance_distribution_per_method(folder):
     df_sur, _ = read_pkl_surrogate(folder)
@@ -153,43 +141,42 @@ def get_policies(folder):
 
     xs = dict()
     for df in [df_sur, df_meta, df_sa, df_gs]:
-        xmethod = df.iloc[df['Utility'].idxmax()][df.columns.str.contains('mem_size|Method')] 
+        xmethod = df.iloc[df['Utility'].idxmax()][df.columns.str.contains('q_swap|Method')] 
         xs[xmethod['Method']] = xmethod.drop('Method')
 
-    # even distribution
-    even = dict()
-    for i in range(9):
-        even[f'mem_size_node_{i}'] = 50
-    xs['Even'] = even
-    
-    # weighted distribution according to Wu X. et al., 2021
-    xs['Wu et. al, 2021'] = {'mem_size_node_0': 25, 'mem_size_node_1': 91, 'mem_size_node_2': 67,
-               'mem_size_node_3': 24, 'mem_size_node_4': 67, 'mem_size_node_5': 24, 
-               'mem_size_node_6': 103, 'mem_size_node_7': 25, 'mem_size_node_8':24}
-
     x_df = pd.DataFrame.from_records(xs).T
-    x_df['Total Number of Allocated Memories'] = x_df.sum(axis=1).astype(int)
     return x_df, xs, vals
 
-def plot_from_exhaustive(folder):
-    x_df, _, _ = get_policies(folder)
-    method_names = ['Surrogate', 'Meta', 'Simulated Annealing', 'Random Gridsearch', 'Even', 'Wu et. al, 2021']
-    dfs = [None]*6
-    for name in glob.glob(f'{folder}/Results_*.csv'):
-        df = pd.read_csv(name)
-        method = df.Method[0]
-        index = method_names.index(method)
-        dfs[index] = df
+# def plot_from_exhaustive(folder):
+#     x_df, _, _ = get_policies(folder)
+#     method_names = ['Surrogate', 'Meta', 'Simulated Annealing', 'Random Gridsearch', 'Even', 'Wu et. al, 2021']
+#     dfs = [None]*6
+#     for name in glob.glob(f'{folder}/Results_*.csv'):
+#         df = pd.read_csv(name)
+#         method = df.Method[0]
+#         index = method_names.index(method)
+#         dfs[index] = df
 
-    df = pd.concat(dfs, axis=0)
-    df = df.drop('Unnamed: 0' , axis=1)
-    df = df.melt(id_vars=['Method', 'Aggregated Completed Requests'], var_name='User', value_name='Number of Completed Requests')
-    df['User'] = df['User'].apply(lambda x: str.replace(x, 'Node', ''))
-    df = df.merge(x_df, left_on='Method', right_index=True, how='left')
-    markers = ['o', '^', 'v', 's', 'd', 'P']
-    fig, axs = plt.subplots(1,1, figsize=(5,3))
-    sns.pointplot(data= df, x='Total Number of Allocated Memories', y='Aggregated Completed Requests', hue='Method', ax=axs, errorbar='se', markers=markers, legend=True, linestyles=['']*6, native_scale=True)
-    axs.grid()
-    plt.title('Aggregated Number of Completed Requests')
-    plt.tight_layout()
-    plt.show()
+#     df = pd.concat(dfs, axis=0)
+#     df = df.drop('Unnamed: 0' , axis=1)
+#     df = df.melt(id_vars=['Method', 'Aggregated Completed Requests'], var_name='User', value_name='Number of Completed Requests')
+#     df['User'] = df['User'].apply(lambda x: str.replace(x, 'Node', ''))
+#     df = df.merge(x_df, left_on='Method', right_index=True, how='left')
+#     markers = ['o', '^', 'v', 's', 'd', 'P']
+#     fig, axs = plt.subplots(1,1, figsize=(5,3))
+#     sns.pointplot(data= df, x='Total Number of Allocated Memories', y='Aggregated Completed Requests', hue='Method', ax=axs, errorbar='se', markers=markers, legend=True, linestyles=['']*6, native_scale=True)
+#     axs.grid()
+#     plt.title('Aggregated Number of Completed Requests')
+#     plt.tight_layout()
+#     plt.show()
+
+if __name__ == '__main__':
+    folder = '../../surdata/cd'
+    df = get_performance_distribution_per_method(folder)
+    print(df)
+
+    df_timeprofiling, df_rel_timeprofiling = read_pkl_surrogate_timeprofiling(folder)
+    print(df_timeprofiling)
+
+    df_xs, xs, vals = get_policies(folder)
+    print('xs \n', vals )

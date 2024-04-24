@@ -92,8 +92,7 @@ def simwrapper(simulation, kwargs: dict):
     std_per_node = np.array([np.sqrt(node[-1]) for node in result[3]])
 
     # get user nodes
-    user_indices = np.where(vals['A'].sum(axis=1) == 1)
-
+    user_indices = np.where(kwargs['A'].sum(axis=1) == 1)
     objectives = mean_per_node[user_indices]
     objectives_std = std_per_node[user_indices]
     raw = mean_per_node
