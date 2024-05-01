@@ -8,7 +8,7 @@ from src.simulatedannealing import *
 if __name__ == '__main__':
         
         # user input:
-        max_time= [MAX_TIME * 3600, "timer"] # in sec
+        max_time= [30, "iterator"] # in sec: MAX_TIME * 3600
 
         # instatiate surrogate model and run optimization
         sim = Surrogate(simwrapper, simulation.simulation_cd, vals=vals, vars=vars, sample_size=initial_model_size)

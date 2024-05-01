@@ -3,6 +3,7 @@ Plotting tools for continuous-protocols use case.
 """
 
 import pandas as pd
+import re
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -33,18 +34,48 @@ def read_pkl_surrogate_timeprofiling(folder):
     for name in glob.glob(f'{folder}/SU_*.pkl'): 
         with open(name,'rb') as file: surs.append(pickle.load(file))
     
-    times = {'Simulation':[], 'Build':[], 'Acquisition':[], 'Simulation per Iteration Mean':[], 'Number of Iterations':[] }
+    times = {'Simulation':[], 'Build':[], 'Acquisition':[], 'Simulation per Iteration Mean':[] }
     for sur in surs:
         times['Simulation'].append(np.sum(sur.sim_time))
         times['Simulation per Iteration Mean'].append(np.mean(sur.sim_time))
-        times['Number of Iterations'].append(len(sur.sim_time))
         times['Build'].append(np.sum(sur.build_time))
         times['Acquisition'].append(np.sum(sur.acquisition_time))
 
     times = pd.DataFrame.from_dict(times)
-    times['Total'] = times.drop(['Simulation per Iteration Mean', 'Number of Iterations'], axis=1).sum(axis=1)
-    times_relative = times.drop(['Simulation per Iteration Mean', 'Number of Iterations'], axis=1).div(times['Total'], axis=0)
+    times['Total'] = times.drop('Simulation per Iteration Mean', axis=1).sum(axis=1)
+    times_relative = times.div(times['Total'], axis=0)
     return times, times_relative
+
+def read_pkl_surrogate_benchmarking(folder):
+    surs = []
+    for name in glob.glob(f'{folder}/SU_*.pkl'): 
+        with open(name,'rb') as file: surs.append(pickle.load(file))
+    
+    errors = []
+    acquisition = {}
+    for i,sur in enumerate(surs):
+        errors.append(pd.DataFrame.from_records(sur.model_scores))
+        errors[i]['Trial'] = i
+        errors[i] = errors[i].reset_index(names='Iteration')
+        acquisition[f'Trial {i}'] = pd.Series(sur.acquisition_time)/np.array(sur.optimize_time)[1:]
+
+    df_errors = pd.concat(errors).melt(id_vars=['Trial', 'Iteration'], value_name='Mean Absolute Error', var_name='ML Model')
+    fig, ax = plt.subplots()
+    sns.pointplot(data=df_errors, x='Iteration', y='Mean Absolute Error', hue='ML Model', errorbar='se')
+    plt.grid()
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.show()
+
+    df_acquisition = pd.DataFrame.from_dict(acquisition).reset_index(names='Iteration')
+    df_acquisition = df_acquisition.melt(id_vars='Iteration', value_name='Execution Time [s]', var_name='Trial')
+    fig, ax = plt.subplots()
+    sns.pointplot(data=df_acquisition, x='Iteration', y='Execution Time [s]', hue='Trial', errorbar='se')
+    plt.grid()
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.show()
+    return df_errors, df_acquisition
 
 
 def read_pkl_surrogate(folder):
@@ -95,7 +126,7 @@ def read_pkl_gridsearch(folder):
         dfs.append(gs[0])
     df = pd.concat(dfs, axis=0)
     df['Utility'] = df['objective'].apply(np.nansum)
-    df['Method'] = 'Random Gridsearch'
+    df['Method'] = 'Uniform Random Search'
     return df.reset_index()
 
 def read_pkl_sa(folder):
@@ -147,36 +178,79 @@ def get_policies(folder):
     x_df = pd.DataFrame.from_records(xs).T
     return x_df, xs, vals
 
-# def plot_from_exhaustive(folder):
-#     x_df, _, _ = get_policies(folder)
-#     method_names = ['Surrogate', 'Meta', 'Simulated Annealing', 'Random Gridsearch', 'Even', 'Wu et. al, 2021']
-#     dfs = [None]*6
-#     for name in glob.glob(f'{folder}/Results_*.csv'):
-#         df = pd.read_csv(name)
-#         method = df.Method[0]
-#         index = method_names.index(method)
-#         dfs[index] = df
+def get_exhaustive(folder):
+    method_names = ['Surrogate', 'Meta', 'Simulated Annealing', 'Random Gridsearch']
+    dfs = [None]*4
+    for name in glob.glob(f'{folder}/Results_*.csv'):
+        df = pd.read_csv(name)
+        method = df.Method[0]
+        index = method_names.index(method)
+        if method == 'Random Gridsearch':
+            df['Method'] = 'Uniform Random Search'
+        dfs[index] = df
+    df = pd.concat(dfs, axis=0)
+    timelimit = re.findall('\d+', folder.split('/')[-1])[0]
+    df['Time Limit [h]'] = timelimit
+    df = df.drop('Unnamed: 0' , axis=1)
+    return df
 
-#     df = pd.concat(dfs, axis=0)
-#     df = df.drop('Unnamed: 0' , axis=1)
-#     df = df.melt(id_vars=['Method', 'Aggregated Completed Requests'], var_name='User', value_name='Number of Completed Requests')
-#     df['User'] = df['User'].apply(lambda x: str.replace(x, 'Node', ''))
-#     df = df.merge(x_df, left_on='Method', right_index=True, how='left')
-#     markers = ['o', '^', 'v', 's', 'd', 'P']
-#     fig, axs = plt.subplots(1,1, figsize=(5,3))
-#     sns.pointplot(data= df, x='Total Number of Allocated Memories', y='Aggregated Completed Requests', hue='Method', ax=axs, errorbar='se', markers=markers, legend=True, linestyles=['']*6, native_scale=True)
-#     axs.grid()
-#     plt.title('Aggregated Number of Completed Requests')
-#     plt.tight_layout()
-#     plt.show()
+def plot_from_exhaustive(folder, show=True):
+    x_df, _, _ = get_policies(folder)
+    df = get_exhaustive(folder)
+    
+    df = df.melt(id_vars=['Method', 'Aggregated Number of Virtual Neighbors'], var_name='User', value_name='Number of Virtual Neighbors')
+    df['User'] = df['User'].apply(lambda x: str.replace(x, 'Node', ''))
+    df = df.merge(x_df, left_on='Method', right_index=True, how='left')
+    if show: 
+        markers = ['o', '^', 'v', 's']
+        fig, axs = plt.subplots(1,1, figsize=(5,3))
+        sns.pointplot(data= df, x='Method', y='Aggregated Number of Virtual Neighbors', hue='Method', ax=axs, errorbar='se', markers=markers, legend=True, linestyles=['']*4, native_scale=True)
+        axs.grid()
+        plt.title('Aggregated Number of Virtual Neighbors')
+        plt.ylabel('Number of Virtual Neighbors')
+        plt.tight_layout()
+        plt.show()
+    return df
+
+
+def plot_from_exhaustive_multiple(folders, show=True):
+    dfs = []
+    for folder in folders:
+        x_df, _, _ = get_policies(folder)
+        df = get_exhaustive(folder)
+        
+        df = df.melt(id_vars=['Method', 'Aggregated Number of Virtual Neighbors', 'Time Limit [h]'], var_name='User', value_name='Number of Virtual Neighbors')
+        df['User'] = df['User'].apply(lambda x: str.replace(x, 'Node', ''))
+        df = df.merge(x_df, left_on='Method', right_index=True, how='left')
+        dfs.append(df)
+    
+    df = pd.concat(dfs, axis=0)
+    if show: 
+        markers = ['o', '^', 'v', 's']
+        fig, axs = plt.subplots(1,1, figsize=(5,3))
+        sns.pointplot(data= df, x='Time Limit [h]', y='Aggregated Number of Virtual Neighbors', hue='Method', ax=axs, errorbar='se', markers=markers, legend=True, linestyles=['-']*4, native_scale=True)
+        axs.grid()
+        plt.title('Aggregated Number of Virtual Neighbors for Different Time Limits')
+        plt.ylabel('Number of Virtual Neighbors')
+        plt.tight_layout()
+        plt.show()
+    return df
 
 if __name__ == '__main__':
-    folder = '../../surdata/cd'
+    folder = '../../surdata/cd_1h'
     df = get_performance_distribution_per_method(folder)
     print(df)
 
     df_timeprofiling, df_rel_timeprofiling = read_pkl_surrogate_timeprofiling(folder)
-    print(df_timeprofiling)
+    print(df_rel_timeprofiling.mean())
 
-    df_xs, xs, vals = get_policies(folder)
-    print('xs \n', vals )
+    # df_xs, xs, vals = get_policies(folder)
+    # print('xs \n', vals['user'][0]) 
+
+    plot_from_exhaustive(folder)
+
+    error, acquisition = read_pkl_surrogate_benchmarking(folder)
+
+    folders = ['../../surdata/cd_1h', '../../surdata/cd_5h', '../../surdata/cd_10h']
+    df = plot_from_exhaustive_multiple(folders)
+    print(df)

@@ -28,6 +28,39 @@ plt.rcParams.update({
 import warnings
 warnings.filterwarnings("ignore")
 
+def read_pkl_surrogate_benchmarking(folder):
+    surs = []
+    for name in glob.glob(f'{folder}/SU_*.pkl'): 
+        with open(name,'rb') as file: surs.append(pickle.load(file))
+    
+    errors = []
+    acquisition = {}
+    for i,sur in enumerate(surs):
+        errors.append(pd.DataFrame.from_records(sur.model_scores))
+        errors[i]['Trial'] = i
+        errors[i] = errors[i].reset_index(names='Iteration')
+        acquisition[f'Trial {i}'] = pd.Series(sur.acquisition_time)/np.array(sur.optimize_time)[1:]
+
+    df_errors = pd.concat(errors).melt(id_vars=['Trial', 'Iteration'], value_name='Mean Absolute Error', var_name='ML Model')
+    fig, ax = plt.subplots()
+    sns.pointplot(data=df_errors, x='Iteration', y='Mean Absolute Error', hue='ML Model', errorbar='se')
+    plt.grid()
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.show()
+
+    df_acquisition = pd.DataFrame.from_dict(acquisition).reset_index(names='Iteration')
+    df_acquisition = df_acquisition.melt(id_vars='Iteration', value_name='Execution Time [s]', var_name='Trial')
+    fig, ax = plt.subplots()
+    sns.pointplot(data=df_acquisition, x='Iteration', y='Execution Time [s]', hue='Trial', errorbar='se')
+    plt.grid()
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.show()
+
+
+    return df_errors, df_acquisition
+
 def read_pkl_surrogate_timeprofiling(folder):
     surs = []
     for name in glob.glob(f'{folder}/SU_*.pkl'): 
