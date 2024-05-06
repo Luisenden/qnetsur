@@ -1,8 +1,11 @@
-from config import *
-from src.utils import *
-
+from datetime import datetime
+import numpy as np
+import pandas as pd
+import time
+import pickle
+from config import MAX_TIME, simwrapper, vals, vars, SEED
+from src.utils import Simulation
 from simulation import simulation_rb
- 
 
 if __name__ == '__main__':
 
@@ -22,15 +25,16 @@ if __name__ == '__main__':
 
         x = sim.get_random_x(1)
         eval = sim.run_sim(x=x, vals=vals)
+        
         evalset = x.copy()
-        evalset['objective'], evalset['std'], evalset['raw'] = eval
+        evalset['Utility'], evalset['std'], evalset['raw'] = eval
         evals.append(evalset)
 
         times_tracked.append(time.time()-start)
         time_tracker = np.sum(times_tracked)
         delta = np.mean(times_tracked)
     
-    gridsearch = pd.DataFrame.from_records(evals)
-    with open(f'../../surdata/rb_budget/GS_starlight_{MAX_TIME:.1f}h_objective-budget_SEED{SEED}_'
+    randomsearch = pd.DataFrame.from_records(evals)
+    with open(f'../../surdata/rb_budget/RS_starlight_{MAX_TIME:.1f}h_objective-budget_SEED{SEED}_'
               +datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
-            pickle.dump([gridsearch, times_tracked, vals], file)
+            pickle.dump([randomsearch, times_tracked, vals], file)

@@ -17,5 +17,5 @@ if __name__ == '__main__':
         if topo.name == 'randtree':
                 sim.vals['user'] = np.where(sim.vals['A'].sum(axis=1) == 1)
 
-        with open(f'../../surdata/cd/SU_{topo.raw}_{MAX_TIME}{max_time[1]}_objective-meanopt_SEED{SEED}_'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
+        with open(f'../../surdata/cd/SU_{topo.raw}_{max_time[0]}{max_time[1]}_objective-meanopt_SEED{SEED}_'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
                 pickle.dump(sim, file)

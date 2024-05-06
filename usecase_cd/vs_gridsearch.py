@@ -29,6 +29,6 @@ if __name__ == '__main__':
         time_tracker = np.sum(times_tracked)
         delta = np.mean(times_tracked)
     
-    gridsearch = pd.DataFrame.from_records(evals)
-    with open(f'../../surdata/cd/GS_{topo.raw}_{MAX_TIME}{max_time[1]}_objective-meanopt_SEED{SEED}_'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
-            pickle.dump([gridsearch,time_tracker,vals], file)
+    randomsearch = pd.DataFrame.from_records(evals)
+    with open(f'../../surdata/cd/RS_{topo.raw}_{MAX_TIME}{max_time[1]}_objective-meanopt_SEED{SEED}_'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
+            pickle.dump([randomsearch,time_tracker,vals], file)

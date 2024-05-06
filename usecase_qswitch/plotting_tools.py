@@ -1,5 +1,5 @@
 """
-Plotting script for results from `extract_best_params_and_run_exhaustive.py`.
+Plotting tools
 """
 
 import pandas as pd
@@ -40,12 +40,12 @@ def read_pkl_surrogate_timeprofiling(folder):
     times = {'Simulation':[], 'Build':[], 'Acquisition':[], '# Iterations': []}
     for sur in surs:
         times['Simulation'].append(np.sum(sur.sim_time))
-        times['# Iterations'].append(len(sur.sim_time))
         times['Build'].append(np.sum(sur.build_time))
         times['Acquisition'].append(np.sum(sur.acquisition_time))
+        times['# Iterations'].append(len(sur.sim_time))
 
     times = pd.DataFrame.from_dict(times)
-    times['Total'] = times.sum(axis=1)
+    times['Total'] = times[['Simulation', 'Build', 'Acquisition']].sum(axis=1)
     times_relative = times.drop('# Iterations', axis=1).div(times['Total'], axis=0)
     return times, times_relative
 
@@ -83,21 +83,20 @@ def read_pkl_meta(folder):
         data['Trial'] = i
         dfs.append(data)
     df = pd.concat(dfs, axis=0)
-    df['Utility'] = df['evaluate']
     df['Method'] = 'Meta'
     return df.reset_index()
 
-def read_pkl_gridsearch(folder):
+def read_pkl_randomsearch(folder):
     gss = []
-    for name in glob.glob(f'{folder}/GS_*.pkl'): 
+    for name in glob.glob(f'{folder}/RS_*.pkl'): 
         with open(name,'rb') as file: gss.append(pickle.load(file))
     dfs = []
     for i, gs in enumerate(gss):
         gs[0]['Trial'] = i
         dfs.append(gs[0])
     df = pd.concat(dfs, axis=0)
-    df['Utility'] = df['objective'].apply(np.nansum)
-    df['Method'] = 'Random Gridsearch'
+    df['Utility'] = df['Utility'].apply(np.nansum)
+    df['Method'] = 'Random Search'
     return df.reset_index()
 
 def read_pkl_sa(folder):
@@ -191,7 +190,7 @@ def get_performance_distribution_per_method(folder):
     df_sur, _ = read_pkl_surrogate(folder)
     df_meta = read_pkl_meta(folder)
     df_sa = read_pkl_sa(folder)
-    df_gs = read_pkl_gridsearch(folder)
+    df_gs = read_pkl_randomsearch(folder)
     columns = ['Trial', 'Method', 'Utility']
     df = pd.concat([df_sur[columns], df_meta[columns], df_sa[columns], df_gs[columns]])
     max_per_trial = df.groupby(['Method', 'Trial'])['Utility'].max()

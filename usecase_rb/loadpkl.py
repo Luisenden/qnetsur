@@ -45,7 +45,7 @@ for name in glob.glob(f'../../surdata/{folder}/SA_*.pkl'):
     with open(name,'rb') as file: sas.append(pickle.load(file)[0])
 
 gss = []
-for name in glob.glob(f'../../surdata/{folder}/GS_*.pkl'):
+for name in glob.glob(f'../../surdata/{folder}/RS_*.pkl'):
     with open(name,'rb') as file: gss.append(pickle.load(file))
 
 

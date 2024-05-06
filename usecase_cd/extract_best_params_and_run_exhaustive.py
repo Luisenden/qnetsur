@@ -10,7 +10,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 parser.add_argument("--method", type=str, default='Surrogate', 
-                    help="Choose one of the following methods: 'Surrogate', 'Meta', 'Simulated Annealing', 'Random Gridsearch'")
+                    help="Choose one of the following methods: 'Surrogate', 'Meta', 'Simulated Annealing', 'Random Search'")
 args, _ = parser.parse_known_args()
 METHOD = args.method
 

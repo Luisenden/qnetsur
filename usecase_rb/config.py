@@ -1,8 +1,4 @@
-import pickle, time
-import pandas as pd
-from functools import partial, wraps
 import numpy as np
-from datetime import datetime
 import argparse
 import sys
 sys.path.append('../')
@@ -16,7 +12,7 @@ MAX_TIME = args.time
 SEED = args.seed
 
 
-rng_sur = np.random.default_rng(seed=SEED) # set rng for optimization 
+rng_sur = np.random.default_rng(seed=SEED) # set rng for surrogate optimization 
 nnodes = 9 # number of nodes
 m_max = 105 # maximum number of memory qubits per node
 sample_size = 10 # number of samples used for the initial training of the surrogate model

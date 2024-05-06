@@ -44,6 +44,6 @@ if __name__ == '__main__':
         time_tracker = np.sum(times_tracked)
         delta = np.mean(times_tracked)
     
-    gridsearch = pd.DataFrame.from_records(evals)
-    with open(f'../../surdata/qswitch/GS_qswitch_nleafnodes{NLEAF_NODES}_{MAX_TIME:.2f}h_objective-servernode_SEED{SEED}_'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
-            pickle.dump([gridsearch, times_tracked, vals], file)
+    randomsearch = pd.DataFrame.from_records(evals)
+    with open(f'../../surdata/qswitch/RS_qswitch_nleafnodes{NLEAF_NODES}_{MAX_TIME:.2f}h_objective-servernode_SEED{SEED}_'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
+            pickle.dump([randomsearch, times_tracked, vals], file)

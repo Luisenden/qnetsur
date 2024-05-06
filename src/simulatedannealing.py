@@ -24,7 +24,7 @@ def get_random_x(self, n, rng) -> dict:
         dict: Randomly generated parameters.
     """
     assert all(isinstance(val, tuple) for val in self.vars['range'].values()) and n > 0,\
-        f"Dimension types must be a tuple (sample-list, dataype) and n must be greater zero."
+        f"Dimension types must be a tuple (sample list, dataype) and n must be greater zero."
 
     x = {}
     for dim, par in self.vars['range'].items():
@@ -50,7 +50,7 @@ def get_random_x(self, n, rng) -> dict:
 
 def get_neighbour(s, x :dict, rng) -> dict:
     """
-    Generates random parameters for the simulation.
+    Generates random parameters for the simulation from neighborhood of `x`.
 
     Args:
         n (int): Number of random parameter sets to generate.
@@ -76,19 +76,19 @@ def get_neighbour(s, x :dict, rng) -> dict:
     return x_n
 
 
-def simulated_annealing(s, MAX_TIME, temp :int = 10, beta_schedule :int =
+def simulated_annealing(sim, MAX_TIME, temp :int = 10, beta_schedule :int =
                          5, seed=42):
 
     start_initial = time.time()
     rng = np.random.default_rng(seed=seed)
     
     # generate an initial point
-    current = get_random_x(s, 1, rng)
+    current = get_random_x(sim, 1, rng)
 
     # evaluate the initial point
-    current_eval = objective(s,current)
+    current_eval = objective(sim, current)
     current_set = current.copy()
-    current_set['objective'] = -current_eval
+    current_set['Utility'] = -current_eval
     dt_init = time.time()-start_initial
     current_set['time'] = dt_init
     
@@ -110,12 +110,12 @@ def simulated_annealing(s, MAX_TIME, temp :int = 10, beta_schedule :int =
         for _ in range(beta_schedule):
             start_beta = time.time()
             # choose a different point and evaluate
-            candidate = get_neighbour(s, current, rng)
-            candidate_eval = objective(s, candidate)
+            candidate = get_neighbour(sim, current, rng)
+            candidate_eval = objective(sim, candidate)
 
-            # check for new best solution
+            # compare candidate to current solution
             if candidate_eval < current_eval:
-                # store new best point
+                # select candidate over current solution 
                 current, current_eval = candidate, candidate_eval
             dt_beta = time.time() - start_beta
             time_tracker += dt_beta
@@ -126,10 +126,8 @@ def simulated_annealing(s, MAX_TIME, temp :int = 10, beta_schedule :int =
         # calculate metropolis acceptance criterion
         diff = candidate_eval - current_eval
         metropolis = np.exp(-diff / t)
-        if metropolis > 1:
-            print(metropolis) 
 
-        # keep if improvement or metropolis criterion satisfied
+        # keep if improvement or metropolis satisfied
         r = rng.random()
         if diff < 0 or r < metropolis:
             current, current_eval = candidate, candidate_eval
@@ -137,7 +135,7 @@ def simulated_annealing(s, MAX_TIME, temp :int = 10, beta_schedule :int =
         dt = time.time()-start
 
         current_set = current.copy()
-        current_set['objective'] = -current_eval
+        current_set['Utility'] = -current_eval
         current_set['time'] = dt
         sets.append(current_set)
         count += 1 

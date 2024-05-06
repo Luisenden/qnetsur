@@ -5,7 +5,7 @@ import numpy as np
 from datetime import datetime
 import argparse
 import sys
-sys.path.append('../../')
+sys.path.append('../')
 
 def test_simwrapper(simulation, kwargs: dict):
     return -simulation(**kwargs), 

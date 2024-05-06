@@ -28,7 +28,7 @@ plt.rcParams.update({
 })
 
 folders = ['cd_N10_23tree_0.2h', 'cd_N10_34tree_1h', 'cd_N10_10square_3h']
-methods = ['Surrogate', 'Meta', 'Simulated Annealing', 'Gridsearch']
+methods = ['Surrogate', 'Meta', 'Simulated Annealing', 'Search']
 
 def load_from_pkl(folder):
     axs = []
@@ -44,7 +44,7 @@ def load_from_pkl(folder):
         with open(name,'rb') as file: sas.append(pickle.load(file))
 
     gss = []
-    for name in glob.glob(f'../../surdata/{folder}/GS_*.pkl'):
+    for name in glob.glob(f'../../surdata/{folder}/RS_*.pkl'):
         with open(name,'rb') as file: gss.append(pickle.load(file))
 
     data = pd.DataFrame()

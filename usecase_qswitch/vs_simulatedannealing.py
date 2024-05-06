@@ -37,4 +37,4 @@ if __name__ == '__main__':
     result = pd.DataFrame.from_records(result)
 
     with open(f'../../surdata/qswitch/SA_qswitch_nleafnodes{NLEAF_NODES}_{MAX_TIME:.2f}h_objective-servernode_SEED{SEED}_'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
-            pickle.dump(result, file)
+            pickle.dump([result, vals], file)

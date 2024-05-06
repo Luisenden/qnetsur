@@ -1,5 +1,5 @@
 """
-Plotting tools for metropolitan network use case.
+Plotting tools
 """
 
 import pandas as pd
@@ -57,8 +57,6 @@ def read_pkl_surrogate_benchmarking(folder):
     plt.xticks(rotation=45)
     plt.tight_layout()
     plt.show()
-
-
     return df_errors, df_acquisition
 
 def read_pkl_surrogate_timeprofiling(folder):
@@ -66,16 +64,16 @@ def read_pkl_surrogate_timeprofiling(folder):
     for name in glob.glob(f'{folder}/SU_*.pkl'): 
         with open(name,'rb') as file: surs.append(pickle.load(file))
     
-    times = {'Simulation':[], 'Build':[], 'Acquisition':[], 'Simulation per Iteration Mean':[] }
+    times = {'Simulation':[], 'Build':[], 'Acquisition':[], '# Iterations': []}
     for sur in surs:
         times['Simulation'].append(np.sum(sur.sim_time))
-        times['Simulation per Iteration Mean'].append(np.mean(sur.sim_time))
         times['Build'].append(np.sum(sur.build_time))
         times['Acquisition'].append(np.sum(sur.acquisition_time))
+        times['# Iterations'].append(len(sur.sim_time))
 
     times = pd.DataFrame.from_dict(times)
-    times['Total'] = times.drop('Simulation per Iteration Mean', axis=1).sum(axis=1)
-    times_relative = times.div(times['Total'], axis=0)
+    times['Total'] = times[['Simulation', 'Build', 'Acquisition']].sum(axis=1)
+    times_relative = times.drop('# Iterations', axis=1).div(times['Total'], axis=0)
     return times, times_relative
 
 
@@ -113,21 +111,20 @@ def read_pkl_meta(folder):
         data['Trial'] = i
         dfs.append(data)
     df = pd.concat(dfs, axis=0)
-    df['Utility'] = df['sum']
     df['Method'] = 'Meta'
     return df.reset_index()
 
-def read_pkl_gridsearch(folder):
+def read_pkl_randomsearch(folder):
     gss = []
-    for name in glob.glob(f'{folder}/GS_*.pkl'): 
+    for name in glob.glob(f'{folder}/RS_*.pkl'): 
         with open(name,'rb') as file: gss.append(pickle.load(file))
     dfs = []
     for i, gs in enumerate(gss):
         gs[0]['Trial'] = i
         dfs.append(gs[0])
     df = pd.concat(dfs, axis=0)
-    df['Utility'] = df['objective'].apply(np.nansum)
-    df['Method'] = 'Random Gridsearch'
+    df['Utility'] = df['Utility'].apply(np.nansum)
+    df['Method'] = 'Random Search'
     return df.reset_index()
 
 def read_pkl_sa(folder):
@@ -146,7 +143,7 @@ def read_pkl_sa(folder):
 
 def to_dataframe(res):
     df = pd.DataFrame.from_records(res)
-    df_raw = df[2].transform({i: itemgetter(i) for i in range(9)}) # get raw mean per node
+    df_raw = df[2].transform({i: itemgetter(i) for i in range(config.nnodes)}) # get raw mean per node
     df_raw = df_raw.add_prefix('Node')
     df_raw['Aggregated Completed Requests'] = df_raw.sum(axis=1)
     return df_raw
@@ -155,7 +152,7 @@ def to_dataframe(res):
 def plot_optimization_results(folder):
     target_columns = ['Trial', 'Utility', 'Method']
     df = pd.concat([read_pkl_surrogate(folder)[0][target_columns], read_pkl_meta(folder)[target_columns],
-                    read_pkl_sa(folder)[target_columns], read_pkl_gridsearch(folder)[target_columns]], axis=0, ignore_index=True)
+                    read_pkl_sa(folder)[target_columns], read_pkl_randomsearch(folder)[target_columns]], axis=0, ignore_index=True)
 
     grouped = df.groupby(['Method', 'Trial'], sort=False).max()
     sns.pointplot(data=grouped, x='Method', y='Utility', errorbar='se', linestyles='None', hue='Method')
@@ -170,7 +167,7 @@ def get_performance_distribution_per_method(folder):
     df_sur, _ = read_pkl_surrogate(folder)
     df_meta = read_pkl_meta(folder)
     df_sa = read_pkl_sa(folder)
-    df_gs = read_pkl_gridsearch(folder)
+    df_gs = read_pkl_randomsearch(folder)
     columns = ['Trial', 'Method', 'Utility']
     df = pd.concat([df_sur[columns], df_meta[columns], df_sa[columns], df_gs[columns]])
     max_per_trial = df.groupby(['Method', 'Trial'])['Utility'].max()
@@ -178,11 +175,11 @@ def get_performance_distribution_per_method(folder):
     mean_std['rel_std'] = mean_std['std']/mean_std['mean']
     return mean_std
 
-def get_policies(folder):
+def get_best_paramters(folder):
     df_sur, vals = read_pkl_surrogate(folder)
     df_meta = read_pkl_meta(folder)
     df_sa = read_pkl_sa(folder)
-    df_gs = read_pkl_gridsearch(folder)
+    df_gs = read_pkl_randomsearch(folder)
 
     xs = dict()
     for df in [df_sur, df_meta, df_sa, df_gs]:
@@ -191,7 +188,7 @@ def get_policies(folder):
 
     # even distribution
     even = dict()
-    for i in range(9):
+    for i in range(config.nnodes):
         even[f'mem_size_node_{i}'] = 50
     xs['Even'] = even
     
@@ -205,8 +202,8 @@ def get_policies(folder):
     return x_df, xs, vals
 
 def plot_from_exhaustive(folder):
-    x_df, _, _ = get_policies(folder)
-    method_names = ['Surrogate', 'Meta', 'Simulated Annealing', 'Random Gridsearch', 'Even', 'Wu et. al, 2021']
+    x_df, _, _ = get_best_paramters(folder)
+    method_names = ['Surrogate', 'Meta', 'Simulated Annealing', 'Random Search', 'Even', 'Wu et. al, 2021']
     dfs = [None]*6
     for name in glob.glob(f'{folder}/Results_*.csv'):
         df = pd.read_csv(name)
@@ -226,3 +223,23 @@ def plot_from_exhaustive(folder):
     plt.title('Aggregated Number of Completed Requests')
     plt.tight_layout()
     plt.show()
+
+
+if __name__ == '__main__':
+    folder = '../../surdata/rb_budget'
+
+    # #plot results of optimization (Utility)
+    # plot_optimization_results(folder)
+
+    # plot from exhaustive run
+    plot_from_exhaustive(folder)
+
+    # plot time profiling
+    time_profile, rel_time_profile = read_pkl_surrogate_timeprofiling(folder)
+    print(rel_time_profile.mean(axis=0))
+
+    df = get_performance_distribution_per_method(folder)
+    print(df)
+
+    error, acquisition = read_pkl_surrogate_benchmarking(folder)
+    print(error, acquisition)

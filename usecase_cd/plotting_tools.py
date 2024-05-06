@@ -57,22 +57,22 @@ def read_pkl_surrogate_benchmarking(folder):
         errors.append(pd.DataFrame.from_records(sur.model_scores))
         errors[i]['Trial'] = i
         errors[i] = errors[i].reset_index(names='Iteration')
-        acquisition[f'Trial {i}'] = pd.Series(sur.acquisition_time)/np.array(sur.optimize_time)[1:]
+        acquisition[f'Trial {i}'] = pd.Series(sur.acquisition_time)/np.array(sur.optimize_time)[1:] # acquisition starts from iteration 1
 
-    df_errors = pd.concat(errors).melt(id_vars=['Trial', 'Iteration'], value_name='Mean Absolute Error', var_name='ML Model')
+    df_errors = pd.concat(errors).melt(id_vars=['Trial', 'Iteration'], value_name='Mean Absolute Error', var_name='Surrogate')
     fig, ax = plt.subplots()
-    sns.pointplot(data=df_errors, x='Iteration', y='Mean Absolute Error', hue='ML Model', errorbar='se')
+    sns.lineplot(data=df_errors, x='Iteration', y='Mean Absolute Error', hue='Surrogate', marker='o', errorbar='sd', err_style='bars')
     plt.grid()
     plt.xticks(rotation=45)
     plt.tight_layout()
     plt.show()
 
     df_acquisition = pd.DataFrame.from_dict(acquisition).reset_index(names='Iteration')
-    df_acquisition = df_acquisition.melt(id_vars='Iteration', value_name='Execution Time [s]', var_name='Trial')
+    df_acquisition['Iteration'] += 1. # acquisition starts from iteration 1
+    df_acquisition = df_acquisition.melt(id_vars='Iteration', value_name='Acquisition Time [s] / Exec Time [s]', var_name='Trial')
     fig, ax = plt.subplots()
-    sns.pointplot(data=df_acquisition, x='Iteration', y='Execution Time [s]', hue='Trial', errorbar='se')
+    sns.lineplot(data=df_acquisition, x='Iteration', y='Acquisition Time [s] / Exec Time [s]', marker='o', errorbar='sd', err_style='bars')
     plt.grid()
-    plt.xticks(rotation=45)
     plt.tight_layout()
     plt.show()
     return df_errors, df_acquisition
@@ -116,9 +116,9 @@ def read_pkl_meta(folder):
     df['Method'] = 'Meta'
     return df.reset_index()
 
-def read_pkl_gridsearch(folder):
+def read_pkl_randomsearch(folder):
     gss = []
-    for name in glob.glob(f'{folder}/GS_*.pkl'): 
+    for name in glob.glob(f'{folder}/RS_*.pkl'): 
         with open(name,'rb') as file: gss.append(pickle.load(file))
     dfs = []
     for i, gs in enumerate(gss):
@@ -156,7 +156,7 @@ def get_performance_distribution_per_method(folder):
     df_sur, _ = read_pkl_surrogate(folder)
     df_meta = read_pkl_meta(folder)
     df_sa = read_pkl_sa(folder)
-    df_gs = read_pkl_gridsearch(folder)
+    df_gs = read_pkl_randomsearch(folder)
     columns = ['Trial', 'Method', 'Utility']
     df = pd.concat([df_sur[columns], df_meta[columns], df_sa[columns], df_gs[columns]])
     max_per_trial = df.groupby(['Method', 'Trial'])['Utility'].max()
@@ -168,7 +168,7 @@ def get_policies(folder):
     df_sur, vals = read_pkl_surrogate(folder)
     df_meta = read_pkl_meta(folder)
     df_sa = read_pkl_sa(folder)
-    df_gs = read_pkl_gridsearch(folder)
+    df_gs = read_pkl_randomsearch(folder)
 
     xs = dict()
     for df in [df_sur, df_meta, df_sa, df_gs]:
@@ -179,13 +179,13 @@ def get_policies(folder):
     return x_df, xs, vals
 
 def get_exhaustive(folder):
-    method_names = ['Surrogate', 'Meta', 'Simulated Annealing', 'Random Gridsearch']
+    method_names = ['Surrogate', 'Meta', 'Simulated Annealing', 'Random Search']
     dfs = [None]*4
     for name in glob.glob(f'{folder}/Results_*.csv'):
         df = pd.read_csv(name)
         method = df.Method[0]
         index = method_names.index(method)
-        if method == 'Random Gridsearch':
+        if method == 'Random Search':
             df['Method'] = 'Uniform Random Search'
         dfs[index] = df
     df = pd.concat(dfs, axis=0)
@@ -237,20 +237,20 @@ def plot_from_exhaustive_multiple(folders, show=True):
     return df
 
 if __name__ == '__main__':
-    folder = '../../surdata/cd_1h'
-    df = get_performance_distribution_per_method(folder)
-    print(df)
+    folder = '../../surdata/cd_10h'
+    # df = get_performance_distribution_per_method(folder)
+    # print(df)
 
-    df_timeprofiling, df_rel_timeprofiling = read_pkl_surrogate_timeprofiling(folder)
-    print(df_rel_timeprofiling.mean())
+    # df_timeprofiling, df_rel_timeprofiling = read_pkl_surrogate_timeprofiling(folder)
+    # print(df_rel_timeprofiling.std())
 
-    # df_xs, xs, vals = get_policies(folder)
-    # print('xs \n', vals['user'][0]) 
+    # # df_xs, xs, vals = get_policies(folder)
+    # # print('xs \n', vals['user'][0]) 
 
-    plot_from_exhaustive(folder)
+    # plot_from_exhaustive(folder)
 
     error, acquisition = read_pkl_surrogate_benchmarking(folder)
 
-    folders = ['../../surdata/cd_1h', '../../surdata/cd_5h', '../../surdata/cd_10h']
-    df = plot_from_exhaustive_multiple(folders)
-    print(df)
+    # folders = ['../../surdata/cd_1h', '../../surdata/cd_5h', '../../surdata/cd_10h']
+    # df = plot_from_exhaustive_multiple(folders)
+    # print(df)

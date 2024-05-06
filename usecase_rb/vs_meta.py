@@ -1,8 +1,12 @@
-from config import *
+import time
+import pickle
+from datetime import datetime
+import numpy as np
+from config import vals, vars, simwrapper, MAX_TIME, SEED
 from src.utils import get_parameters
 from ax.service.ax_client import AxClient, ObjectiveProperties
 
-from simulation import *
+from simulation import simulation_rb
 
 
 def evaluate(parameters) -> float:
@@ -17,7 +21,7 @@ if __name__ == '__main__':
     max_time = MAX_TIME * 3600 # in sec
 
     objectives = dict()
-    objectives["sum"] = ObjectiveProperties(minimize=False)
+    objectives['Utility'] = ObjectiveProperties(minimize=False)
 
     ax_client = AxClient(verbose_logging=False, random_seed=SEED)
     ax_client.create_experiment( # define variable parameters of quantum network simulation

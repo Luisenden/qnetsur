@@ -8,7 +8,7 @@ if __name__ == '__main__':
     df_sur, vals = read_pkl_surrogate(folder)
     df_meta = read_pkl_meta(folder)
     df_sa = read_pkl_sa(folder)
-    df_gs = read_pkl_gridsearch(folder)
+    df_gs = read_pkl_randomsearch(folder)
 
     xs = []
     for df in [df_sur, df_meta, df_sa, df_gs]:
@@ -22,7 +22,7 @@ if __name__ == '__main__':
     seed_count = 1
     while True:
         for x,method in zip(xs, ['Surrogate', 'Meta',
-                                'Simulated Annealing', 'Random Gridsearch']):
+                                'Simulated Annealing', 'Random Search']):
             sim = Simulation(simwrapper, simulation_qswitch)
             res = sim.run_exhaustive(x=x, vals=vals, N=nprocs, seed=seed_count)
             df = to_dataframe(res)

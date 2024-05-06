@@ -10,7 +10,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 parser.add_argument("--method", type=str, default='Surrogate', 
-                    help="Choose one of the following methods: 'Surrogate', 'Meta', 'Simulated Annealing', 'Random Gridsearch', 'Even', 'Wu et. al, 2021'")
+                    help="Choose one of the following methods: 'Surrogate', 'Meta', 'Simulated Annealing', 'Random Search', 'Even', 'Wu et. al, 2021'")
 args, _ = parser.parse_known_args()
 METHOD = args.method
 
@@ -19,7 +19,7 @@ if __name__ == '__main__':
 
     folder = '../../surdata/rb_budget'
 
-    _, xs, vals = get_policies(folder)
+    _, xs, vals = get_best_paremters(folder)
     
     vals['N'] = 1
     nprocs = mp.cpu_count()
