@@ -5,9 +5,7 @@ import numpy as np
 from config import vals, vars, simwrapper, MAX_TIME, SEED
 from src.utils import get_parameters
 from ax.service.ax_client import AxClient, ObjectiveProperties
-
 from simulation import simulation_rb
-
 
 def evaluate(parameters) -> float:
     x = {**vals, **parameters}
@@ -19,6 +17,7 @@ if __name__ == '__main__':
 
     # user input:
     max_time = MAX_TIME * 3600 # in sec
+    output_folder = '../../surdata/rb_budget/'
 
     objectives = dict()
     objectives['Utility'] = ObjectiveProperties(minimize=False)
@@ -44,6 +43,6 @@ if __name__ == '__main__':
         delta = np.mean(times_tracked)
     
     result = ax_client.get_trials_data_frame()
-    with open(f'../../surdata/rb_budget/AX_starlight_{MAX_TIME:.1f}h_objective-budget_SEED{SEED}_'
+    with open(output_folder+f'AX_starlight_{MAX_TIME:.1f}h_objective-budget_SEED{SEED}_'
               +datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
             pickle.dump([result, times_tracked, vals], file)
