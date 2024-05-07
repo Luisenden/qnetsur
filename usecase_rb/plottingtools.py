@@ -76,7 +76,6 @@ def read_pkl_surrogate_timeprofiling(folder):
     times_relative = times.drop('# Iterations', axis=1).div(times['Total'], axis=0)
     return times, times_relative
 
-
 def read_pkl_surrogate(folder):
     surs = []
     for name in glob.glob(f'{folder}/SU_*.pkl'): 
@@ -107,7 +106,7 @@ def read_pkl_meta(folder):
         with open(name,'rb') as file: metas.append(pickle.load(file))
     dfs = []
     for i, meta in enumerate(metas):
-        data = meta[0]#.get_trials_data_frame()
+        data = meta[0]
         data['Trial'] = i
         dfs.append(data)
     df = pd.concat(dfs, axis=0)
@@ -140,14 +139,12 @@ def read_pkl_sa(folder):
     df['Method'] = 'Simulated Annealing'
     return df.reset_index()
 
-
 def to_dataframe(res):
     df = pd.DataFrame.from_records(res)
-    df_raw = df[2].transform({i: itemgetter(i) for i in range(config.nnodes)}) # get raw mean per node
-    df_raw = df_raw.add_prefix('Node')
-    df_raw['Aggregated Completed Requests'] = df_raw.sum(axis=1)
-    return df_raw
-
+    df = df[2].transform({i: itemgetter(i) for i in range(config.nnodes)}) # get raw mean per node
+    df = df.add_prefix('Node')
+    df['Aggregated Completed Requests'] = df.sum(axis=1)
+    return df
 
 def plot_optimization_results(folder):
     target_columns = ['Trial', 'Utility', 'Method']
@@ -175,7 +172,7 @@ def get_performance_distribution_per_method(folder):
     mean_std['rel_std'] = mean_std['std']/mean_std['mean']
     return mean_std
 
-def get_best_paramters(folder):
+def get_best_parameters(folder):
     df_sur, vals = read_pkl_surrogate(folder)
     df_meta = read_pkl_meta(folder)
     df_sa = read_pkl_sa(folder)
@@ -202,7 +199,7 @@ def get_best_paramters(folder):
     return x_df, xs, vals
 
 def plot_from_exhaustive(folder):
-    x_df, _, _ = get_best_paramters(folder)
+    x_df, _, _ = get_best_parameters(folder)
     method_names = ['Surrogate', 'Meta', 'Simulated Annealing', 'Random Search', 'Even', 'Wu et. al, 2021']
     dfs = [None]*6
     for name in glob.glob(f'{folder}/Results_*.csv'):
@@ -228,18 +225,18 @@ def plot_from_exhaustive(folder):
 if __name__ == '__main__':
     folder = '../../surdata/rb_budget'
 
-    # #plot results of optimization (Utility)
-    # plot_optimization_results(folder)
+    #plot results of optimization (Utility)
+    get_performance_distribution_per_method(folder)
 
-    # plot from exhaustive run
-    plot_from_exhaustive(folder)
+    # # plot from exhaustive run
+    # plot_from_exhaustive(folder)
 
-    # plot time profiling
-    time_profile, rel_time_profile = read_pkl_surrogate_timeprofiling(folder)
-    print(rel_time_profile.mean(axis=0))
+    # # plot time profiling
+    # time_profile, rel_time_profile = read_pkl_surrogate_timeprofiling(folder)
+    # print(rel_time_profile.mean(axis=0))
 
-    df = get_performance_distribution_per_method(folder)
-    print(df)
+    # df = get_performance_distribution_per_method(folder)
+    # print(df)
 
-    error, acquisition = read_pkl_surrogate_benchmarking(folder)
-    print(error, acquisition)
+    # error, acquisition = read_pkl_surrogate_benchmarking(folder)
+    # print(error, acquisition)

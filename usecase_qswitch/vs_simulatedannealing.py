@@ -31,9 +31,7 @@ if __name__ == '__main__':
 
     # baseline simulated annealing
     si = Simulation(simwrapper, simulation_qswitch, vals=vals, vars=vars )
-    simanneal = partial(simulated_annealing, MAX_TIME=max_time, seed=SEED)
-    
-    result = simanneal(si)
+    result = simulated_annealing(sim=si, MAX_TIME=max_time, seed=SEED)
     result = pd.DataFrame.from_records(result)
 
     with open(f'../../surdata/qswitch/SA_qswitch_nleafnodes{NLEAF_NODES}_{MAX_TIME:.2f}h_objective-servernode_SEED{SEED}_'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:

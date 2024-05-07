@@ -1,10 +1,13 @@
+import time
+import pandas as pd
+import torch.multiprocessing as mp
 import sys
 sys.path.append('../')
 sys.path.append('../src')
-from src.utils import *
-from config import *
-from simulation import *
-from plotting_tools import *
+from src.utils import Simulation
+from config import parser, simwrapper, vals
+from simulation import simulation_rb
+from usecase_rb.plottingtools import get_best_parameters, to_dataframe
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -19,7 +22,7 @@ if __name__ == '__main__':
 
     folder = '../../surdata/rb_budget'
 
-    _, xs, vals = get_best_paremters(folder)
+    _, xs, vals = get_best_parameters(folder)
     
     vals['N'] = 1
     nprocs = mp.cpu_count()
