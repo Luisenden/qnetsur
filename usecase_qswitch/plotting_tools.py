@@ -137,36 +137,33 @@ def get_best_x(df):
 def plot_from_exhaustive(df):
     markers = ['o', '^', 'x', 's']
     linestyles = '-', '--', '-.', ':'
-    fig, axs = plt.subplots(3,2, figsize=(10,7))
-    sns.pointplot(data= df, x='User', y='Utility', hue='Method', ax=axs.flat[0], errorbar='se', markers=markers, linestyles=linestyles)
-    sns.pointplot(data= df, x='Method', y='Aggregated Utility', hue='Method', ax=axs.flat[1], errorbar='se', markers=markers)
+    fig, axs = plt.subplots(3,1, figsize=(5,12))
+    sns.lineplot(data= df, x='User', y='Utility', hue='Method', ax=axs[0], errorbar='se', err_style='bars', style='Method', markers=True, markersize=10)
+    sns.lineplot(data= df, x='User', y='Rate [Hz]', hue='Method', ax=axs[1], errorbar='se', err_style='bars', style='Method', markers=True, markersize=10)
+    g = sns.lineplot(data= df, x='User', y='Fidelity', hue='Method', ax=axs[2], errorbar='se', err_style='bars', style='Method', markers=True, markersize=10)
 
-    sns.pointplot(data= df, x='User', y='Rate [Hz]', hue='Method', ax=axs.flat[2], errorbar='se', markers=markers, linestyles=linestyles)
-    sns.pointplot(data= df, x='Method', y='Aggregated Rate [Hz]', ax=axs.flat[3], hue='Method', errorbar='se', markers=markers)
-
-    sns.pointplot(data=df, x='User', y='Fidelity', hue='Method', ax=axs.flat[4], errorbar='se', markers=markers, linestyles=linestyles)
-
-    for i in range(len(axs.flat)):
-        axs.flat[i].grid(alpha=0.3)
-        axs.flat[i].legend().remove()
-        axs.flat[i].set_xlabel('')        
-        if i % 2:
-            axs.flat[i].set_xticks([])
-            axs.flat[i].set_ylabel('')
+    for i in range(len(axs)):
+        axs[i].grid(alpha=0.3)
+        axs[i].legend().remove()
+        axs[i].set_xlabel('')
     
-    axs.flat[0].set_title('Utility per User')
-    axs.flat[1].set_title('Aggregated Utility')
-    axs.flat[2].set_title('Rate [Hz] per User')
-    axs.flat[3].set_title('Aggregated Rate [Hz]')
-    axs.flat[4].set_title('Fidelity per User')
-    axs.flat[4].set_xlabel('User')
-    axs.flat[-1].axis('off')
+    axs[0].set_title('Utility per User')
+    axs[1].set_title('Rate [Hz] per User')
+    axs[2].set_title('Fidelity per User')
+    axs[2].set_xlabel('User')
 
-    handles, labels = axs.flat[1].get_legend_handles_labels()
-
-    fig.legend(handles, labels, loc='lower right', bbox_to_anchor=(0.85, 0.1))
+    g.legend(loc='lower center', bbox_to_anchor=(0.5, -1.5), ncol=1)
     plt.tight_layout()
-    plt.show()
+    # plt.show()
+
+    fig, axs = plt.subplots(figsize=(5,7))
+    sns.barplot(data=df, x='Method', y='Aggregated Utility')
+    plt.title(r'Aggregated Utility $U(\mathbf{s_\alpha})$')
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.savefig('QES-example2-bars.pdf')
+
+
 
 def plot_surrogate_linklevelfidels(folder, trial=0):
     df, _ = read_pkl_surrogate(folder)
@@ -200,16 +197,16 @@ def get_performance_distribution_per_method(folder):
 
 if __name__ == '__main__':
 
-    folder = '../../surdata/qswitch'
-    plot_surrogate_linklevelfidels(folder, trial=7)
+    # folder = '../../surdata/qswitch'
+    # plot_surrogate_linklevelfidels(folder, trial=7)
 
     df = pd.read_csv('../../surdata/qswitch/Results_qswitch_5users_T30min.csv')
     plot_from_exhaustive(df)
 
-    time_profile, rel_time_profile = read_pkl_surrogate_timeprofiling(folder)
-    print(time_profile)
+    # time_profile, rel_time_profile = read_pkl_surrogate_timeprofiling(folder)
+    # print(time_profile)
 
-    df = get_performance_distribution_per_method(folder)
-    print(df)
+    # df = get_performance_distribution_per_method(folder)
+    # print(df)
 
     

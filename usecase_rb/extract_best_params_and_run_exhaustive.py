@@ -28,8 +28,8 @@ if __name__ == '__main__':
     nprocs = mp.cpu_count()
     x = xs[METHOD]
 
-    # x_df = pd.DataFrame.from_records(xs).T
-    # print(x_df.T.to_latex())
+    # x_df = pd.DataFrame.from_records(xs)
+    # print(x_df.sum())#.T.to_latex())
 
     dfs = []
     seed_count = 1
@@ -44,7 +44,7 @@ if __name__ == '__main__':
         dfs.append(df)
 
         seed_count += 1
-        if len(dfs)*nprocs >= 10:
+        if len(dfs)*nprocs >= 1000:
             break
     
     df_exhaustive = pd.concat(dfs, axis=0)

@@ -135,7 +135,7 @@ def read_pkl_sa(folder):
         gs[0]['Trial'] = i
         dfs.append(gs[0])
     df = pd.concat(dfs, axis=0)
-    df['Utility'] = df['objective'].apply(np.nansum)
+    df['Utility'] = df['Utility'].apply(np.nansum)
     df['Method'] = 'Simulated Annealing'
     return df.reset_index()
 
@@ -226,14 +226,15 @@ if __name__ == '__main__':
     folder = '../../surdata/rb_budget'
 
     #plot results of optimization (Utility)
-    get_performance_distribution_per_method(folder)
+    df = get_performance_distribution_per_method(folder)
+    print(df)
 
     # # plot from exhaustive run
     # plot_from_exhaustive(folder)
 
-    # # plot time profiling
-    # time_profile, rel_time_profile = read_pkl_surrogate_timeprofiling(folder)
-    # print(rel_time_profile.mean(axis=0))
+    # plot time profiling
+    time_profile, rel_time_profile = read_pkl_surrogate_timeprofiling(folder)
+    print(time_profile)
 
     # df = get_performance_distribution_per_method(folder)
     # print(df)
