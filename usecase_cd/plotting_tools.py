@@ -1,5 +1,5 @@
 """
-Plotting tools for continuous-protocols use case.
+Plotting tools for continuous-protocols.
 """
 
 import pandas as pd
@@ -7,11 +7,8 @@ import re
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
-from operator import itemgetter
 import glob
 import pickle
-
-import config
 
 plt.style.use("seaborn-v0_8-paper")
 font = 14
@@ -34,16 +31,16 @@ def read_pkl_surrogate_timeprofiling(folder):
     for name in glob.glob(f'{folder}/SU_*.pkl'): 
         with open(name,'rb') as file: surs.append(pickle.load(file))
     
-    times = {'Simulation':[], 'Build':[], 'Acquisition':[], 'Simulation per Iteration Mean':[] }
+    times = {'Simulation':[], 'Build':[], 'Acquisition':[], 'Total':[], '# Iterations': []}
     for sur in surs:
         times['Simulation'].append(np.sum(sur.sim_time))
-        times['Simulation per Iteration Mean'].append(np.mean(sur.sim_time))
         times['Build'].append(np.sum(sur.build_time))
         times['Acquisition'].append(np.sum(sur.acquisition_time))
+        times['Total'].append(np.sum(sur.optimize_time))
+        times['# Iterations'].append(len(sur.sim_time))
 
     times = pd.DataFrame.from_dict(times)
-    times['Total'] = times.drop('Simulation per Iteration Mean', axis=1).sum(axis=1)
-    times_relative = times.div(times['Total'], axis=0)
+    times_relative = times.drop('# Iterations', axis=1).div(times['Total'], axis=0)
     return times, times_relative
 
 def read_pkl_surrogate_benchmarking(folder):
@@ -100,7 +97,7 @@ def read_pkl_surrogate(folder):
     df = Xs.join(ys)
     df = df.join(ys_std)
     df['Method'] = 'Surrogate'
-    return df.reset_index(), vals
+    return df.reset_index(), vals, surs[0]
 
 def read_pkl_meta(folder):
     metas = []
@@ -153,7 +150,7 @@ def to_dataframe(res, users):
 
 
 def get_performance_distribution_per_method(folder):
-    df_sur, _ = read_pkl_surrogate(folder)
+    df_sur, _, _ = read_pkl_surrogate(folder)
     df_meta = read_pkl_meta(folder)
     df_sa = read_pkl_sa(folder)
     df_gs = read_pkl_randomsearch(folder)
@@ -165,7 +162,7 @@ def get_performance_distribution_per_method(folder):
     return mean_std
 
 def get_policies(folder):
-    df_sur, vals = read_pkl_surrogate(folder)
+    df_sur, vals, sim = read_pkl_surrogate(folder)
     df_meta = read_pkl_meta(folder)
     df_sa = read_pkl_sa(folder)
     df_gs = read_pkl_randomsearch(folder)
@@ -176,16 +173,16 @@ def get_policies(folder):
         xs[xmethod['Method']] = xmethod.drop('Method')
 
     x_df = pd.DataFrame.from_records(xs).T
-    return x_df, xs, vals
+    return x_df, xs, vals, sim
 
 def get_exhaustive(folder):
-    method_names = ['Surrogate', 'Meta', 'Simulated Annealing', 'Random Search']
+    method_names = ['Surrogate', 'Meta', 'Simulated Annealing', 'Random Gridsearch']
     dfs = [None]*4
     for name in glob.glob(f'{folder}/Results_*.csv'):
         df = pd.read_csv(name)
         method = df.Method[0]
         index = method_names.index(method)
-        if method == 'Random Search':
+        if method == 'Random Gridsearch':
             df['Method'] = 'Uniform Random Search'
         dfs[index] = df
     df = pd.concat(dfs, axis=0)
@@ -237,20 +234,20 @@ def plot_from_exhaustive_multiple(folders, show=True):
     return df
 
 if __name__ == '__main__':
-    folder = '../../surdata/cd_10h'
+    folder = '../../surdata/cd_1h'
     # df = get_performance_distribution_per_method(folder)
     # print(df)
 
-    # df_timeprofiling, df_rel_timeprofiling = read_pkl_surrogate_timeprofiling(folder)
-    # print(df_rel_timeprofiling.std())
+    df_timeprofiling, df_rel_timeprofiling = read_pkl_surrogate_timeprofiling(folder)
+    print(df_timeprofiling.mean())
 
     # # df_xs, xs, vals = get_policies(folder)
     # # print('xs \n', vals['user'][0]) 
 
-    # plot_from_exhaustive(folder)
+    plot_from_exhaustive(folder)
 
     error, acquisition = read_pkl_surrogate_benchmarking(folder)
 
-    # folders = ['../../surdata/cd_1h', '../../surdata/cd_5h', '../../surdata/cd_10h']
-    # df = plot_from_exhaustive_multiple(folders)
-    # print(df)
+    folders = ['../../surdata/cd_1h', '../../surdata/cd_5h', '../../surdata/cd_10h']
+    df = plot_from_exhaustive_multiple(folders)
+    print(df)

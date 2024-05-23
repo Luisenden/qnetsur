@@ -197,14 +197,14 @@ def get_performance_distribution_per_method(folder):
 
 if __name__ == '__main__':
 
-    # folder = '../../surdata/qswitch'
+    folder = '../../surdata/qswitch'
     # plot_surrogate_linklevelfidels(folder, trial=7)
 
-    df = pd.read_csv('../../surdata/qswitch/Results_qswitch_5users_T30min.csv')
-    plot_from_exhaustive(df)
+    # df = pd.read_csv('../../surdata/qswitch/Results_qswitch_5users_T30min.csv')
+    # plot_from_exhaustive(df)
 
-    # time_profile, rel_time_profile = read_pkl_surrogate_timeprofiling(folder)
-    # print(time_profile)
+    time_profile, rel_time_profile = read_pkl_surrogate_timeprofiling(folder)
+    print(time_profile.std())
 
     # df = get_performance_distribution_per_method(folder)
     # print(df)

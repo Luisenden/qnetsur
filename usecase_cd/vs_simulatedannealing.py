@@ -1,22 +1,28 @@
-from config import *
+
+import pandas as pd
+from datetime import datetime
+import pickle
+
+from config import Config
 from src.utils import Simulation
 
 from optimizingcd import main_cd as simulation
-
 from src.simulatedannealing import simulated_annealing 
 
 
 if __name__ == '__main__':
 
-        # user input:
-        max_time= [MAX_TIME * 3600, "timer"]
+        # load configuration
+        conf = Config(initial_model_size=5)
+        limit = conf.args.time
 
         # baseline simulated annealing
-        si = Simulation(simwrapper, simulation.simulation_cd, vals=vals, vars=vars)
-        simaneal = partial(simulated_annealing, MAX_TIME=max_time[0], seed=SEED)
+        sim = Simulation(conf.simobjective, simulation.simulation_cd, values=conf.vals, variables=conf.vars, rng=conf.rng)
         
-        result = simaneal(si)
+        result = simulated_annealing(sim, limit=limit)
         result = pd.DataFrame.from_records(result)
 
-        with open(f'../../surdata/cd/SA_{topo.raw}_{MAX_TIME}{max_time[1]}_objective-meanopt_SEED{SEED}_'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
+        limit_kind = 'hours' if isinstance(limit, float) else 'cycles'
+        with open(conf.args.folder+f'SA_{conf.name}_{limit}{limit_kind}_SEED{conf.args.seed}_'\
+                  +datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
                 pickle.dump(result, file)
