@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 from operator import itemgetter
 import glob
 import pickle
-import json
 
 import config
 
@@ -173,7 +172,7 @@ def get_performance_distribution_per_method(folder):
     mean_std['rel_std'] = mean_std['std']/mean_std['mean']
     return mean_std
 
-def get_best_parameters(folder, plot=False):
+def get_best_parameters(folder):
     df_sur, vals = read_pkl_surrogate(folder)
     df_meta = read_pkl_meta(folder)
     df_sa = read_pkl_sa(folder)
@@ -195,70 +194,7 @@ def get_best_parameters(folder, plot=False):
                'mem_size_node_3': 24, 'mem_size_node_4': 67, 'mem_size_node_5': 24, 
                'mem_size_node_6': 103, 'mem_size_node_7': 25, 'mem_size_node_8':24}
 
-    method_names = ['Surrogate', 'Meta', 'Simulated Annealing', 'Random Search', 'Even', 'Wu et. al, 2021']
-    x_df = pd.DataFrame.from_records(xs)
-    x_df = x_df[method_names].T
+    x_df = pd.DataFrame.from_records(xs).T
     x_df['Total Number of Allocated Memories'] = x_df.sum(axis=1).astype(int)
-
-    if plot:
-        with open('starlight.json', 'r') as file:
-            data = json.load(file)
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(9,4), gridspec_kw={'width_ratios': [3, 1]})
-        sns.lineplot(data=x_df[['Total Number of Allocated Memories']].T, ax=ax2, markers=True, markersize=10)
-        sns.lineplot(data=x_df.drop('Total Number of Allocated Memories', axis=1).T, markers=True, markersize=10, ax=ax1,  legend=False)
-        ax2.set_xticklabels('')
-        ax2.grid()
-        ax2.set_title('Total Number of Allocated Memories', loc='left')
-        ax1.grid()
-        ax1.set_ylabel('# Memories')
-        ax1.set_title('Number of Allocated Memories per User', loc='left')
-        ax1.set_xticks(ticks=list(range(9)), labels=[data['nodes'][i]['name'] for i in range(9)], rotation=45)
-        ax2.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-        plt.tight_layout()
-        plt.show()
-
+    x_df.to_csv(folder+'Best_found_solutions.csv')
     return x_df, xs, vals
-
-def plot_from_exhaustive(folder):
-    x_df, _, _ = get_best_parameters(folder)
-    method_names = ['Surrogate', 'Meta', 'Simulated Annealing', 'Random Search', 'Even', 'Wu et. al, 2021']
-    dfs = [None]*6
-    for name in glob.glob(f'{folder}/Results_*.csv'):
-        df = pd.read_csv(name)
-        method = df.Method[0]
-        index = method_names.index(method)
-        dfs[index] = df
-
-    df = pd.concat(dfs, axis=0)
-    df = df.drop('Unnamed: 0' , axis=1)
-    df = df.melt(id_vars=['Method', 'Aggregated Completed Requests'], var_name='User', value_name='Number of Completed Requests')
-    df['User'] = df['User'].apply(lambda x: str.replace(x, 'Node', ''))
-    df = df.merge(x_df, left_on='Method', right_index=True, how='left')
-    markers = ['o', '^', 'v', 's', 'd', 'P']
-    fig, axs = plt.subplots(1,1, figsize=(5,3))
-    sns.pointplot(data= df, x='Total Number of Allocated Memories', y='Aggregated Completed Requests', hue='Method', ax=axs, errorbar='se', markers=markers, legend=True, linestyles=['']*6, native_scale=True)
-    axs.grid()
-    plt.title('Aggregated Number of Completed Requests')
-    plt.tight_layout()
-    plt.show()
-
-
-if __name__ == '__main__':
-    folder = '../../surdata/rb_budget_25h'
-
-    #plot results of optimization (Utility)
-    # df = get_performance_distribution_per_method(folder)
-    # print(df)
-
-    # plot from exhaustive run
-    plot_from_exhaustive(folder)
-
-    # plot time profiling
-    # time_profile, rel_time_profile = read_pkl_surrogate_timeprofiling(folder)
-    # print(time_profile.std())
-
-    # df = get_performance_distribution_per_method(folder)
-    # print(df)
-
-    # error, acquisition = read_pkl_surrogate_benchmarking(folder)
-    # print(error, acquisition)

@@ -1,8 +1,0 @@
-ax
-matplotlib
-numpy
-pandas
-scikit_learn
-scipy
-seaborn
-git+https://github.com/AlvaroGI/optimizing-cd-protocols.git@package

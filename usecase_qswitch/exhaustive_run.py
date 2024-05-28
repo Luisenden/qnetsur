@@ -32,23 +32,6 @@ plt.rcParams.update({
     'axes.titlesize': font
 })
 
-def read_pkl_surrogate_timeprofiling(folder):
-    surs = []
-    for name in glob.glob(f'{folder}/SU_*.pkl'): 
-        with open(name,'rb') as file: surs.append(pickle.load(file))
-    
-    times = {'Simulation':[], 'Build':[], 'Acquisition':[], '# Iterations': []}
-    for sur in surs:
-        times['Simulation'].append(np.sum(sur.sim_time))
-        times['Build'].append(np.sum(sur.build_time))
-        times['Acquisition'].append(np.sum(sur.acquisition_time))
-        times['# Iterations'].append(len(sur.sim_time))
-
-    times = pd.DataFrame.from_dict(times)
-    times['Total'] = times[['Simulation', 'Build', 'Acquisition']].sum(axis=1)
-    times_relative = times.drop('# Iterations', axis=1).div(times['Total'], axis=0)
-    return times, times_relative
-
 def read_pkl_surrogate(folder):
     surs = []
     for name in glob.glob(f'{folder}/SU_*.pkl'): 
@@ -79,11 +62,12 @@ def read_pkl_meta(folder):
         with open(name,'rb') as file: metas.append(pickle.load(file))
     dfs = []
     for i, meta in enumerate(metas):
-        data = meta[0]#.get_trials_data_frame()
+        data = meta[0]
         data['Trial'] = i
         dfs.append(data)
     df = pd.concat(dfs, axis=0)
     df['Method'] = 'Meta'
+    df['Utility'] = df['evaluate']
     return df.reset_index()
 
 def read_pkl_randomsearch(folder):
@@ -95,7 +79,7 @@ def read_pkl_randomsearch(folder):
         gs[0]['Trial'] = i
         dfs.append(gs[0])
     df = pd.concat(dfs, axis=0)
-    df['Utility'] = df['Utility'].apply(np.nansum)
+    df['Utility'] = df['objective'].apply(np.nansum)
     df['Method'] = 'Random Search'
     return df.reset_index()
 
@@ -134,37 +118,6 @@ def to_dataframe(res):
 def get_best_x(df):
     return df.iloc[df['Utility'].idxmax()][df.columns.str.contains('bright_state')]
 
-def plot_from_exhaustive(df):
-    markers = ['o', '^', 'x', 's']
-    linestyles = '-', '--', '-.', ':'
-    fig, axs = plt.subplots(3,1, figsize=(5,12))
-    sns.lineplot(data= df, x='User', y='Utility', hue='Method', ax=axs[0], errorbar='se', err_style='bars', style='Method', markers=True, markersize=10)
-    sns.lineplot(data= df, x='User', y='Rate [Hz]', hue='Method', ax=axs[1], errorbar='se', err_style='bars', style='Method', markers=True, markersize=10)
-    g = sns.lineplot(data= df, x='User', y='Fidelity', hue='Method', ax=axs[2], errorbar='se', err_style='bars', style='Method', markers=True, markersize=10)
-
-    for i in range(len(axs)):
-        axs[i].grid(alpha=0.3)
-        axs[i].legend().remove()
-        axs[i].set_xlabel('')
-    
-    axs[0].set_title('Utility per User')
-    axs[1].set_title('Rate [Hz] per User')
-    axs[2].set_title('Fidelity per User')
-    axs[2].set_xlabel('User')
-
-    g.legend(loc='lower center', bbox_to_anchor=(0.5, -1.5), ncol=1)
-    plt.tight_layout()
-    # plt.show()
-
-    fig, axs = plt.subplots(figsize=(5,7))
-    sns.barplot(data=df, x='Method', y='Aggregated Utility')
-    plt.title(r'Aggregated Utility $U(\mathbf{s_\alpha})$')
-    plt.xticks(rotation=45)
-    plt.tight_layout()
-    plt.savefig('QES-example2-bars.pdf')
-
-
-
 def plot_surrogate_linklevelfidels(folder, trial=0):
     df, _ = read_pkl_surrogate(folder)
     
@@ -183,30 +136,37 @@ def plot_surrogate_linklevelfidels(folder, trial=0):
     plt.tight_layout()
     plt.show()
 
-def get_performance_distribution_per_method(folder):
-    df_sur, _ = read_pkl_surrogate(folder)
-    df_meta = read_pkl_meta(folder)
-    df_sa = read_pkl_sa(folder)
-    df_gs = read_pkl_randomsearch(folder)
-    columns = ['Trial', 'Method', 'Utility']
-    df = pd.concat([df_sur[columns], df_meta[columns], df_sa[columns], df_gs[columns]])
-    max_per_trial = df.groupby(['Method', 'Trial'])['Utility'].max()
-    mean_std = max_per_trial.groupby(level='Method').agg(['min', 'max', 'mean', 'std'])
-    mean_std['rel_std'] = mean_std['std']/mean_std['mean']
-    return mean_std
-
 if __name__ == '__main__':
 
     folder = '../../surdata/qswitch'
-    # plot_surrogate_linklevelfidels(folder, trial=7)
+    result_folder = '../../surdata/qswitch/Results_qswitch_5users_T30min.csv'
 
-    # df = pd.read_csv('../../surdata/qswitch/Results_qswitch_5users_T30min.csv')
-    # plot_from_exhaustive(df)
+    df_sur, vals = read_pkl_surrogate(folder)
+    df_meta = read_pkl_meta(folder)
+    df_sa = read_pkl_sa(folder)
+    df_gs = read_pkl_randomsearch(folder)
 
-    time_profile, rel_time_profile = read_pkl_surrogate_timeprofiling(folder)
-    print(time_profile.std())
+    xs = []
+    for df in [df_sur, df_meta, df_sa, df_gs]:
+        x = get_best_x(df)  
+        xs.append(x)  
 
-    # df = get_performance_distribution_per_method(folder)
-    # print(df)
+    vals['N'] = 1
+    nprocs = mp.cpu_count()
 
+    dfs = []
+    seed_count = 1
+    while True:
+        for x,method in zip(xs, ['Surrogate', 'Meta',
+                                'Simulated Annealing', 'Random Search']):
+            sim = Simulation(simwrapper, simulation_qswitch)
+            res = sim.run_exhaustive(x=x, vals=vals, N=nprocs, seed=seed_count)
+            df = to_dataframe(res)
+            df['Method'] = method
+            dfs.append(df)
+        seed_count += 1
+        if len(dfs)*nprocs > 4000:
+            break
     
+    df_exhaustive = pd.concat(dfs, axis=0)
+    df_exhaustive.to_csv(result_folder) 

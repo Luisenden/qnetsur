@@ -104,4 +104,4 @@ if __name__ == '__main__':
         vars['range']['bright_state_user'] = ([.0, .1], 'float')
 
         # optimize at different bottleneck-link lengths (1-100km)
-        df = run(vars=vars, vals=vals, limit=max_time_or_iteration, path=storage_path, bottleneck_length=100, n=20)
+        df = run(vars=vars, vals=vals, limit=max_time_or_iteration, path=storage_path, bottleneck_length=100, n=1)

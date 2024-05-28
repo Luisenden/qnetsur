@@ -7,7 +7,7 @@ sys.path.append('../src')
 from src.utils import Simulation
 from config import parser, simwrapper, vals
 from simulation import simulation_rb
-from usecase_rb.plottingtools import get_best_parameters, to_dataframe
+from usecase_metropolitan.plottingtools import get_best_parameters, to_dataframe
 
 import warnings
 warnings.filterwarnings("ignore")
