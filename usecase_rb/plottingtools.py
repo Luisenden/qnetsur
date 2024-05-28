@@ -196,48 +196,5 @@ def get_best_parameters(folder):
 
     x_df = pd.DataFrame.from_records(xs).T
     x_df['Total Number of Allocated Memories'] = x_df.sum(axis=1).astype(int)
+    x_df.to_csv(folder+'Best_found_solutions.csv')
     return x_df, xs, vals
-
-def plot_from_exhaustive(folder):
-    x_df, _, _ = get_best_parameters(folder)
-    method_names = ['Surrogate', 'Meta', 'Simulated Annealing', 'Random Search', 'Even', 'Wu et. al, 2021']
-    dfs = [None]*6
-    for name in glob.glob(f'{folder}/Results_*.csv'):
-        df = pd.read_csv(name)
-        method = df.Method[0]
-        index = method_names.index(method)
-        dfs[index] = df
-
-    df = pd.concat(dfs, axis=0)
-    df = df.drop('Unnamed: 0' , axis=1)
-    df = df.melt(id_vars=['Method', 'Aggregated Completed Requests'], var_name='User', value_name='Number of Completed Requests')
-    df['User'] = df['User'].apply(lambda x: str.replace(x, 'Node', ''))
-    df = df.merge(x_df, left_on='Method', right_index=True, how='left')
-    markers = ['o', '^', 'v', 's', 'd', 'P']
-    fig, axs = plt.subplots(1,1, figsize=(5,3))
-    sns.pointplot(data= df, x='Total Number of Allocated Memories', y='Aggregated Completed Requests', hue='Method', ax=axs, errorbar='se', markers=markers, legend=True, linestyles=['']*6, native_scale=True)
-    axs.grid()
-    plt.title('Aggregated Number of Completed Requests')
-    plt.tight_layout()
-    plt.show()
-
-
-if __name__ == '__main__':
-    folder = '../../surdata/rb_budget'
-
-    #plot results of optimization (Utility)
-    df = get_performance_distribution_per_method(folder)
-    print(df)
-
-    # # plot from exhaustive run
-    # plot_from_exhaustive(folder)
-
-    # plot time profiling
-    time_profile, rel_time_profile = read_pkl_surrogate_timeprofiling(folder)
-    print(time_profile)
-
-    # df = get_performance_distribution_per_method(folder)
-    # print(df)
-
-    # error, acquisition = read_pkl_surrogate_benchmarking(folder)
-    # print(error, acquisition)

@@ -420,6 +420,8 @@ class Surrogate(Simulation):
             if limit[1] == 'timer':
                 if verbose: print('Optimize with timer.')
                 self.optimize_with_timer(verbose=verbose)
+                print('sim', len(self.sim_time))
+                print('acqu', len(self.acquisition_time))
             elif limit[1] == 'iterator':
                 if verbose: print('Optimize with iterator.')
                 self.optimize_with_iteration(verbose=verbose)
