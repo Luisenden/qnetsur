@@ -1,5 +1,5 @@
 """
-Central script containing objects for surrogate optimization and helper function to retrieve format of parameters for Ax-platform.
+Central script containing objects for surrogate optimization and helper functions.
 """
 
 import numpy as np
@@ -20,15 +20,6 @@ from sklearn.svm import SVR
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.metrics import mean_absolute_error, make_scorer
-
-import os
-from importlib import import_module
-
-USE_CASE = os.environ.get('USE_CASE') or 'usecase_cd'  # default to usecase_cd if not set
-try:
-    config = import_module(f'{USE_CASE}.config')
-except ImportError:
-    raise ImportError(f"Cannot import config.py for '{USE_CASE}'")
 
 class Simulation:
     """
@@ -60,18 +51,20 @@ class Simulation:
         specified variable parameters.
     """
 
-    def __init__(self, sim_wrapper, sim, vals=None, vars=None):
+    def __init__(self, sim_wrapper, sim, rng, values, variables):
+        
+        self.rng = rng
         # specify fixed parameters
-        self.vals = vals
+        self.vals = values
         # specify variable parameters
-        self.vars = vars
+        self.vars = variables
 
         # simulation function handler
         self.sim_wrapper = sim_wrapper
         # simulation function
         self.sim = sim
 
-    def run_sim(self, x :dict, vals :dict = None) -> list:
+    def run_sim(self, x :dict) -> list:
         """
         Runs the quantum network simulation with the provided parameters.
 
@@ -81,15 +74,15 @@ class Simulation:
         Returns:
             list: Results of the simulation.
         """
-        xrun = {**self.vals, **x} if vals == None else {**vals, **x}
+        xrun = {**self.vals, **x} 
         res = self.sim_wrapper(self.sim, xrun)
         return res
 
-    def run_exhaustive(self, x :dict, vals :dict = None, N=10, seed=42) -> list:
+    def run_exhaustive(self, x :dict, N=10, seed=42) -> list:
         """
         Runs the quantum network simulation with the provided parameters N times in parallel.
         """
-        xrun = {**x, **vals}
+        xrun = {**x, **self.vals}
         task = partial(self.sim_wrapper, self.sim)
         with Pool(processes=N) as pool:
             res = pool.map(task, [{**xrun, **{'seed': (i+1)*seed}} for i in range(N)])
@@ -108,21 +101,21 @@ class Simulation:
         for dim, par in self.vars['range'].items():
                 vals = par[0]
                 if par[1] == 'int':
-                    x[dim] = config.rng_sur.integers(vals[0], vals[1], n) if n > 1\
-                        else config.rng_sur.integers(vals[0], vals[1])
+                    x[dim] = self.rng.integers(vals[0], vals[1], n) if n > 1\
+                        else self.rng.integers(vals[0], vals[1])
                 elif par[1] == 'float':
-                    x[dim] = config.rng_sur.uniform(vals[0], vals[1], n) if n > 1\
-                        else config.rng_sur.uniform(vals[0], vals[1])
+                    x[dim] = self.rng.uniform(vals[0], vals[1], n) if n > 1\
+                        else self.rng.uniform(vals[0], vals[1])
                 else:
                     raise Exception('Datatype must be "int" or "float".')
 
         for dim, vals in self.vars['ordinal'].items():
-                x[dim] = config.rng_sur.choice(vals, size=n) if n > 1\
-                    else config.rng_sur.choice(vals)
+                x[dim] = self.rng.choice(vals, size=n) if n > 1\
+                    else self.rng.choice(vals)
                     
         for dim, vals in self.vars['choice'].items():
-                x[dim] = config.rng_sur.choice(vals, n) if n > 1\
-                    else config.rng_sur.choice(vals)       
+                x[dim] = self.rng.choice(vals, n) if n > 1\
+                    else self.rng.choice(vals)       
 
         return x
     
@@ -141,11 +134,11 @@ class Surrogate(Simulation):
         perform pre-processing of simulation parameters.
     sim : function
         The actual simulation function to be optimized.
-    vals : dict
+    values : dict
         Fixed parameters for the simulation, passed to every simulation run.
     sample_size : int
         The number of samples to use for the initial surrogate model training.
-    vars : dict, optional
+    variables : dict, optional
         Variable parameters for the simulation that can be optimized.
     k : int, optional
         Exponent in acquisition transition function.
@@ -191,8 +184,8 @@ class Surrogate(Simulation):
     optimize(max_time, verbose=False)
         Conducts the optimization process to find optimal simulation parameters.
     """
-    def __init__(self, sim_wrapper, sim, vals, vars, sample_size, k=4):
-        super().__init__(sim_wrapper, sim, vals, vars)
+    def __init__(self, sim_wrapper, sim, rng, values, variables, sample_size, k=4):
+        super().__init__(sim_wrapper, sim, rng, values, variables)
 
         # storage for time profiling
         self.sim_time = []
@@ -231,11 +224,11 @@ class Surrogate(Simulation):
                 if par[1] == 'int':
                     std = f * (vals[1] - vals[0])/2
                     x_n[dim] = truncnorm.rvs((vals[0] - x[dim]) / std, (vals[1] - x[dim]) / std,
-                                             loc=x[dim], scale=std, size=size, random_state=config.rng_sur).astype(int)
+                                             loc=x[dim], scale=std, size=size, random_state=self.rng).astype(int)
                 elif par[1] == 'float':
                     std = f * (vals[1] - vals[0])/2
                     x_n[dim] = truncnorm.rvs((vals[0] - x[dim]) / std, (vals[1] - x[dim]) / std,
-                                             loc=x[dim], scale=std, size=size, random_state=config.rng_sur) 
+                                             loc=x[dim], scale=std, size=size, random_state=self.rng) 
                 else:
                     raise Exception('Datatype must be "int" or "float".')
 
@@ -246,12 +239,12 @@ class Surrogate(Simulation):
                 std = f/2
                 probs = truncnorm.pdf(pval,
                                       (0-loc)/std, (1-loc)/std, scale=std,
-                                      loc=loc, random_state=config.rng_sur)/len(x)  # corresponding weights
+                                      loc=loc, random_state=self.rng)/len(x)  # corresponding weights
                 probs /= probs.sum()  # normalize probabilities
-                x_n[dim] = config.rng_sur.random.choice(vals, size=size , p=probs)
+                x_n[dim] = self.rng.random.choice(vals, size=size , p=probs)
 
         for dim, vals in self.vars['choice'].items():
-                x_n[dim] = config.rng_sur.random.choice(vals, size)
+                x_n[dim] = self.rng.random.choice(vals, size)
 
         # select best prediction as next neighbour
         samples_x = pd.DataFrame(x_n).astype(object)
@@ -361,10 +354,9 @@ class Surrogate(Simulation):
         # train models
         self.train_models()
 
-        initial_optimize_time = time.time()-optimize_start
-        self.optimize_time.append(initial_optimize_time)
+        self.initial_optimize_time = time.time()-optimize_start
+        self.optimize_time.append(self.initial_optimize_time)
 
-        self.max_optimize_time = self.limit - initial_optimize_time
 
     def optimize_with_timer(self, verbose):
         """
@@ -372,6 +364,7 @@ class Surrogate(Simulation):
         """
         current_times = []
         self.current_time_counter = 0
+        self.max_optimize_time = self.limit - self.initial_optimize_time
         delta = 0
         counter = 1
         while (self.current_time_counter + delta) < self.max_optimize_time:
@@ -408,26 +401,15 @@ class Surrogate(Simulation):
         """
         Conducts the optimization process to find optimal simulation parameters.
         """
+        self.limit = limit
         if isinstance(limit, float):
-            self.limit = limit
+            self.limit *= 3600
             if verbose: print('Optimize with timer.')
             self.gen_initial_set(verbose=verbose)
             self.optimize_with_timer(verbose=verbose)
-        
         else:
-            self.limit = limit[0]
             self.gen_initial_set(verbose=verbose)
-            if limit[1] == 'timer':
-                if verbose: print('Optimize with timer.')
-                self.optimize_with_timer(verbose=verbose)
-                print('sim', len(self.sim_time))
-                print('acqu', len(self.acquisition_time))
-            elif limit[1] == 'iterator':
-                if verbose: print('Optimize with iterator.')
-                self.optimize_with_iteration(verbose=verbose)
-            else:
-                raise Exception('Configuration must be either "timer" or "iterator".')
-        
+            self.optimize_with_iteration(verbose=verbose)
         if verbose: print('Optimization finished.')
 
 def get_parameters(variables):
@@ -436,7 +418,7 @@ def get_parameters(variables):
 
     Parameters
     ----------
-    vars : dict
+    variables : dict
         A dictionary where keys correspond to parameter types (e.g., 'range', 'ordinal', 'choice')
         and values provide the definitions of these parameters.
 
