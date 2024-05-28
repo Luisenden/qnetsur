@@ -2,13 +2,25 @@ import pandas as pd
 import pickle
 import glob
 import numpy as np
-
-import pickle
 import sys
 sys.path.append('../')
 
 class ResultCollector:
+    """Base class for collecting results from serialized pickle files.
+
+    Attributes:
+        prefix (str): File prefix to identify the files.
+        folder (str): Folder path where files are stored.
+        dfs (list): List of DataFrames storing results from files.
+
+    """
     def __init__(self, folder, file_prefix):
+        """Initialize the ResultCollector with folder and file prefix.
+
+        Args:
+            folder (str): Path to the folder containing the result files.
+            file_prefix (str): Prefix common to all result files to be collected.
+        """
         self.prefix = file_prefix
         self.folder = folder
         self.dfs = []
@@ -21,16 +33,27 @@ class ResultCollector:
                 self.dfs.append(data_df)
 
     def get_total(self):
+        """Abstract method to compute total results from data. Must be overridden by subclasses."""
         raise NotImplementedError("This method should be overridden by subclasses.")
 
     def get_final(self, name=None):
+        """Concatenates all DataFrames in dfs and adds methodological information.
+
+        Args:
+            name (str, optional): Name of the output CSV file. Defaults to None.
+
+        Returns:
+            pd.DataFrame: DataFrame containing concatenated results with method labels.
+        """
         results = pd.concat(self.dfs, axis=0).reset_index(drop=True)
         results['Method'] = {'SA_':'Simulated Annealing', 'SU_':'Surrogate', 'AX_':'Meta', 'RS_':'Random Search'}[self.prefix]
         if name is not None:
             results.to_csv(self.folder + name + '.csv')
         return results
 
+
 class SurrogateCollector(ResultCollector):
+    """Collector specifically designed for surrogate-based optimization results."""
     def __init__(self, folder):
         super().__init__(folder, 'SU_')
 
@@ -54,6 +77,7 @@ class SurrogateCollector(ResultCollector):
         return self.total
 
 class AxCollector(ResultCollector):
+    """Collector for optimization results from Ax platform."""
     def __init__(self, folder):
         super().__init__(folder, 'AX_')
 
@@ -61,6 +85,7 @@ class AxCollector(ResultCollector):
         return self.data[0]
     
 class SaCollector(ResultCollector):
+    """Collector for optimization results from Simulated Annealing."""
     def __init__(self, folder):
         super().__init__(folder, 'SA_')
 
@@ -70,6 +95,7 @@ class SaCollector(ResultCollector):
 
 
 class RsCollector(ResultCollector):
+    """Collector for optimization results from Random Search."""
     def __init__(self, folder):
         super().__init__(folder, 'RS_')
 
@@ -78,8 +104,3 @@ class RsCollector(ResultCollector):
         self.data['objective'] = self.data['objective'].apply(lambda x: sum(x))
         self.data['std'] = self.data['std'].apply(lambda x: np.sqrt(sum(x**2)))
         return self.data
-
-
-
-
-
