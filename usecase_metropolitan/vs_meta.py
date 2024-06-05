@@ -1,38 +1,38 @@
-import time
-import pickle
-from datetime import datetime
 import numpy as np
-from config import vals, vars, simwrapper, MAX_TIME, SEED
+import time
+from datetime import datetime
+import pickle
+
+
+from config import Config
 from src.utils import get_parameters
 from ax.service.ax_client import AxClient, ObjectiveProperties
-from simulation import simulation_rb
 
 def evaluate(parameters) -> float:
-    x = {**vals, **parameters}
-    mean_obj, std_obj, _ = simwrapper(simulation=simulation_rb, kwargs=x)
-    return (np.sum(mean_obj), np.sqrt(np.sum(np.square(std_obj)))) # std of sum (assuming independent trials)
-
-
+    x = {**conf.vals, **parameters}
+    mean_per_user_node, std_per_user_node, _ = conf.simobjective(simulation=conf.sim, kwargs=x)
+    return {"objective" : (np.sum(mean_per_user_node), np.sqrt(np.sum(np.square(std_per_user_node))))}
+          
 if __name__ == '__main__':
 
-    # user input:
-    max_time = MAX_TIME * 3600 # in sec
-    output_folder = '../../surdata/rb_budget/'
+    # load configuration
+    conf = Config()
+    limit = conf.args.time
 
     objectives = dict()
-    objectives['Utility'] = ObjectiveProperties(minimize=False)
+    objectives["objective"] = ObjectiveProperties(minimize=False)
 
-    ax_client = AxClient(verbose_logging=False, random_seed=SEED)
-    ax_client.create_experiment( # define variable parameters of quantum network simulation
-        name=f"request-based-simulation-seed{SEED}",
-        parameters=get_parameters(vars),
+    ax_client = AxClient(verbose_logging=False, random_seed=conf.args.seed)
+    ax_client.create_experiment( # define variable parameters for simulation function
+        name=f"on-demand-protocol-seed{conf.args.seed}",
+        parameters=get_parameters(conf.vars),
         objectives=objectives,
     )
 
     times_tracked = []
     time_tracker = 0
     delta = 0
-    while time_tracker + delta < max_time:
+    while time_tracker + delta < limit * 3600:
         start = time.time()
 
         parameters, trial_index = ax_client.get_next_trial()
@@ -41,8 +41,9 @@ if __name__ == '__main__':
         times_tracked.append(time.time()-start)
         time_tracker = np.sum(times_tracked)
         delta = np.mean(times_tracked)
-    
-    result = ax_client.get_trials_data_frame()
-    with open(output_folder+f'AX_starlight_{MAX_TIME:.1f}h_objective-budget_SEED{SEED}_'
-              +datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
-            pickle.dump([result, times_tracked, vals], file)
+
+        df = ax_client.get_trials_data_frame()
+
+    with open(conf.args.folder+f'AX_{conf.name}_{limit}hours_SEED{conf.args.seed}_'\
+                  +datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
+            pickle.dump(df, file)

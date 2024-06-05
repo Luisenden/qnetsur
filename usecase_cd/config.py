@@ -1,3 +1,4 @@
+"""Central config file for all executables (surrogate.py, vs_*.py)."""
 import sys
 sys.path.append('../')
 
@@ -8,7 +9,22 @@ import re
 from optimizingcd import main_cd as simulation
 
 class Config:
-    def __init__(self, initial_model_size):
+    """
+    Configuration class for setting up and running simulations with specific parameters.
+
+    Attributes:
+        vars (dict): Variables and their bounds used in the simulation.
+        vals (dict): Fixed parameters for the simulation function including protocol, probabilities, and other settings.
+        sim (func): Simulation function to be executed.
+        initial_model_size (int): The initial size of the model used in simulations.
+        args (Namespace): Parsed command line arguments specifying the simulation scope.
+        rng (Generator): Random number generator object initialized with a specific seed.
+        name (str): The topology name derived from command line arguments.
+        topo_input (list): Split parts of the 'topo' argument indicating the network layout.
+        kind (str): Type of topology (e.g., 'tree', 'square', 'randtree').
+        A (array): Adjacency matrix representing the topology of the network.
+    """
+    def __init__(self, initial_model_size=5):
         self.vals = { # define fixed parameters for given simulation function 
             'protocol':'ndsrs', 
             'p_gen': 0.9,  # generation rate
@@ -16,12 +32,13 @@ class Config:
             'return_data':'avg', 
             'progress_bar': None,
             'total_time': 1000,
-            'N_samples' : 20,
+            'N_samples' : 5,
             'p_cons': 0.9/4,  # consumption rate
             'qbits_per_channel': 5,
             'cutoff': 28,
             'M': 10,
             }
+        self.sim = simulation.simulation_cd
         self.initial_model_size = initial_model_size
 
         # parse global params
@@ -29,7 +46,7 @@ class Config:
         parser.add_argument("--topo", type=str, default='tree-2-3', help="Network topology; \
                             Use 'tree-i-j' or 'randtree-i' or 'square-i', where i,j are integers. Type: str")
         parser.add_argument('--level', action='store_true', help="If tree-i-j is used for topology \
-                         level 'True' assigns the same swap probability per tree level.", default=False)
+                         level assigns the same swap probability per tree level.", default=False)
         parser.add_argument('--user', action='store_true', help="Specifies if only user nodes \
                          (min vertex degree) should be selected for optimization.", default=False)
         parser.add_argument("--time", type=float, default=0.05,
@@ -67,6 +84,9 @@ class Config:
 
 
     def set_variables(self) -> None:
+        """
+        Defines variables and their bounds for the simulation based on the network topology.
+        """
         vars = { # define variables and bounds for given simulation function 
             'range': {},
             'choice':{},
@@ -81,6 +101,16 @@ class Config:
         self.vars = vars
     
     def simobjective(self, simulation, kwargs: dict):
+        """
+        Runs the simulation with the given parameters and calculates objectives.
+
+        Args:
+            simulation (function): The simulation function to run.
+            kwargs (dict): Keyword arguments for the simulation function including q_swap values.
+
+        Returns:
+            tuple: Tuple containing the objectives, their standard deviations, and raw data.
+        """
         q_swap = []
         for key,value in list(kwargs.items()):  # assign q_swap to level nodes
             if 'q_swap' in key:
@@ -91,7 +121,6 @@ class Config:
                 else:
                     q_swap.append(value)
                 kwargs.pop(key)
-        print(q_swap)
         kwargs['q_swap'] = q_swap
         
         # run simulation and retrieve number of virtual neighbors per node

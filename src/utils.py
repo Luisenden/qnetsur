@@ -181,7 +181,7 @@ class Surrogate(Simulation):
         Selects new parameters for evaluation by balancing exploration and exploitation.
     update()
         Updates the surrogate model with new data points collected from simulation runs.
-    optimize(max_time, verbose=False)
+    optimize(max_time)
         Conducts the optimization process to find optimal simulation parameters.
     """
     def __init__(self, sim_wrapper, sim, rng, values, variables, sample_size, k=4):
@@ -335,11 +335,11 @@ class Surrogate(Simulation):
         self.train_models()
 
 
-    def gen_initial_set(self, verbose):
+    def gen_initial_set(self):
         """
         Generates the initial training set.
         """
-        if verbose: print("Start optimization ...")
+        if self.verbose: print("Start optimization ...")
         optimize_start = time.time()
         
         # generate initial training set X
@@ -358,7 +358,7 @@ class Surrogate(Simulation):
         self.optimize_time.append(self.initial_optimize_time)
 
 
-    def optimize_with_timer(self, verbose):
+    def optimize_with_timer(self):
         """
         Optimization until a set maximum number of seconds.
         """
@@ -378,22 +378,22 @@ class Surrogate(Simulation):
             self.current_time_counter = np.sum(current_times)
             delta = np.mean(current_times)
             counter +=1
-            if verbose:
+            if self.verbose:
                 print(f'Time left for optimization: {self.max_optimize_time-self.current_time_counter:.2f}s')
 
-    def optimize_with_iteration(self, verbose):
+    def optimize_with_iteration(self):
         """
         Optimization until a set maximum number of iterations.
         """
         self.current_time_counter = 1
-        while self.current_time_counter < self.limit:
+        while self.current_time_counter <= self.limit:
             start = time.time()
 
             self.acquisition()
             self.update(self.current_time_counter)
 
             self.optimize_time.append(time.time()-start)
-            if verbose: print(f'Iteration {self.current_time_counter}/{self.limit-1}')
+            if self.verbose: print(f'Iteration {self.current_time_counter}/{self.limit-1}')
             self.current_time_counter +=1
 
 
@@ -402,15 +402,17 @@ class Surrogate(Simulation):
         Conducts the optimization process to find optimal simulation parameters.
         """
         self.limit = limit
+        self.verbose = verbose
         if isinstance(limit, float):
-            self.limit *= 3600
-            if verbose: print('Optimize with timer.')
-            self.gen_initial_set(verbose=verbose)
-            self.optimize_with_timer(verbose=verbose)
+            self.limit *= 3600 # to seconds
+            if self.verbose: print(f'Optimize with timer. LIMIT: {self.limit} seconds.')
+            self.gen_initial_set()
+            self.optimize_with_timer()
         else:
-            self.gen_initial_set(verbose=verbose)
-            self.optimize_with_iteration(verbose=verbose)
-        if verbose: print('Optimization finished.')
+            if self.verbose: print(f'Optimize with iterator. LIMIT: {self.limit} cycles.')
+            self.gen_initial_set()
+            self.optimize_with_iteration()
+        if self.verbose: print('Optimization finished.')
 
 def get_parameters(variables):
     """

@@ -123,7 +123,7 @@ def simulated_annealing(sim, limit, temp :int = 10, beta_schedule :int =
     time_tracker = 0
     t = temp 
     dt_beta = 0
-    while t > 1e-5 and time_tracker+dt_beta < limit:
+    while t > 1e-5 and time_tracker+dt_beta < limit *3600:
 
         # cooling 
         t = temp / (count + 1)

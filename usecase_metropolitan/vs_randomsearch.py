@@ -1,40 +1,38 @@
-from datetime import datetime
+import time
 import numpy as np
 import pandas as pd
-import time
 import pickle
-from config import MAX_TIME, simwrapper, vals, vars, SEED
+from datetime import datetime
+
+from config import Config
 from src.utils import Simulation
-from simulation import simulation_rb
+ 
 
 if __name__ == '__main__':
-    # user input:
-    max_time= MAX_TIME * 3600 # in sec
-    output_folder = '../../surdata/rb_budget/'
 
+    # load configuration
+    conf = Config()
+    limit = conf.args.time
     evals = [] # storage for results
-
     times_tracked = []
     time_tracker = 0
     delta = 0
 
-    sim = Simulation(simwrapper, simulation_rb, vals=vals, vars=vars)
+    sim = Simulation(conf.simobjective, conf.sim, rng=conf.rng, values=conf.vals, variables=conf.vars)
 
-    while time_tracker + delta < max_time:
+    while time_tracker + delta < limit * 3600:
         start = time.time()
-
         x = sim.get_random_x(1)
-        eval = sim.run_sim(x=x, vals=vals)
-        
+        eval = sim.run_sim(x)
         evalset = x.copy()
-        evalset['Utility'], evalset['std'], evalset['raw'] = eval
+        evalset['objective'], evalset['std'], evalset['raw'] = eval
         evals.append(evalset)
 
         times_tracked.append(time.time()-start)
         time_tracker = np.sum(times_tracked)
         delta = np.mean(times_tracked)
-
+    
     randomsearch = pd.DataFrame.from_records(evals)
-    with open(output_folder+f'RS_starlight_{MAX_TIME:.1f}h_objective-budget_SEED{SEED}_'
-                +datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
-            pickle.dump([randomsearch, times_tracked, vals], file)
+    with open(conf.args.folder+f'RS_{conf.name}_{limit}hours_SEED{conf.args.seed}_'\
+                  +datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
+            pickle.dump(randomsearch, file)

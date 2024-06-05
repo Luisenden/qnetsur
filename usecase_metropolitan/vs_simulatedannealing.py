@@ -1,22 +1,25 @@
-import pickle
+
 import pandas as pd
 from datetime import datetime
-from config import MAX_TIME, simwrapper, vals, vars, SEED
-from src.utils import Simulation
-from simulation import simulation_rb
+import pickle
 
-from src.simulatedannealing import simulated_annealing
+from config import Config
+from src.utils import Simulation
+from src.simulatedannealing import simulated_annealing 
+
 
 if __name__ == '__main__':
-  # user input:
-  max_time = MAX_TIME * 3600 # in sec
-  output_folder = '../../surdata/rb_budget/'
 
-  # baseline simulated annealing
-  si = Simulation(simwrapper, simulation_rb, vals=vals, vars=vars)
-  result = simulated_annealing(sim=si, MAX_TIME=max_time, seed=SEED)
-  result = pd.DataFrame.from_records(result)
+        # load configuration
+        conf = Config()
+        limit = conf.args.time
 
-  with open(output_folder+f'SA_starlight_{MAX_TIME:.1f}h_objective-budget_SEED{SEED}_'
-            +datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
-          pickle.dump([result, vals], file)
+        # baseline simulated annealing
+        sim = Simulation(conf.simobjective, conf.sim, values=conf.vals, variables=conf.vars, rng=conf.rng)
+        
+        result = simulated_annealing(sim, limit=limit)
+        result = pd.DataFrame.from_records(result)
+
+        with open(conf.args.folder+f'SA_{conf.name}_{limit}hours_SEED{conf.args.seed}_'\
+                  +datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
+                pickle.dump(result, file)

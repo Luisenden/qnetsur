@@ -1,10 +1,19 @@
-from config import *
+"""
+Optimize using BoTorch service loop according to best practices (see https://ax.dev/tutorials/gpei_hartmann_service.html)
+"""
+import numpy as np
+import time
+from datetime import datetime
+import pickle
+
+
+from config import Config
 from src.utils import get_parameters
-from ax.service.ax_client import AxClient
+from ax.service.ax_client import AxClient, ObjectiveProperties
 
 def evaluate(parameters) -> float:
-    x = {**vals, **parameters}
-    mean_obj, std_obj, _ = simwrapper(simulation=simulation_qswitch, kwargs=x)
+    x = {**conf.vals, **parameters}
+    mean_obj, std_obj, _ = conf.simobjective(simulation=conf.sim, kwargs=x)
     mean_obj = np.nan_to_num(mean_obj, copy=True, nan=0)
     std_obj = np.nan_to_num(std_obj, copy=True, nan=0)
     return (np.sum(mean_obj), np.sum(std_obj))
@@ -12,41 +21,25 @@ def evaluate(parameters) -> float:
 
 if __name__ == '__main__':
 
-    # define fixed parameters and set variable ranges
-    vals = {  
-        'nnodes': NLEAF_NODES,
-        'total_runtime_in_seconds': 5,  # simulation time [s]
-        'connect_size': 2,
-        'server_node_name': 'leaf_node_0',
-        'distances': np.array([5, 10, 20, 30, 40, 50])[:NLEAF_NODES],
-        'repetition_times': [10 ** -3] * NLEAF_NODES,  # time between generation attempts
-        'beta': 0.2, # link efficiency coefficient
-        'loss': 1, # loss parameter
-        'buffer_size': 20,
-        'T2': 0,
-        'include_classical_comm': False,
-        'num_positions': 200,
-        'decoherence_rate': 0,
-        'N': 20, # batch size
-    }
-    for node in range(NLEAF_NODES):
-        vars['range'][f'bright_state_{node}'] = ([1e-12, .1], 'float') 
+    # load configuration
+    conf = Config()
+    limit = conf.args.time
+    conf.set_default_values()
 
-    max_time= MAX_TIME * 3600 # in sec
+    objectives = dict()
+    objectives["objective"] = ObjectiveProperties(minimize=False)
 
-    # create instance of AxClient and set objective
-    ax_client = AxClient(verbose_logging=False, random_seed=SEED)
-    ax_client.create_experiment( 
-        name="qswitch-simulation-seed{SEED}",
-        parameters=get_parameters(vars),
-        minimize=False,
-        objective_name="evaluate",
+    ax_client = AxClient(verbose_logging=False, random_seed=conf.args.seed)
+    ax_client.create_experiment( # define variable parameters for simulation function
+        name=f"on-demand-protocol-seed{conf.args.seed}",
+        parameters=get_parameters(conf.vars),
+        objectives=objectives,
     )
-    # optimize according to best practices (see https://ax.dev/tutorials/gpei_hartmann_service.html)
+
     times_tracked = []
     time_tracker = 0
     delta = 0
-    while time_tracker + delta < max_time:
+    while time_tracker + delta < limit * 3600:
         start = time.time()
 
         parameters, trial_index = ax_client.get_next_trial()
@@ -55,8 +48,8 @@ if __name__ == '__main__':
         times_tracked.append(time.time()-start)
         time_tracker = np.sum(times_tracked)
         delta = np.mean(times_tracked)
-    
-    result = ax_client.get_trials_data_frame()
-    best_parameters, metrics = ax_client.get_best_parameters()
-    with open(f'../../surdata/qswitch/AX_qswitch_nleafnodes{NLEAF_NODES}_{MAX_TIME:.2f}h_objective-servernode_SEED{SEED}_'+datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
-            pickle.dump([result, times_tracked, vals], file)
+        df = ax_client.get_trials_data_frame()
+
+    with open(conf.args.folder+f'AX_{conf.name}_{limit}hours_SEED{conf.args.seed}_'\
+                  +datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
+            pickle.dump(df, file)

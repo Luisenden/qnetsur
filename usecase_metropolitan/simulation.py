@@ -163,10 +163,14 @@ def simulation_rb(network_config_file, cavity, total_time, N, mem_size, seed=42)
         res = np.zeros(len(nodes))
         try: # if simulation cannot run with current parameters zero requests are completed
             df = run(network_topo, seed+n)
-            os.remove(str(proc)+'.json')
             completed_requests_per_node = df.groupby('Initiator').size()
             for i,node in enumerate(nodes):
                 if node.name in completed_requests_per_node: res[i] = completed_requests_per_node[node.name]
+        except:
+            pass
+        
+        try:
+            os.remove(str(proc)+'.json')
         except:
             pass
         results.append(res)

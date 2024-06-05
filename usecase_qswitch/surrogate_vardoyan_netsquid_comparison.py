@@ -9,8 +9,13 @@ The goal is to find the optimal link bright-state population values (alpha=1-Fid
 the given utility function, Distillable Entanglement as defined in the paper.
 """
 
-from config import *
-from src.utils import *
+from datetime import datetime
+import pandas as pd
+import numpy as np 
+
+from config import Config
+from src.utils import Surrogate, Simulation
+
 
 def get_results(result:pd.DataFrame, params:list, sim:Simulation) -> None:
         obj_sums = np.sum(sim.y, axis=1)
@@ -34,7 +39,7 @@ def get_results(result:pd.DataFrame, params:list, sim:Simulation) -> None:
         params.append(sim.X_df.iloc[best_index])
 
 
-def run(vars:dict, vals:dict, limit:list, path:str, bottleneck_length:int, n=20):
+def run(bottleneck_length:int = 100, n:int =20):
         """
         Executes a series of optimizations over a range of server distances from 1-100km to evaluate the performance of a quantum switch network.
         This function iterates through specified server distances, instantiates a surrogate model for each, and runs optimization 
@@ -61,7 +66,7 @@ def run(vars:dict, vals:dict, limit:list, path:str, bottleneck_length:int, n=20)
                 #instatiante surrogate model and run optimization
                 # try:
                 vals['distances'] = [server_distance, 2, 2]
-                sim = Surrogate(simwrapper, simulation_qswitch, vals=vals, vars=vars, sample_size=initial_model_size)
+                sim = Surrogate(conf.simobjective, conf.sim, values=vals, variables=vars, sample_size=conf.initial_model_size, rng=conf.rng)
                 sim.optimize(limit=limit, verbose=True)
 
                 get_results(result, best_params, sim)
@@ -74,19 +79,21 @@ def run(vars:dict, vals:dict, limit:list, path:str, bottleneck_length:int, n=20)
         df_result = pd.DataFrame.from_records(result)
         df = df_params.join(df_result, how='left')
 
-        df.to_csv(path+
-                  f'Sur_df_qswitch_nleafnodes{NLEAF_NODES}_{limit[0]:.1f}{limit[1]}_bottleneck-link_SEED{SEED}_'+
-                  datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.csv')
+        df.to_csv(storage_path)
         return df
 
 
 if __name__ == '__main__':
 
-        storage_path='../../surdata/qswitch/'  # storage path
-        max_time_or_iteration =[30, 'iterator']  # maximum allowed optimization time in seconds [*, 'timer'] or number of iterations [*, 'iterator']
+        # load configuration
+        conf = Config()
+        limit = conf.args.time
+        limit_kind = 'hours' if isinstance(limit, float) else 'cycles'
+        storage_path = conf.args.folder+f'SU_{conf.name}_{limit}{limit_kind}_SEED{conf.args.seed}_'\
+                  +datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.csv'
 
         vals = {  # define fixed parameters for given simulation function
-            'nnodes': NLEAF_NODES,
+            'nnodes': conf.args.nleaf,
             'total_runtime_in_seconds': 5,  # in [s]
             'decoherence_rate': 0,
             'connect_size': 2,
@@ -97,11 +104,17 @@ if __name__ == '__main__':
             'buffer_size': 20,
             'include_classical_comm': False,
             'num_positions': 200,
-            'repetition_times': [10 ** -3] * NLEAF_NODES, # repetition time in [s]
-            'N': 20 # batch size 
+            'repetition_times': [10 ** -3] * conf.args.nleaf, # repetition time in [s]
+            'N': 20 # sample size 
         }
+
+        vars = {
+            'range': {},
+            'choice':{},
+            'ordinal':{}
+        } 
         vars['range']['bright_state_server'] = ([.0, .1], 'float') 
         vars['range']['bright_state_user'] = ([.0, .1], 'float')
 
         # optimize at different bottleneck-link lengths (1-100km)
-        df = run(vars=vars, vals=vals, limit=max_time_or_iteration, path=storage_path, bottleneck_length=100, n=1)
+        df = run(n=1)

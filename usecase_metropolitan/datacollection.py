@@ -2,7 +2,7 @@ import sys
 import numpy as np
 
 sys.path.append('../')
-from src.datacollectors import ResultCollector, SurrogateCollector, AxCollector, SaCollector
+from src.folderdatacollectors import ResultCollector, SurrogateCollector, AxCollector, SaCollector
 
 class RsCollector(ResultCollector):
     def __init__(self, folder):
