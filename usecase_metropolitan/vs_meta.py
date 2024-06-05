@@ -1,7 +1,6 @@
 import numpy as np
 import time
 from datetime import datetime
-import pickle
 
 
 from config import Config
@@ -18,13 +17,15 @@ if __name__ == '__main__':
     # load configuration
     conf = Config()
     limit = conf.args.time
+    path = conf.args.folder+f'AX_{conf.name}_{limit}hours_SEED{conf.args.seed}_'\
+                  +datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl'
 
     objectives = dict()
     objectives["objective"] = ObjectiveProperties(minimize=False)
 
     ax_client = AxClient(verbose_logging=False, random_seed=conf.args.seed)
     ax_client.create_experiment( # define variable parameters for simulation function
-        name=f"on-demand-protocol-seed{conf.args.seed}",
+        name=f"on-demand-metropolitan-simulation-seed{conf.args.seed}",
         parameters=get_parameters(conf.vars),
         objectives=objectives,
     )
@@ -43,7 +44,4 @@ if __name__ == '__main__':
         delta = np.mean(times_tracked)
 
         df = ax_client.get_trials_data_frame()
-
-    with open(conf.args.folder+f'AX_{conf.name}_{limit}hours_SEED{conf.args.seed}_'\
-                  +datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
-            pickle.dump(df, file)
+    df.to_pickle(path)

@@ -1,6 +1,5 @@
 from datetime import datetime
 import pandas as pd
-import numpy as np
 
 from config import Config
 from src.datacollectors import SurrogateCollector

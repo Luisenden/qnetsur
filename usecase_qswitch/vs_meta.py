@@ -4,7 +4,6 @@ Optimize using BoTorch service loop according to best practices (see https://ax.
 import numpy as np
 import time
 from datetime import datetime
-import pickle
 
 
 from config import Config
@@ -25,6 +24,8 @@ if __name__ == '__main__':
     conf = Config()
     limit = conf.args.time
     conf.set_default_values()
+    path = conf.args.folder+f'AX_{conf.name}_{limit}hours_SEED{conf.args.seed}_'\
+                  +datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl'
 
     objectives = dict()
     objectives["objective"] = ObjectiveProperties(minimize=False)
@@ -50,6 +51,4 @@ if __name__ == '__main__':
         delta = np.mean(times_tracked)
         df = ax_client.get_trials_data_frame()
 
-    with open(conf.args.folder+f'AX_{conf.name}_{limit}hours_SEED{conf.args.seed}_'\
-                  +datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
-            pickle.dump(df, file)
+    df.to_pickle(path)

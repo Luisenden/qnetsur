@@ -11,18 +11,6 @@ from optimizingcd import main_cd as simulation
 class Config:
     """
     Configuration class for setting up and running simulations with specific parameters.
-
-    Attributes:
-        vars (dict): Variables and their bounds used in the simulation.
-        vals (dict): Fixed parameters for the simulation function including protocol, probabilities, and other settings.
-        sim (func): Simulation function to be executed.
-        initial_model_size (int): The initial size of the model used in simulations.
-        args (Namespace): Parsed command line arguments specifying the simulation scope.
-        rng (Generator): Random number generator object initialized with a specific seed.
-        name (str): The topology name derived from command line arguments.
-        topo_input (list): Split parts of the 'topo' argument indicating the network layout.
-        kind (str): Type of topology (e.g., 'tree', 'square', 'randtree').
-        A (array): Adjacency matrix representing the topology of the network.
     """
     def __init__(self, initial_model_size=5):
         self.vals = { # define fixed parameters for given simulation function 
@@ -60,17 +48,20 @@ class Config:
         self.args, _ = parser.parse_known_args()
 
         self.rng = np.random.default_rng(seed=self.args.seed) # set rng for optimization 
-
         self.name = self.args.topo   
         self.topo_input = self.name.split('-')
         self.kind = self.topo_input[0]
         if self.args.level == True:
             assert self.kind == 'tree', 'If "level" is used, topology must be "tree".'
         
+        # set adjacency matrix and variables
         self.set_adjacency()
         self.set_variables()
     
     def set_adjacency(self) -> None:
+        """
+        Generates and sets the adjacency matrix for the network based on the specified topology.
+        """
         if self.kind == 'square':
             A = simulation.adjacency_squared(int(self.topo_input[1]))
         elif self.kind == 'tree':
@@ -100,7 +91,7 @@ class Config:
                 vars['range'][f'q_swap{i}'] = ([0., 1.], 'float')
         self.vars = vars
     
-    def simobjective(self, simulation, kwargs: dict):
+    def simobjective(self, simulation, kwargs: dict) -> tuple:
         """
         Runs the simulation with the given parameters and calculates objectives.
 

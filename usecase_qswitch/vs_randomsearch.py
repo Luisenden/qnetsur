@@ -1,7 +1,6 @@
 import time
 import numpy as np
 import pandas as pd
-import pickle
 from datetime import datetime
 
 from config import Config
@@ -14,6 +13,9 @@ if __name__ == '__main__':
     conf = Config()
     conf.set_default_values()
     limit = conf.args.time
+
+    path = conf.args.folder+f'RS_{conf.name}_{limit}hours_SEED{conf.args.seed}_'\
+                  +datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl'
     evals = [] # storage for results
     times_tracked = []
     time_tracker = 0
@@ -33,6 +35,4 @@ if __name__ == '__main__':
         delta = np.mean(times_tracked)
     
     randomsearch = pd.DataFrame.from_records(evals)
-    with open(conf.args.folder+f'RS_{conf.name}_{limit}hours_SEED{conf.args.seed}_'\
-                  +datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl', 'wb') as file:
-            pickle.dump(randomsearch, file)
+    randomsearch.to_pickle(path)

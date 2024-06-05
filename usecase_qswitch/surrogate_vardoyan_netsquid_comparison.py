@@ -117,4 +117,4 @@ if __name__ == '__main__':
         vars['range']['bright_state_user'] = ([.0, .1], 'float')
 
         # optimize at different bottleneck-link lengths (1-100km)
-        df = run(n=1)
+        df = run(n=20)

@@ -158,7 +158,7 @@ def simulated_annealing(sim, limit, temp :int = 10, beta_schedule :int =
         dt = time.time()-start
 
         current_set = current.copy()
-        current_set['Utility'] = -current_eval
+        current_set['objective'] = -current_eval
         current_set['time'] = dt
         sets.append(current_set)
         count += 1 
