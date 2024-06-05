@@ -1,10 +1,11 @@
 import glob
 import argparse
 import pandas as pd
+import numpy as np
 
 def get_policies(folder):
     dfs = []
-    for i,name in enumerate(glob.glob(f'{folder}/RS_*.pkl')): 
+    for i,name in enumerate(glob.glob(f'{folder}/SU_*.pkl')): 
         with open(name,'rb') as file: dfs.append(pd.read_pickle(file))
         dfs[i]['Trial'] = i
     df = pd.concat(dfs, axis=0)
@@ -21,7 +22,9 @@ if __name__ == '__main__':
     folder = '../../surdata/cd/'
 
     res = get_policies(folder)
-    print(res)
+    #res['objective'] = res['Utility']
+    #res['objective'].apply(np.sum)
+    print(res.groupby(['Trial']).max(['objective'])['objective'].mean())
     
     # vals['N_samples'] = 1
     # users = vals['user'][0]
