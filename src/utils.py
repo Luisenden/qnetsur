@@ -393,7 +393,7 @@ class Surrogate(Simulation):
             self.update(self.current_time_counter)
 
             self.optimize_time.append(time.time()-start)
-            if self.verbose: print(f'Iteration {self.current_time_counter}/{self.limit-1}')
+            if self.verbose: print(f'Iteration {self.current_time_counter}/{self.limit}')
             self.current_time_counter +=1
 
 

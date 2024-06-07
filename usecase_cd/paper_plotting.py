@@ -25,78 +25,59 @@ plt.rcParams.update({
 import warnings
 warnings.filterwarnings("ignore")
 
-def get_policies(folder, suffix):
-    df_sur = pd.read_csv(folder+'SU'+suffix)
-    df_meta = pd.read_csv(folder+'AX'+suffix)
-    df_meta['objective'] = df_meta['evaluate']
-    df_sa = pd.read_csv(folder+'SA'+suffix)
-    df_rs = pd.read_csv(folder+'RS'+suffix)
+def get_exhaustive(folders):
+    dfs_total = []
+    method_names = ['Surrogate', 'Meta', 'Simulated Annealing', 'Random Search']
+    for i, folder in enumerate(folders):
+        dfs = [None]*4
+        for name in glob.glob(f'{folder}/Results_*.csv'):
+            df_read = pd.read_csv(name, index_col=0)
+            method_index = method_names.index(df_read['Method'].unique())
+            dfs[method_index] = df_read
+        df = pd.concat(dfs, axis=0)
+        df['Time Limit [h]'] = [1,5,10][i]
+        dfs_total.append(df)
+    df_result = pd.concat(dfs_total, axis=0)
+    return df_result
 
-    xs = dict()
-    for df in [df_sur, df_meta, df_sa, df_rs]:
-        xmethod = df.iloc[df['objective'].idxmax()][df.columns.str.contains('q_swap|Method')] 
-        xs[xmethod['Method']] = xmethod.drop('Method')
-
-    x_df = pd.DataFrame.from_records(xs).T
-    return x_df
-
-def get_exhaustive(folder):
-    method_names = ['Surrogate', 'Meta', 'Simulated Annealing', 'Random Gridsearch']
-    dfs = [None]*4
-    for name in glob.glob(f'{folder}/Results_*.csv'):
-        df = pd.read_csv(name)
-        method = df.Method[0]
-        index = method_names.index(method)
-        if method == 'Random Gridsearch':
-            df['Method'] = 'Uniform Random Search'
-        dfs[index] = df
-    df = pd.concat(dfs, axis=0)
-    timelimit = re.findall('(\d+)h', folder)[0]
-    df['Time Limit [h]'] = timelimit
-    return df
-
-def plot_from_exhaustive_multiple(folders, suffixes, show=True):
-    dfs = []
-    for folder, suffix in zip(folders, suffixes):
-        x_df = get_policies(folder, suffix)
-        df = get_exhaustive(folder)
-        
-        df = df.melt(id_vars=['Method', 'Aggregated Number of Virtual Neighbors', 'Time Limit [h]'], var_name='User', value_name='Number of Virtual Neighbors')
-        df['User'] = df['User'].apply(lambda x: str.replace(x, 'Node', ''))
-        df = df.merge(x_df, left_on='Method', right_index=True, how='left')
-        dfs.append(df)
-    
-    df = pd.concat(dfs, axis=0)
+def plot_from_exhaustive_multiple(folders, show=True):
+    df = get_exhaustive(folders)
     if show: 
         markers = ['o', '^', 'v', 's']
         fig, axs = plt.subplots(1,1, figsize=(5,3))
         sns.pointplot(data= df, x='Time Limit [h]', y='Aggregated Number of Virtual Neighbors', hue='Method', ax=axs, errorbar='se', markers=markers, legend=True, linestyles=['-']*4, native_scale=True)
         axs.grid()
-        plt.title('Aggregated Number of Virtual Neighbors for Different Time Limits')
-        plt.ylabel('Number of Virtual Neighbors')
         plt.tight_layout()
         plt.show()
     return df
 
-def get_performance_distribution_per_method(folder,suffix):
-    df_sur = pd.read_csv(folder+'SU'+suffix)
-    df_meta = pd.read_csv(folder+'AX'+suffix)
-    df_meta['objective'] = df_meta['evaluate']
-    df_sa = pd.read_csv(folder+'SA'+suffix)
-    df_rs = pd.read_csv(folder+'RS'+suffix)
+def get_performance_distribution_per_method(folder):
+    dfs_methods = []
+    mapping = {'Surrogate':'SU', 'Meta':'AX', 'Simulated Annealing':'SA', 'Random Search':'RS'}
+    for key, value in mapping.items():
+        dfs = []
+        for i,name in enumerate(glob.glob(folder + f'/{value}_*.pkl')): 
+            with open(name,'rb') as file: dfs.append(pd.read_pickle(file))
+            dfs[i]['Trial'] = i
+        df = pd.concat(dfs, axis=0).reset_index()
+        df['Method'] = key
+        dfs_methods.append(df)
 
+    df =pd.concat(dfs_methods, axis=0)   
     columns = ['Trial', 'Method', 'objective']
-    df = pd.concat([df_sur[columns], df_meta[columns], df_sa[columns], df_rs[columns]])
     df['Utility'] = df['objective']
     max_per_trial = df.groupby(['Method', 'Trial'])['Utility'].max()
-    mean_std = max_per_trial.groupby(level='Method').agg(['min', 'max', 'mean', 'std'])
-    mean_std['rel_std'] = mean_std['std']/mean_std['mean']
-    return mean_std
+    distr = max_per_trial.groupby(level='Method').agg(['min', 'max', 'mean', 'std'])
+    distr['rel_std'] = distr['std']/distr['mean']
+    return distr
 
-def get_surrogate_timeprofiling(file):
-
-    times = pd.read_csv(file)
-    times = times[times.columns[times.columns.str.contains('\[s\]|Trial')]]
+def get_surrogate_timeprofiling(folder):
+    dfs = []
+    for i,name in enumerate(glob.glob(folder + f'/SU_*.pkl')): 
+        with open(name,'rb') as file: dfs.append(pd.read_pickle(file))
+        dfs[i]['Trial'] = i
+    df = pd.concat(dfs, axis=0)
+    times = df[df.columns[df.columns.astype('str').str.contains('\[s\]|Trial')]]
     times = times.drop_duplicates(ignore_index=True)
     relative = times.drop('Trial', axis=1).agg('mean')/times.drop('Trial', axis=1).agg('mean')['Total [s]']
     return times, relative, np.mean(np.mean(times.groupby('Trial').count()))
@@ -105,18 +86,21 @@ if __name__ == '__main__':
     
     
     # exhaustive run results (main text)
-    folders = [f'../../surdata/cd_randtree-100-{i}h/' for i in [1,5,10]]
-    suffixes = [f'_randtree-100_{i}h.csv'for i in [1,5,10]]
-    plot_from_exhaustive_multiple(folders, suffixes)
+    folders = [f'../../surdata/cd_{i}h/' for i in [1,5,10]]
+    plot_from_exhaustive_multiple(folders)
 
     # performance distribution (Supplementary Notes)
     time = 1
-    folder = f'../../surdata/cd_randtree-100-{time}h/'
-    distr = get_performance_distribution_per_method(folder, f'_randtree-100_{time}h.csv')
+    folder = f'../../surdata/cd_{time}h/'
+    distr = get_performance_distribution_per_method(folder)
     print(distr)
 
     # time profiling (Supplementary Notes)
-    times, relative, cycles = get_surrogate_timeprofiling(folder+f'SU_randtree-100_{time}h.csv')
+    print('\n')
+    times, relative, cycles = get_surrogate_timeprofiling(folder)
     print('Overall:\n', times)
+    print('\n')
     print('Relative:\n', relative)
+    print('\n')
     print('Mean number of cycles:', cycles)
+

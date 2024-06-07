@@ -15,6 +15,7 @@ import numpy as np
 
 from config import Config
 from src.utils import Surrogate, Simulation
+import argparse
 
 
 def get_results(result:pd.DataFrame, params:list, sim:Simulation) -> None:
@@ -39,7 +40,7 @@ def get_results(result:pd.DataFrame, params:list, sim:Simulation) -> None:
         params.append(sim.X_df.iloc[best_index])
 
 
-def run(bottleneck_length:int = 100, n:int =20):
+def run(server_distance):
         """
         Executes a series of optimizations over a range of server distances from 1-100km to evaluate the performance of a quantum switch network.
         This function iterates through specified server distances, instantiates a surrogate model for each, and runs optimization 
@@ -62,18 +63,13 @@ def run(bottleneck_length:int = 100, n:int =20):
         """
         result = {'server_distance':[], 'Utility': [], 'Utility_std':[], 'Rate':[], 'Rate_std':[], 'Fidelity':[], 'Fidelity_std':[]}
         best_params = []
-        for server_distance in np.linspace(1.5, bottleneck_length, n):
-                #instatiante surrogate model and run optimization
-                # try:
-                vals['distances'] = [server_distance, 2, 2]
-                sim = Surrogate(conf.simobjective, conf.sim, values=vals, variables=vars, sample_size=conf.initial_model_size, rng=conf.rng)
-                sim.optimize(limit=limit, verbose=True)
+        vals['distances'] = [server_distance, 2, 2]
+        sim = Surrogate(conf.simobjective, conf.sim, values=vals, variables=vars, sample_size=conf.initial_model_size, rng=conf.rng)
+        sim.optimize(limit=limit, verbose=True)
 
-                get_results(result, best_params, sim)
-                result['server_distance'].append(server_distance)
-                print(f'done server distance {server_distance}')
-                # except:
-                        # print(f'An exception occurred at server distance {server_distance}')
+        get_results(result, best_params, sim)
+        result['server_distance'].append(server_distance)
+        print(f'done server distance {server_distance}')
         
         df_params = pd.DataFrame.from_records(best_params)
         df_result = pd.DataFrame.from_records(result)
@@ -85,11 +81,16 @@ def run(bottleneck_length:int = 100, n:int =20):
 
 if __name__ == '__main__':
 
+        parser = argparse.ArgumentParser(description="set distance")
+        parser.add_argument("--serverdist", type=int, default=100, 
+                                help="Set distance of server node to switch (in km). Type: int")
+        args, _ = parser.parse_known_args()        
+
         # load configuration
         conf = Config()
         limit = conf.args.time
         limit_kind = 'hours' if isinstance(limit, float) else 'cycles'
-        storage_path = conf.args.folder+f'SU_{conf.name}_{limit}{limit_kind}_SEED{conf.args.seed}_'\
+        storage_path = conf.args.folder+f'SU_{conf.name}_{limit}{limit_kind}_distance{args.serverdist}_SEED{conf.args.seed}_'\
                   +datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.csv'
 
         vals = {  # define fixed parameters for given simulation function
@@ -105,7 +106,7 @@ if __name__ == '__main__':
             'include_classical_comm': False,
             'num_positions': 200,
             'repetition_times': [10 ** -3] * conf.args.nleaf, # repetition time in [s]
-            'N': 20 # sample size 
+            'N': 100 # sample size 
         }
 
         vars = {
@@ -116,5 +117,6 @@ if __name__ == '__main__':
         vars['range']['bright_state_server'] = ([.0, .1], 'float') 
         vars['range']['bright_state_user'] = ([.0, .1], 'float')
 
+
         # optimize at different bottleneck-link lengths (1-100km)
-        df = run(n=20)
+        df = run(server_distance=args.serverdist)
