@@ -217,8 +217,15 @@ class Surrogate(Simulation):
         according to current knowledge of surrogate model and depending on the time left.
         """
         x_n = {}
-        f = (1-np.log(1+self.current_time_counter/self.limit)**2)**self.k
-        size = int(self.current_time_counter/self.limit*10000 + 10)
+        if self.isscore:
+             f_svr = (1-np.log(1+(self.model_scores['SVR'][0]-self.model_scores['SVR'][-1])/self.model_scores['SVR'][0])**2)**self.k
+             f_tree  = (1-np.log(1+(self.model_scores['DecisionTree'][0]-self.model_scores['DecisionTree'][-1])/self.model_scores['DecisionTree'][0])**2)**self.k
+             f = f_svr if f_svr < f_tree else f_tree
+             size = int((1-f)*10000 + 10)
+        else:
+            f = (1-np.log(1+self.current_time_counter/self.limit)**2)**self.k
+            size = int(self.current_time_counter/self.limit*10000 + 10)
+
         for dim, par in self.vars['range'].items():
                 vals = par[0]
                 if par[1] == 'int':
@@ -266,7 +273,7 @@ class Surrogate(Simulation):
             neighbour = self.get_neighbour(x=x.to_dict())
             newx.append(neighbour)
         self.X_df_add = pd.DataFrame.from_records(newx).astype(object)
-        self.acquisition_time.append(time.time()-start)       
+        self.acquisition_time.append(time.time()-start)      
 
 
     def run_multiple_and_add_target_values(self, X, n=10) -> None:
@@ -397,12 +404,13 @@ class Surrogate(Simulation):
             self.current_time_counter +=1
 
 
-    def optimize(self, limit, verbose=False) -> None:
+    def optimize(self, limit, isscore=False, verbose=False) -> None:
         """
         Conducts the optimization process to find optimal simulation parameters.
         """
         self.limit = limit
         self.verbose = verbose
+        self.isscore = isscore
         if isinstance(limit, float):
             self.limit *= 3600 # to seconds
             if self.verbose: print(f'Optimize with timer. LIMIT: {self.limit} seconds.')

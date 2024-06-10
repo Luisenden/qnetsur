@@ -20,7 +20,7 @@ class Config:
             'return_data':'avg', 
             'progress_bar': None,
             'total_time': 1000,
-            'N_samples' : 20,
+            'N_samples' : 5,#20,
             'p_cons': 0.9/4,  # consumption rate
             'qbits_per_channel': 5,
             'cutoff': 28,
@@ -41,9 +41,11 @@ class Config:
                             help="Maximum time allowed for optimization (in hours). Type: float")
         parser.add_argument("--iterator", type=int, dest='time',
                             help="Maximum optimization cycles allowed; overwrites arg 'time'. Type: int")
+        parser.add_argument("--score", action='store_true',
+                            help="If argument is used, the ml score is used in the acquisition process. Type:bool", default=False)
         parser.add_argument("--seed", type=int, default=42,
                             help="Global seed for random number generation for the optimizer. Type: int")
-        parser.add_argument("--folder", type=str, default='../../surdata/cd/',
+        parser.add_argument("--folder", type=str, default='../../surdata/cdtest/',
                             help="Directory to store result data. Type: str")
         self.args, _ = parser.parse_known_args()
 
