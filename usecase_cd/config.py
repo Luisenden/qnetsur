@@ -45,7 +45,7 @@ class Config:
                             help="If argument is used, the ml score is used in the acquisition process. Type:bool", default=False)
         parser.add_argument("--seed", type=int, default=42,
                             help="Global seed for random number generation for the optimizer. Type: int")
-        parser.add_argument("--folder", type=str, default='../../surdata/cd_1h/',
+        parser.add_argument("--folder", type=str, default='../../surdata/cd/',
                             help="Directory to store result data. Type: str")
         self.args, _ = parser.parse_known_args()
 
