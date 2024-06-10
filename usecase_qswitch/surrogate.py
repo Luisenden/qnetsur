@@ -21,7 +21,7 @@ if __name__ == '__main__':
                         variables=conf.vars, sample_size=conf.initial_model_size)
         
         # run optimization
-        sim.optimize(limit=limit, verbose=True)
+        sim.optimize(limit=limit, isscore=conf.args.score, verbose=True)
 
         # store fixed input values used
         pd.DataFrame.from_dict(sim.vals, 'index').to_pickle(conf.args.folder+'SIMULATION_INPUT_VALUES.pkl')

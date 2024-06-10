@@ -31,6 +31,8 @@ class Config:
                             help="Maximum time allowed for optimization (in hours). Type: float")
         parser.add_argument("--iterator", type=int, dest='time',
                             help="Maximum optimization cycles allowed; overwrites arg 'time'. Type: int")
+        parser.add_argument("--score", action='store_true',
+                            help="If argument is used, the ml score is used in the acquisition process. Type:bool", default=False)
         parser.add_argument("--seed", type=int, default=42, help="Global seed for random number generation for the optimizer")
         parser.add_argument("--folder", type=str, default='../../surdata/qswitchtest/',
                         help="Directory to store result data. Type: str")
@@ -56,7 +58,7 @@ class Config:
             'include_classical_comm': False,
             'num_positions': 200,
             'decoherence_rate': 0,
-            'N': 20, # batch size
+            'N': 2, # batch size
         }
         vars = {
             'range': {},
