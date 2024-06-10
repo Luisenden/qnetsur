@@ -58,7 +58,7 @@ class Config:
             'include_classical_comm': False,
             'num_positions': 200,
             'decoherence_rate': 0,
-            'N': 2, # batch size
+            'N': 20, # batch size
         }
         vars = {
             'range': {},
