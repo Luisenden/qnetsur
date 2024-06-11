@@ -16,8 +16,9 @@ def get_solution(folder):
         dfs[i]['Trial'] = i
     df = pd.concat(dfs, axis=0).reset_index()
     cols = df.columns[df.columns.astype('str').str.contains('bright_state')]
-    df = df.iloc[df['objective'].idxmax()][cols]
-    return df
+    x = df.iloc[df['objective'].idxmax()][cols]
+    print(df['objective'].max())
+    return x
 
 def get_values(folder):
     filename = glob.glob(folder+'*_INPUT_VALUES.pkl')[0]

@@ -6,6 +6,7 @@ import pandas as pd
 import seaborn as sns
 import numpy as np
 import matplotlib.pyplot as plt
+import glob
 
 plt.style.use("seaborn-v0_8-paper")
 font = 14
@@ -60,45 +61,54 @@ def plot_from_exhaustive(df):
     plt.savefig('Images/QES-example2-bars.pdf')
     plt.show()
 
-def get_surrogate_timeprofiling(file):
-
-    times = pd.read_csv(file)
-    times = times[times.columns[times.columns.str.contains('\[s\]|Trial')]]
+def get_surrogate_timeprofiling(folder):
+    dfs = []
+    for i,name in enumerate(glob.glob(folder + f'/SU_*.pkl')): 
+        with open(name,'rb') as file: dfs.append(pd.read_pickle(file))
+        dfs[i]['Trial'] = i
+    df = pd.concat(dfs, axis=0)
+    times = df[df.columns[df.columns.astype('str').str.contains('\[s\]|Trial')]]
     times = times.drop_duplicates(ignore_index=True)
     relative = times.drop('Trial', axis=1).agg('mean')/times.drop('Trial', axis=1).agg('mean')['Total [s]']
-
     return times, relative, np.mean(np.mean(times.groupby('Trial').count()))
 
-def get_performance_distribution_per_method(folder,suffix):
-    df_sur = pd.read_csv(folder+'SU_'+suffix)
-    df_meta = pd.read_csv(folder+'AX_'+suffix)
-    df_meta['objective'] = df_meta['evaluate']
-    df_sa = pd.read_csv(folder+'SA_'+suffix)
-    df_rs = pd.read_csv(folder+'RS_'+suffix)
+def get_performance_distribution_per_method(folder):
+    dfs_methods = []
+    mapping = {'Surrogate':'SU', 'Meta':'AX', 'Simulated Annealing':'SA', 'Random Search':'RS'}
+    for key, value in mapping.items():
+        dfs = []
+        for i,name in enumerate(glob.glob(folder + f'/{value}_*.pkl')): 
+            with open(name,'rb') as file: dfs.append(pd.read_pickle(file))
+            dfs[i]['Trial'] = i
+        df = pd.concat(dfs, axis=0).reset_index()
+        df['Method'] = key
+        dfs_methods.append(df)
 
+    df =pd.concat(dfs_methods, axis=0)   
     columns = ['Trial', 'Method', 'objective']
-    df = pd.concat([df_sur[columns], df_meta[columns], df_sa[columns], df_rs[columns]])
     df['Utility'] = df['objective']
     max_per_trial = df.groupby(['Method', 'Trial'])['Utility'].max()
-    mean_std = max_per_trial.groupby(level='Method').agg(['min', 'max', 'mean', 'std'])
-    mean_std['rel_std'] = mean_std['std']/mean_std['mean']
-    return mean_std
+    distr = max_per_trial.groupby(level='Method').agg(['min', 'max', 'mean', 'std'])
+    distr['rel_std'] = distr['std']/distr['mean']
+    return distr
 
 
 if __name__ == '__main__':
 
-    # five users at varying distances
-    df = pd.read_csv('../../surdata/qswitch/Results_qswitch_5users_T30min.csv')
-    plot_from_exhaustive(df)
+    # # five users at varying distances
+    # df = pd.read_csv('../../surdata/qswitch/Results_qswitch_5users_T30min.csv')
+    # plot_from_exhaustive(df)
 
     # performance distribution (Supplementary Notes)
-    folder = '../../surdata/qswitch/'
-    suffix = 'qswitch6-30min.csv'
-    distr = get_performance_distribution_per_method(folder, suffix)
+    folder = f'../../surdata/qswitchtest/'
+    distr = get_performance_distribution_per_method(folder)
     print(distr)
 
     # time profiling (Supplementary Notes)
-    times, relative, cycles = get_surrogate_timeprofiling('../../surdata/qswitch/SU_qswitch6-30min.csv')
+    print('\n')
+    times, relative, cycles = get_surrogate_timeprofiling(folder)
     print('Overall:\n', times)
+    print('\n')
     print('Relative:\n', relative)
+    print('\n')
     print('Mean number of cycles:', cycles)
