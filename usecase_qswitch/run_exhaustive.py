@@ -23,14 +23,13 @@ def get_values(folder):
     filename = glob.glob(folder+'*_INPUT_VALUES.pkl')[0]
     vals = pd.read_pickle(filename).to_dict()[0]
     vals['N'] = 1
-    return vals, users[0]
+    return vals
 
-def to_dataframe(res, users):
+def to_dataframe(res):
     df = pd.DataFrame.from_records(res)
     df = df[0].apply(pd.Series)
-    df.columns = users
     df = df.add_prefix('User')
-    df['Aggregated Number of Virtual Neighbors'] = df.sum(axis=1)
+    df['Utility'] = df.sum(axis=1)
     return df
 
 if __name__ == '__main__':
@@ -41,8 +40,8 @@ if __name__ == '__main__':
     args, _ = parser.parse_known_args()
     mapping = {'Surrogate':'SU', 'Meta':'AX', 'Simulated Annealing':'SA', 'Random Search':'RS'}
 
-    folder = f'../../surdata/qswitch/'
-    vals, users = get_values(folder)
+    folder = f'../../surdata/qswitchtest/'
+    vals = get_values(folder)
     x = get_solution(folder)
 
     conf = Config()
@@ -52,14 +51,15 @@ if __name__ == '__main__':
     dfs = []
     seed_count = 1
     while True:
-        sim = Simulation(conf.simobjective, conf.sim, conf.rng, values=vals, variables=conf.vars)
+        sim = Simulation(conf.simobjective, conf.sim, conf.rng, values=vals, variables=None)
         start = time.time()
         res = sim.run_exhaustive(x=x, N=nprocs, seed=seed_count)
         print(time.time()-start)
 
-        df = to_dataframe(res, users=users)
+        df = to_dataframe(res)
         df['Method'] = args.method
         dfs.append(df)
+        print(df)
 
         seed_count += 1
         if len(dfs)*nprocs >= 10:
