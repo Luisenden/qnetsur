@@ -11,7 +11,7 @@ from src.utils import Simulation
 
 def get_solution(folder):
     dfs = []
-    for i,name in enumerate(glob.glob(folder + f'/{mapping[args.method]}_randtree-100_{args.hour}.0hours_*.pkl')): 
+    for i,name in enumerate(glob.glob(folder + f'{mapping[args.method]}_randtree-100_{args.hour}.0hours_*.pkl')): 
         with open(name,'rb') as file: dfs.append(pd.read_pickle(file))
         dfs[i]['Trial'] = i
     df = pd.concat(dfs, axis=0).reset_index()
