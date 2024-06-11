@@ -70,5 +70,5 @@ if __name__ == '__main__':
             break
     
     df_exhaustive = pd.concat(dfs, axis=0)
-    result_folder = folder+f'Results_cd_compare_{args.method}.csv'
+    result_folder = folder+f'Results_cd_compare_{args.method}_{args.hour}.csv'
     df_exhaustive.to_csv(result_folder) 
