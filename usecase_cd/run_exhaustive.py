@@ -11,7 +11,7 @@ from src.utils import Simulation
 
 def get_solution(folder):
     dfs = []
-    for i,name in enumerate(glob.glob(folder + f'/{mapping[args.method]}_*.pkl')): 
+    for i,name in enumerate(glob.glob(folder + f'/{mapping[args.method]}_randtree-100_{args.hour}.0_*.pkl')): 
         with open(name,'rb') as file: dfs.append(pd.read_pickle(file))
         dfs[i]['Trial'] = i
     df = pd.concat(dfs, axis=0).reset_index()
@@ -45,7 +45,7 @@ if __name__ == '__main__':
     args, _ = parser.parse_known_args()
     mapping = {'Surrogate':'SU', 'Meta':'AX', 'Simulated Annealing':'SA', 'Random Search':'RS'}
 
-    folder = f'../../surdata/cd_{args.hour}h/'
+    folder = f'../../surdata/cd/'
     vals, users = get_values(folder)
     x = get_solution(folder)
 
