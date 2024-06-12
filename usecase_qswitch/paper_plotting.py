@@ -31,35 +31,20 @@ sys.path.append('../src')
 import warnings
 warnings.filterwarnings("ignore")
 
-
-def plot_from_exhaustive(df):
-    fig, axs = plt.subplots(3,1, figsize=(5,12))
-    sns.lineplot(data= df, x='User', y='Utility', hue='Method', ax=axs[0], errorbar='se', err_style='bars', style='Method', markers=True, markersize=10)
-    sns.lineplot(data= df, x='User', y='Rate [Hz]', hue='Method', ax=axs[1], errorbar='se', err_style='bars', style='Method', markers=True, markersize=10)
-    g = sns.lineplot(data= df, x='User', y='Fidelity', hue='Method', ax=axs[2], errorbar='se', err_style='bars', style='Method', markers=True, markersize=10)
-
-    for i in range(len(axs)):
-        axs[i].grid(alpha=0.3)
-        axs[i].legend().remove()
-        axs[i].set_xlabel('')
-    
-    axs[0].set_title('Utility per User')
-    axs[1].set_title('Rate [Hz] per User')
-    axs[2].set_title('Fidelity per User')
-    axs[2].set_xlabel('User')
-
-    g.legend(loc='lower center', bbox_to_anchor=(0.5, -1.5), ncol=1)
-    plt.tight_layout()
-    plt.savefig('Images/QES-example2-users.pdf')
-    plt.show()
-
-    fig, axs = plt.subplots(figsize=(5,7))
-    sns.barplot(data=df, x='Method', y='Aggregated Utility')
-    plt.title(r'Aggregated Utility $U(\mathbf{s_\alpha})$')
-    plt.xticks(rotation=45)
-    plt.tight_layout()
-    plt.savefig('Images/QES-example2-bars.pdf')
-    plt.show()
+def get_exhaustive(folders):
+    dfs_total = []
+    method_names = ['Surrogate', 'Meta', 'Simulated Annealing', 'Random Search']
+    for i, folder in enumerate(folders):
+        dfs = [None]*4
+        for name in glob.glob(f'{folder}/Results_*.csv'):
+            df_read = pd.read_csv(name, index_col=0)
+            method_index = method_names.index(df_read['Method'].unique())
+            dfs[method_index] = df_read
+        df = pd.concat(dfs, axis=0)
+        df['Time Limit [h]'] = [0.5,3][i]
+        dfs_total.append(df)
+    df_result = pd.concat(dfs_total, axis=0)
+    return df_result
 
 def get_surrogate_timeprofiling(folder):
     dfs = []
@@ -111,28 +96,43 @@ def plot_progress(folder):
 
     df =pd.concat(dfs_methods, axis=0).rename_axis('Iteration').reset_index()
     sns.lineplot(df, x='Iteration', y='objective', hue='Method') #units='Trial', estimator=None
+    plt.ylabel('Utility')
+    plt.xlabel('Optimization Cycle')
     plt.show()
+
+def plot_from_exhaustive_multiple(folders):
+    df = get_exhaustive(folders)
+    markers = ['o', '^', 'v', 's']
+    fig, axs = plt.subplots(1,1, figsize=(5,3))
+    sns.pointplot(data= df, x='Time Limit [h]', y='Utility', hue='Method', ax=axs, errorbar='se', markers=markers, linestyles=['-']*4)
+    axs.grid()
+    plt.tight_layout()
+    plt.show()
+    return df
+
+    
 
 
 if __name__ == '__main__':
 
-    # # five users at varying distances
-    # df = pd.read_csv('../../surdata/qswitch/Results_qswitch_5users_T30min.csv')
-    # plot_from_exhaustive(df)
+    # five users at varying distances
+    folders = [f'../../surdata/qswitch_30min/', f'../../surdata/qswitch_3h/']
+    plot_from_exhaustive_multiple(folders)
+    
 
-    # performance distribution (Supplementary Notes)
-    folder = f'../../surdata/qswitch_3h/'
-    distr = get_performance_distribution_per_method(folder)
-    print(distr)
+    # # performance distribution (Supplementary Notes)
+    # folder = f'../../surdata/qswitch_30min/'
+    # distr = get_performance_distribution_per_method(folder)
+    # print(distr)
 
-    # time profiling (Supplementary Notes)
-    print('\n')
-    times, relative, cycles = get_surrogate_timeprofiling(folder)
-    print('Overall:\n', times)
-    print('\n')
-    print('Relative:\n', relative)
-    print('\n')
-    print('Mean number of cycles:', cycles)
+    # # time profiling (Supplementary Notes)
+    # print('\n')
+    # times, relative, cycles = get_surrogate_timeprofiling(folder)
+    # print('Overall:\n', times)
+    # print('\n')
+    # print('Relative:\n', relative)
+    # print('\n')
+    # print('Mean number of cycles:', cycles)
 
     # plot progress
-    plot_progress(folder)
+    plot_progress(folders[1])

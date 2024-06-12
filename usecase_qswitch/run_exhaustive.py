@@ -17,7 +17,7 @@ def get_solution(folder):
     df = pd.concat(dfs, axis=0).reset_index()
     cols = df.columns[df.columns.astype('str').str.contains('bright_state')]
     x = df.iloc[df['objective'].idxmax()][cols]
-    print(df['objective'].max())
+    print('max objective',  df['objective'].max())
     return x
 
 def get_values(folder):
@@ -28,9 +28,11 @@ def get_values(folder):
 
 def to_dataframe(res):
     df = pd.DataFrame.from_records(res)
-    df = df[0].apply(pd.Series)
-    df = df.add_prefix('User')
-    df['Utility'] = df.sum(axis=1)
+    df_utility = df[0].apply(pd.Series)
+    df_utility['Utility'] = df_utility.sum(axis=1)
+    df_rates = df[2].apply(lambda x: pd.Series(x[0])).add_prefix('Rate')
+    df_fidelities = df[2].apply(lambda x: pd.Series(x[2])).add_prefix('Fidelity')
+    df = pd.concat([df_utility, df_rates, df_fidelities], axis=1)
     return df
 
 if __name__ == '__main__':
@@ -62,6 +64,7 @@ if __name__ == '__main__':
         df = to_dataframe(res)
         df['Method'] = args.method
         dfs.append(df)
+        print(df)
 
         seed_count += 1
         if len(dfs)*nprocs >= 1000:
