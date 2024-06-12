@@ -278,10 +278,15 @@ class Surrogate(Simulation):
 
     def run_multiple_and_add_target_values(self, X, n=10) -> None:
         start = time.time()
-        with Pool(processes=n) as pool:
-            y_temp = pool.map(self.run_sim, X)
-            pool.close()
-            pool.join()
+        if self.isssequential:
+            for x in X:
+                y_temp = []
+                y_temp.append(self.run_sim(x))
+        else:
+            with Pool(processes=n) as pool:
+                y_temp = pool.map(self.run_sim, X)
+                pool.close()
+                pool.join()
         self.sim_time.append(time.time() - start)  # measure simulation time
 
         # add new data
@@ -404,13 +409,14 @@ class Surrogate(Simulation):
             self.current_time_counter +=1
 
 
-    def optimize(self, limit, isscore=False, verbose=False) -> None:
+    def optimize(self, limit, isscore=False, issequential=False, verbose=False) -> None:
         """
         Conducts the optimization process to find optimal simulation parameters.
         """
         self.limit = limit
         self.verbose = verbose
         self.isscore = isscore
+        self.issequential = issequential
         if isinstance(limit, float):
             self.limit *= 3600 # to seconds
             if self.verbose: print(f'Optimize with timer. LIMIT: {self.limit} seconds.')
