@@ -278,7 +278,7 @@ class Surrogate(Simulation):
 
     def run_multiple_and_add_target_values(self, X) -> None:
         start = time.time()
-        if self.isssequential:
+        if self.issequential:
             for x in X:
                 y_temp = []
                 y_temp.append(self.run_sim(x))
