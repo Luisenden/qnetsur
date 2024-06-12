@@ -38,10 +38,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="set method")
     parser.add_argument("--method", type=str, default='Surrogate', 
                         help="Choose one of the following methods: 'Surrogate', 'Meta', 'Simulated Annealing', 'Random Search'")
+    parser.add_argument("--lim", type=str, default='30min', 
+                    help="Folder name.")
     args, _ = parser.parse_known_args()
     mapping = {'Surrogate':'SU', 'Meta':'AX', 'Simulated Annealing':'SA', 'Random Search':'RS'}
 
-    folder = f'../../surdata/qswitchtest/'
+    folder = f'../../surdata/qswitch_{args.lim}/'
     vals = get_values(folder)
     x = get_solution(folder)
 
@@ -60,7 +62,6 @@ if __name__ == '__main__':
         df = to_dataframe(res)
         df['Method'] = args.method
         dfs.append(df)
-        print(df)
 
         seed_count += 1
         if len(dfs)*nprocs >= 10:

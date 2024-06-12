@@ -8,7 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import glob
 
-plt.style.use("seaborn-v0_8-paper")
+plt.style.use("seaborn-paper")
 font = 14
 plt.rcParams.update({
     'text.usetex': False,
@@ -92,6 +92,27 @@ def get_performance_distribution_per_method(folder):
     distr['rel_std'] = distr['std']/distr['mean']
     return distr
 
+def plot_progress(folder):
+    dfs_methods = []
+    columns = ['Trial', 'Method', 'objective']
+    mapping = {'Surrogate':'SU', 'Meta':'AX', 'Simulated Annealing':'SA', 'Random Search':'RS'}
+    for key, value in mapping.items():
+        dfs = []
+        for i,name in enumerate(glob.glob(folder + f'/{value}_*.pkl')): 
+            with open(name,'rb') as file: df_raw = pd.read_pickle(file)
+            if any(df_raw.columns.str.contains('Iteration')):
+                df_raw = df_raw.merge(df_raw.groupby(['Iteration'])['objective'].max(numeric_only=True), on='Iteration', suffixes=('_x', ''))
+                df_raw = df_raw[['Iteration', 'objective']].drop_duplicates().reset_index()
+            df_raw['Trial'] = i
+            dfs.append(df_raw.reset_index())
+        df = pd.concat(dfs, axis=0)
+        df['Method'] = key
+        dfs_methods.append(df[columns])
+
+    df =pd.concat(dfs_methods, axis=0).rename_axis('Iteration').reset_index()
+    sns.lineplot(df, x='Iteration', y='objective', hue='Method') #units='Trial', estimator=None
+    plt.show()
+
 
 if __name__ == '__main__':
 
@@ -100,7 +121,7 @@ if __name__ == '__main__':
     # plot_from_exhaustive(df)
 
     # performance distribution (Supplementary Notes)
-    folder = f'../../surdata/qswitchtest/'
+    folder = f'../../surdata/qswitch_3h/'
     distr = get_performance_distribution_per_method(folder)
     print(distr)
 
@@ -112,3 +133,6 @@ if __name__ == '__main__':
     print('Relative:\n', relative)
     print('\n')
     print('Mean number of cycles:', cycles)
+
+    # plot progress
+    plot_progress(folder)

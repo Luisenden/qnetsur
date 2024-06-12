@@ -111,7 +111,7 @@ def simulated_annealing(sim, limit, temp :int = 10, beta_schedule :int =
     # evaluate the initial point
     current_eval = objective(sim, current)
     current_set = current.copy()
-    current_set['Utility'] = -current_eval
+    current_set['objective'] = -current_eval
     dt_init = time.time()-start_initial
     current_set['time'] = dt_init
     
@@ -160,6 +160,7 @@ def simulated_annealing(sim, limit, temp :int = 10, beta_schedule :int =
         current_set = current.copy()
         current_set['objective'] = -current_eval
         current_set['time'] = dt
+        print(current_set)
         sets.append(current_set)
         count += 1 
 
