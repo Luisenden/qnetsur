@@ -4,7 +4,7 @@ Script to compare simulated annealing to scipy optimizers for different test fun
 import sys
 sys.path.append('../')
 import numpy as np
-from src.simulatedannealing import *
+from qnetsur.simulatedannealing import *
 from scipy.optimize import minimize
 from config import *
 

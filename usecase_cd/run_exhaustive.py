@@ -7,7 +7,7 @@ import sys
 
 from config import Config
 sys.path.append('../')
-from src.utils import Simulation
+from qnetsur.utils import Simulation
 
 def get_solution(folder):
     dfs = []

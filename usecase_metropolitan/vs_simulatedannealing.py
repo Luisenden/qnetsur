@@ -3,8 +3,8 @@ import pandas as pd
 from datetime import datetime
 
 from config import Config
-from src.utils import Simulation
-from src.simulatedannealing import simulated_annealing 
+from qnetsur.utils import Simulation
+from qnetsur.simulatedannealing import simulated_annealing 
 
 
 if __name__ == '__main__':

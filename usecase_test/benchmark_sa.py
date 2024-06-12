@@ -1,7 +1,7 @@
 
 
 from benchmark_config import *
-from src.simulatedannealing import * 
+from qnetsur.simulatedannealing import * 
 import matplotlib.pyplot as plt
 
 booth_function = lambda x,y: (x + 2*y - 7)**2 + (2*x +  - 5)**2 # booth benchmark function (f20 in https://arxiv.org/pdf/1308.4008.pdf)

@@ -2,7 +2,7 @@ import sys
 import numpy as np
 
 sys.path.append('../')
-from src.folderdatacollectors import ResultCollector, SurrogateCollector, AxCollector, SaCollector
+from qnetsur.folderdatacollectors import ResultCollector, SurrogateCollector, AxCollector, SaCollector
 
 class RsCollector(ResultCollector):
     def __init__(self, folder):

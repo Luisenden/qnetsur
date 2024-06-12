@@ -4,8 +4,8 @@ from datetime import datetime
 import pandas as pd
 
 from config import Config
-from src.datacollectors import SurrogateCollector
-from src.utils import Surrogate
+from qnetsur.datacollectors import SurrogateCollector
+from qnetsur.utils import Surrogate
 
 
 if __name__ == '__main__':

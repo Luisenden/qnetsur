@@ -1,7 +1,7 @@
 import sys
 
 sys.path.append('../')
-from src.folderdatacollectors import ResultCollector, SurrogateCollector, AxCollector, RsCollector
+from qnetsur.folderdatacollectors import ResultCollector, SurrogateCollector, AxCollector, RsCollector
 
 class SaCollector(ResultCollector):
     def __init__(self, folder):

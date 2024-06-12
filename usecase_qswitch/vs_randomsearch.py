@@ -4,7 +4,7 @@ import pandas as pd
 from datetime import datetime
 
 from config import Config
-from src.utils import Simulation
+from qnetsur.utils import Simulation
  
 
 if __name__ == '__main__':

@@ -4,7 +4,7 @@ import torch.multiprocessing as mp
 import sys
 sys.path.append('../')
 sys.path.append('../src')
-from src.utils import Simulation
+from qnetsur.utils import Simulation
 from config import parser, simwrapper, vals
 from simulation import simulation_rb
 from usecase_metropolitan.plottingtools import get_best_parameters, to_dataframe
