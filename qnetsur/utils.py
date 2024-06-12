@@ -10,10 +10,10 @@ from functools import partial
 
 import torch.multiprocessing as mp
 from torch.multiprocessing import Pool, set_start_method
-try:    
-    set_start_method('spawn')
-except RuntimeError:
-     pass
+# try:    
+#     set_start_method('spawn')
+# except RuntimeError:
+#      pass
 
 from sklearn.model_selection import cross_val_score
 from sklearn.svm import SVR
