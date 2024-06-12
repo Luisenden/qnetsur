@@ -260,7 +260,7 @@ class Surrogate(Simulation):
         x_fittest = samples_x.iloc[fittest_neighbour_index].to_dict()
         return x_fittest
 
-    def acquisition(self, n=10) -> pd.DataFrame:
+    def acquisition(self) -> pd.DataFrame:
         """
         Computes n new data points according to estimated improvement 
         and degree of exploration and adds the data to the training sample.
@@ -268,7 +268,7 @@ class Surrogate(Simulation):
         start = time.time()
         y_obj_vec = np.sum(self.y, axis=1)
         newx = []
-        top_selection = self.X_df.iloc[np.argsort(y_obj_vec)[-n:]]  # select top n candidates
+        top_selection = self.X_df.iloc[np.argsort(y_obj_vec)[-self.procs:]]  # select top n candidates
         for x in top_selection.iloc:  # get most promising neighbour according to surrogate
             neighbour = self.get_neighbour(x=x.to_dict())
             newx.append(neighbour)
@@ -276,14 +276,14 @@ class Surrogate(Simulation):
         self.acquisition_time.append(time.time()-start)      
 
 
-    def run_multiple_and_add_target_values(self, X, n=10) -> None:
+    def run_multiple_and_add_target_values(self, X) -> None:
         start = time.time()
         if self.isssequential:
             for x in X:
                 y_temp = []
                 y_temp.append(self.run_sim(x))
         else:
-            with Pool(processes=n) as pool:
+            with Pool(processes=self.procs) as pool:
                 y_temp = pool.map(self.run_sim, X)
                 pool.close()
                 pool.join()
