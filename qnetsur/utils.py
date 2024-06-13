@@ -8,12 +8,14 @@ import pandas as pd
 from scipy.stats import truncnorm
 from functools import partial
 
-import torch.multiprocessing as mp
-from torch.multiprocessing import Pool, set_start_method
+# import torch.multiprocessing as mp
+# from torch.multiprocessing import Pool, set_start_method
 # try:    
 #     set_start_method('spawn')
 # except RuntimeError:
 #      pass
+
+import multiprocessing as mp
 
 from sklearn.model_selection import cross_val_score
 from sklearn.svm import SVR
@@ -84,7 +86,7 @@ class Simulation:
         """
         xrun = {**x, **self.vals}
         task = partial(self.sim_wrapper, self.sim)
-        with Pool(processes=N) as pool:
+        with mp.Pool(processes=N) as pool:
             res = pool.map(task, [{**xrun, **{'seed': (i+1)*seed}} for i in range(N)])
             pool.close()
             pool.join()
@@ -285,7 +287,7 @@ class Surrogate(Simulation):
             for x in X:
                 y_temp.append(self.run_sim(x))
         else:
-            with Pool(processes=self.procs) as pool:
+            with mp.Pool(processes=self.procs) as pool:
                 y_temp = pool.map(self.run_sim, X)
                 pool.close()
                 pool.join()
