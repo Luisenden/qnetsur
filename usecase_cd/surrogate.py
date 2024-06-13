@@ -22,7 +22,7 @@ if __name__ == '__main__':
                         variables=conf.vars, sample_size=conf.initial_model_size)
         
         # run optimization
-        sim.optimize(limit=limit, isscore=conf.args.score , verbose=True, issequential=False)
+        sim.optimize(limit=limit, isscore=conf.args.score , verbose=True, issequential=True)
 
         # store user nodes
         if conf.kind == 'randtree':

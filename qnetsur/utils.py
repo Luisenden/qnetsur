@@ -184,8 +184,10 @@ class Surrogate(Simulation):
     optimize(max_time)
         Conducts the optimization process to find optimal simulation parameters.
     """
-    def __init__(self, sim_wrapper, sim, rng, values, variables, sample_size, k=4):
+    def __init__(self, sim_wrapper, sim, rng, values, variables, sample_size=5, k=4):
         super().__init__(sim_wrapper, sim, rng, values, variables)
+
+        assert sample_size>=5, f"Sample size must be at least 5 (requirement for 5-fold cross validation)."
 
         # storage for time profiling
         self.sim_time = []
@@ -268,7 +270,7 @@ class Surrogate(Simulation):
         start = time.time()
         y_obj_vec = np.sum(self.y, axis=1)
         newx = []
-        top_selection = self.X_df.iloc[np.argsort(y_obj_vec)[-self.procs:]]  # select top n candidates
+        top_selection = self.X_df.iloc[np.argsort(y_obj_vec)[-self.sample_size:]]  # select top n candidates
         for x in top_selection.iloc:  # get most promising neighbour according to surrogate
             neighbour = self.get_neighbour(x=x.to_dict())
             newx.append(neighbour)
