@@ -321,7 +321,7 @@ class Surrogate(Simulation):
              self.model = SVR()
         else:
              self.model = DecisionTreeRegressor(random_state=42)
-        print(f'scores: svr = {score_svr} and tree={score_tree}')
+        print(f'MAE: svr = {score_svr} and tree={score_tree}')
         self.model_scores['SVR'].append(score_svr)
         self.model_scores['DecisionTree'].append(score_tree)
 
