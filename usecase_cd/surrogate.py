@@ -22,17 +22,17 @@ if __name__ == '__main__':
                         variables=conf.vars, sample_size=conf.initial_model_size)
         
         # run optimization
-        sim.optimize(limit=limit, isscore=conf.args.score , verbose=True)
+        sim.optimize(limit=limit, isscore=conf.args.score , verbose=True, issequential=False)
 
         # store user nodes
         if conf.kind == 'randtree':
                 sim.vals['user'] = np.where(sim.vals['A'].sum(axis=1) == 1)
-        pd.DataFrame.from_dict(sim.vals, 'index').to_pickle(conf.args.folder+'SIMULATION_INPUT_VALUES.pkl')
+        #pd.DataFrame.from_dict(sim.vals, 'index').to_pickle(conf.args.folder+'SIMULATION_INPUT_VALUES.pkl')
         
         # collect and store results
         coll = SurrogateCollector(sim=sim)
         result = coll.get_total()
-        result.to_pickle(storage_path)
+        # result.to_pickle(storage_path)
 
 
 

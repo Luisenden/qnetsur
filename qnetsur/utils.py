@@ -279,8 +279,8 @@ class Surrogate(Simulation):
     def run_multiple_and_add_target_values(self, X) -> None:
         start = time.time()
         if self.issequential:
+            y_temp = []
             for x in X:
-                y_temp = []
                 y_temp.append(self.run_sim(x))
         else:
             with Pool(processes=self.procs) as pool:
@@ -368,6 +368,7 @@ class Surrogate(Simulation):
 
         self.initial_optimize_time = time.time()-optimize_start
         self.optimize_time.append(self.initial_optimize_time)
+        if self.verbose and isinstance(self.limit, int): print(f'Iteration 0/{self.limit}')
 
 
     def optimize_with_timer(self):
