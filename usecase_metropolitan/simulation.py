@@ -49,7 +49,6 @@ def get_component(node: "Node", component_type: str):
 
 def set_parameters(cavity:int, network_topo):
 
-    C = cavity
     routers = network_topo.get_nodes_by_type(RouterNetTopo.QUANTUM_ROUTER)
     bsm_nodes = network_topo.get_nodes_by_type(RouterNetTopo.BSM_NODE)
 
@@ -57,7 +56,7 @@ def set_parameters(cavity:int, network_topo):
     MEMO_FREQ = 2e5
     MEMO_EXPIRE = 1.3
     MEMO_EFFICIENCY = 0.75
-    MEMO_FIDELITY = 0.9349367588934053 
+    MEMO_FIDELITY = 0.9909987775181183
     for node in routers:
         memory_array = node.get_components_by_type("MemoryArray")[0]  # assume only 1 memory array
         memory_array.update_memory_params("frequency", MEMO_FREQ)

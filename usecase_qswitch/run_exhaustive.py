@@ -17,7 +17,6 @@ def get_solution(folder):
     df = pd.concat(dfs, axis=0).reset_index()
     cols = df.columns[df.columns.astype('str').str.contains('bright_state')]
     x = df.iloc[df['objective'].idxmax()][cols]
-    print('max objective',  df['objective'].max())
     return x
 
 def get_values(folder):

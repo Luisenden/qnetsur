@@ -141,7 +141,7 @@ def read_pkl_sa(folder):
 
 def to_dataframe(res):
     df = pd.DataFrame.from_records(res)
-    df = df[2].transform({i: itemgetter(i) for i in range(config.nnodes)}) # get raw mean per node
+    df = df[2].transform({i: itemgetter(i) for i in range(9)}) # get raw mean per node
     df = df.add_prefix('Node')
     df['Aggregated Completed Requests'] = df.sum(axis=1)
     return df

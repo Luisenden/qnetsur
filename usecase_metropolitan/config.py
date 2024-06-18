@@ -14,8 +14,8 @@ class Config:
     def __init__(self, initial_model_size=5):
         self.vals = {
         'network_config_file': 'starlight.json', # network configuration file
-        'N': 1, # simulation sample size
-        'total_time': 2e12, # simulation time
+        'N': 5, # simulation sample size
+        'total_time': 2e13, # simulation time
         'cavity': 500 # experimental parameter for atom-cavity cooperativity
         }
         self.name = 'starlight'

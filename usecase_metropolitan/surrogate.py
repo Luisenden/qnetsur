@@ -17,7 +17,7 @@ if __name__ == '__main__':
 
         # instatiate surrogate model
         sim = Surrogate(conf.simobjective, conf.sim, rng=conf.rng, values=conf.vals,\
-                        variables=conf.vars, sample_size=conf.initial_model_size)
+                        variables=conf.vars, sample_size=conf.initial_model_size, k=6)
         
         # run optimization
         sim.optimize(limit=limit, verbose=True)
@@ -29,3 +29,4 @@ if __name__ == '__main__':
         coll = SurrogateCollector(sim=sim)
         result = coll.get_total()
         result.to_pickle(storage_path)
+        print(result)
