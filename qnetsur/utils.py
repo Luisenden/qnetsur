@@ -200,8 +200,8 @@ class Surrogate(Simulation):
         # set multiprocessing
         self.procs = mp.cpu_count()
         self.sample_size = sample_size
-        if self.procs > sample_size:
-            self.procs = sample_size
+        if self.procs > 10:
+            self.procs = 10
 
         # storage target value
         self.y = []
