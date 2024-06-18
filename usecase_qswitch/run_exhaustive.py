@@ -45,7 +45,7 @@ if __name__ == '__main__':
     args, _ = parser.parse_known_args()
     mapping = {'Surrogate':'SU', 'Meta':'AX', 'Simulated Annealing':'SA', 'Random Search':'RS'}
 
-    folder = f'../../surdata/qswitchtest/'
+    folder = f'../../surdata/qswitch_15min/'
     vals = get_values(folder)
     x = get_solution(folder)
 

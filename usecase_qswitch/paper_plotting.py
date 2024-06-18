@@ -120,8 +120,10 @@ def plot_from_exhaustive_multiple(folders):
 if __name__ == '__main__':
 
     # five users at varying distances
-    folders = [f'../../surdata/qswitch_30min/', f'../../surdata/qswitch_3h/']
-    #plot_from_exhaustive_multiple(folders)
+    # folders = [f'../../surdata/qswitch_30min/', f'../../surdata/qswitch_3h/']
+    # plot_from_exhaustive_multiple(folders)
+
+    plot_from_exhaustive_multiple([f'../../surdata/qswitchtest/'])
     
 
     # # performance distribution (Supplementary Notes)
