@@ -49,7 +49,7 @@ def plot_from_exhaustive(folder):
     fig, axs = plt.subplots(1,1, figsize=(5,3))
     sns.pointplot(data= df, x='Total Number of Allocated Memories', y='Aggregated Completed Requests', hue='Method', ax=axs, errorbar='se', markers=markers, legend=True, linestyles=['']*6, native_scale=True)
     axs.grid()
-    plt.title('Aggregated Number of Completed Requests')
+    plt.ylabel('Total number of completed requests')
     plt.tight_layout()
     plt.show()
 
@@ -77,22 +77,41 @@ def get_surrogate_timeprofiling(file):
     relative = times.drop('Trial', axis=1).agg('mean')/times.drop('Trial', axis=1).agg('mean')['Total [s]']
     return times, relative, np.mean(np.mean(times.groupby('Trial').count()))
 
+def plot_policies(file):
+    df = pd.read_csv(file, index_col=0).T
+    df = df.drop('Total Number of Allocated Memories').reset_index()
+    df = df.drop('index', axis=1).T
+    df.columns = ["NU", "StarLight", "UChicago_PME", "UChicago_HC", "Fermilab_1", \
+                  "Fermilab_2", "Argonne_1", "Argonne_2", "Argonne_3"]
+    df = df.reset_index(names='Method').T
+    # df = df.melt(id_vars='Method', var_name='Node', value_name='Number of Memories')
+    # fig, ax = plt.subplots()
+    # sns.barplot(df, x='Node', y='Number of Memories', hue='Method')
+    # ax.set_xticklabels(ax.get_xticklabels(), rotation=45) 
+    # plt.grid()
+    # plt.legend(loc='upper left', bbox_to_anchor=(1, 1))
+    # plt.tight_layout()
+    # plt.show()
+    return df.to_latex()
+
 if __name__ == '__main__':
-    folder = '../../surdata/rb_budget_25h/'
+    # folder = '../../surdata/rb_budget_25h/'
     
-    # best found solutions (Supplementary Notes)
-    best_solutions= pd.read_csv(folder+'Best_found_solutions.csv',index_col=0)
-    print('Best Found Solutions:\n', best_solutions)
+    # # best found solutions (Supplementary Notes)
+    # best_solutions= pd.read_csv(folder+'Best_found_solutions.csv',index_col=0)
+    # print('Best Found Solutions:\n', best_solutions)
     
-    # exhaustive run results (main text)
-    plot_from_exhaustive(folder)
+    # # exhaustive run results (main text)
+    # plot_from_exhaustive(folder)
 
-    # performance distribution (Supplementary Notes)
-    distr = get_performance_distribution_per_method(folder, '_rb_starlight_budget_25h.csv')
-    print(distr)
+    # # performance distribution (Supplementary Notes)
+    # distr = get_performance_distribution_per_method(folder, '_rb_starlight_budget_25h.csv')
+    # print(distr)
 
-    # time profiling (Supplementary Notes)
-    times, relative, cycles = get_surrogate_timeprofiling(folder+'SU_rb_starlight_budget_25h.csv')
-    print('Overall:\n', times)
-    print('Relative:\n', relative)
-    print('Mean number of cycles:', cycles)
+    # # time profiling (Supplementary Notes)
+    # times, relative, cycles = get_surrogate_timeprofiling(folder+'SU_rb_starlight_budget_25h.csv')
+    # print('Overall:\n', times)
+    # print('Relative:\n', relative)
+    # print('Mean number of cycles:', cycles)
+
+    print(plot_policies('../../surdata/rb_budget_25h/Best_found_solutions.csv'))
