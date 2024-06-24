@@ -15,7 +15,6 @@ def get_solution(folder):
         with open(name,'rb') as file: dfs.append(pd.read_pickle(file))
         dfs[i]['Trial'] = i
     df = pd.concat(dfs, axis=0).reset_index()
-    #print(df.groupby('Trial').max('objective')['objective'])
     cols = df.columns[df.columns.astype('str').str.contains('q_swap')]
     df = df.iloc[df['objective'].idxmax()][cols]
     return df
@@ -45,7 +44,7 @@ if __name__ == '__main__':
     args, _ = parser.parse_known_args()
     mapping = {'Surrogate':'SU', 'Meta':'AX', 'Simulated Annealing':'SA', 'Random Search':'RS'}
 
-    folder = f'../../surdata/cd/'
+    folder = f'../../surdata/cd_{args.hour}h/'
     vals, users = get_values(folder)
     x = get_solution(folder)
 

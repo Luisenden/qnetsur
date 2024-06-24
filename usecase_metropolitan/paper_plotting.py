@@ -53,21 +53,40 @@ def plot_from_exhaustive(folder):
     plt.tight_layout()
     plt.show()
 
-def get_performance_distribution_per_method(folder,suffix):
-    df_sur = pd.read_csv(folder+'SU'+suffix)
-    df_sur['Utility'] = df_sur['objective']
-    df_meta = pd.read_csv(folder+'AX'+suffix)
-    df_sa = pd.read_csv(folder+'SA'+suffix)
-    df_rs = pd.read_csv(folder+'RS'+suffix)
-    df_rs['Utility'] = df_rs['objective']
+# def get_performance_distribution_per_method(folder,suffix):
+#     df_sur = pd.read_csv(folder+'SU'+suffix)
+#     df_sur['Utility'] = df_sur['objective']
+#     df_meta = pd.read_csv(folder+'AX'+suffix)
+#     df_sa = pd.read_csv(folder+'SA'+suffix)
+#     df_rs = pd.read_csv(folder+'RS'+suffix)
+#     df_rs['Utility'] = df_rs['objective']
 
-    columns = ['Trial', 'Method', 'Utility']
-    df = pd.concat([df_sur[columns], df_meta[columns], df_sa[columns], df_rs[columns]])
-    print(df)
+#     columns = ['Trial', 'Method', 'Utility']
+#     df = pd.concat([df_sur[columns], df_meta[columns], df_sa[columns], df_rs[columns]])
+#     print(df)
+#     max_per_trial = df.groupby(['Method', 'Trial'])['Utility'].max()
+#     mean_std = max_per_trial.groupby(level='Method').agg(['min', 'max', 'mean', 'std'])
+#     mean_std['rel_std'] = mean_std['std']/mean_std['mean']
+#     return mean_std
+
+def get_performance_distribution_per_method(folder):
+    dfs_methods = []
+    mapping = {'Surrogate':'SU',}# 'Meta':'AX', 'Simulated Annealing':'SA',} #'Random Search':'RS'}
+    for key, value in mapping.items():
+        dfs = []
+        for i,name in enumerate(glob.glob(folder + f'/{value}_*.pkl')): 
+            with open(name,'rb') as file: dfs.append(pd.read_pickle(file))
+            dfs[i]['Trial'] = i
+        df = pd.concat(dfs, axis=0).reset_index()
+        df['Method'] = key
+        dfs_methods.append(df[['Trial', 'Iteration', 'Method', 'objective']])
+
+    df =pd.concat(dfs_methods, axis=0)   
+    df['Utility'] = df['objective']
     max_per_trial = df.groupby(['Method', 'Trial'])['Utility'].max()
-    mean_std = max_per_trial.groupby(level='Method').agg(['min', 'max', 'mean', 'std'])
-    mean_std['rel_std'] = mean_std['std']/mean_std['mean']
-    return mean_std
+    distr = max_per_trial.groupby(level='Method').agg(['min', 'max', 'mean', 'std'])
+    distr['rel_std'] = distr['std']/distr['mean']
+    return df[df.Trial == 0]
 
 def get_surrogate_timeprofiling(file):
 
@@ -95,7 +114,7 @@ def plot_policies(file):
     return df.to_latex()
 
 if __name__ == '__main__':
-    # folder = '../../surdata/rb_budget_25h/'
+    folder = '../../surdata/rb/'
     
     # # best found solutions (Supplementary Notes)
     # best_solutions= pd.read_csv(folder+'Best_found_solutions.csv',index_col=0)
@@ -104,9 +123,9 @@ if __name__ == '__main__':
     # # exhaustive run results (main text)
     # plot_from_exhaustive(folder)
 
-    # # performance distribution (Supplementary Notes)
-    # distr = get_performance_distribution_per_method(folder, '_rb_starlight_budget_25h.csv')
-    # print(distr)
+    # performance distribution (Supplementary Notes)
+    distr = get_performance_distribution_per_method(folder)
+    print(distr)
 
     # # time profiling (Supplementary Notes)
     # times, relative, cycles = get_surrogate_timeprofiling(folder+'SU_rb_starlight_budget_25h.csv')
@@ -114,4 +133,4 @@ if __name__ == '__main__':
     # print('Relative:\n', relative)
     # print('Mean number of cycles:', cycles)
 
-    print(plot_policies('../../surdata/rb_budget_25h/Best_found_solutions.csv'))
+    # print(plot_policies('../../surdata/rb_budget_25h/Best_found_solutions.csv'))
