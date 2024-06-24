@@ -86,14 +86,14 @@ if __name__ == '__main__':
     
     
     # exhaustive run results (main text)
-    # folders = [f'../../surdata/cd_{i}h/' for i in [1,5,10]]
-    # plot_from_exhaustive_multiple(folders)
+    folders = [f'../../surdata/cd_{i}h/' for i in [1,5,10]]
+    plot_from_exhaustive_multiple(folders)
 
     # performance distribution (Supplementary Notes)
-    time = 1
-    folder = f'../../surdata/cd/'
-    distr = get_performance_distribution_per_method(folder)
-    print(distr)
+    # time = 1
+    # folder = f'../../surdata/cd/'
+    # distr = get_performance_distribution_per_method(folder)
+    # print(distr)
 
     # time profiling (Supplementary Notes)
     # print('\n')
