@@ -186,7 +186,7 @@ class Surrogate(Simulation):
     optimize(max_time)
         Conducts the optimization process to find optimal simulation parameters.
     """
-    def __init__(self, sim_wrapper, sim, rng, values, variables, sample_size=5, k=4):
+    def __init__(self, sim_wrapper, sim, rng, values, variables, sample_size=10, k=4):
         super().__init__(sim_wrapper, sim, rng, values, variables)
 
         assert sample_size>=5, f"Sample size must be at least 5 (requirement for 5-fold cross validation)."
@@ -198,10 +198,8 @@ class Surrogate(Simulation):
         self.optimize_time = []
 
         # set multiprocessing
-        self.procs = mp.cpu_count()
+        self.procs = min(mp.cpu_count(), sample_size)
         self.sample_size = sample_size
-        if self.procs > 10:
-            self.procs = 10
 
         # storage target value
         self.y = []

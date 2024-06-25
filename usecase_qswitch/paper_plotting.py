@@ -153,16 +153,15 @@ def plot_exhaustive_per_user(folder):
 if __name__ == '__main__':
 
     # five users at varying distances
-    folders = ['../../surdata/qswitch_30min/']
-    plot_from_exhaustive_multiple(folders)
-
+    # folders = ['../../surdata/qswitch_30min/']
     # plot_from_exhaustive_multiple([f'../../surdata/qswitchtest/'])
+   # plot_exhaustive_per_user(['../../surdata/qswitch_30min/'])
     
 
-    # # # performance distribution (Supplementary Notes)
-    # folder = f'../../surdata/qswitchtest/'
-    # distr = get_performance_distribution_per_method(folder)
-    # print(distr)
+    # performance distribution (Supplementary Notes)
+    folder = f'../../surdata/qswitch_30min/'
+    distr = get_performance_distribution_per_method(folder)
+    print(distr)
 
     # # time profiling (Supplementary Notes)
     # print('\n')
@@ -176,5 +175,3 @@ if __name__ == '__main__':
     # plot progress
     # df = plot_progress(f'../../surdata/qswitch_15min/')
     # print(df.iloc[df.groupby('Method')['objective'].idxmax()][['Method','Trial']])
-
-    plot_exhaustive_per_user(['../../surdata/qswitch_30min/'])

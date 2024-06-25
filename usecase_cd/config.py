@@ -12,7 +12,7 @@ class Config:
     """
     Configuration class for setting up and running simulations with specific parameters.
     """
-    def __init__(self, initial_model_size=5):
+    def __init__(self, evaluation_sample_size=10):
         self.vals = { # define fixed parameters for given simulation function 
             'protocol':'ndsrs', 
             'p_gen': 0.9,  # generation rate
@@ -27,7 +27,7 @@ class Config:
             'M': 10,
             }
         self.sim = simulation.simulation_cd
-        self.initial_model_size = initial_model_size
+        self.evaluation_sample_size = evaluation_sample_size
 
         # parse global params
         parser = argparse.ArgumentParser(description="Import globals")
