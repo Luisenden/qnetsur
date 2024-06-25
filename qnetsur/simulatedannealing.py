@@ -97,8 +97,7 @@ def get_neighbour(sim, x :dict, rng) -> dict:
     return x_n
 
 
-def simulated_annealing(sim, limit, temp :int = 10, beta_schedule :int =
-                         5):
+def simulated_annealing(sim, limit, temp :int = 10, beta_schedule :int =5):
     """Performs the simulated annealing optimization algorithm.
     Detailed parameter descriptions are provided in the function header.
     """
@@ -160,7 +159,6 @@ def simulated_annealing(sim, limit, temp :int = 10, beta_schedule :int =
         current_set = current.copy()
         current_set['objective'] = -current_eval
         current_set['time'] = dt
-        print(current_set)
         sets.append(current_set)
         count += 1 
 

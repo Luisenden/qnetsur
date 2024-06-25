@@ -26,7 +26,7 @@ if __name__ == '__main__':
         x = sim.get_random_x(1)
         eval = sim.run_sim(x)
         evalset = x.copy()
-        evalset['objective'], evalset['std'], evalset['raw'] = eval
+        evalset['objective'] = np.sum(eval[0])
         evals.append(evalset)
 
         times_tracked.append(time.time()-start)
