@@ -198,7 +198,7 @@ class Surrogate(Simulation):
         self.optimize_time = []
 
         # set multiprocessing
-        self.procs = mp.cpu_count()
+        self.procs = min(mp.cpu_count(),ntop)
         print('Available processors for parallel execution: ', self.procs)
         self.init_size = initial_training_size
         self.ntop = ntop
