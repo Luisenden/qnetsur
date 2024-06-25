@@ -1,7 +1,5 @@
 from ax.service.ax_client import AxClient
 from ax.utils.measurement.synthetic_functions import branin
-import matplotlib.pyplot as plt
-
 
 ax_client = AxClient()
 ax_client.create_experiment(

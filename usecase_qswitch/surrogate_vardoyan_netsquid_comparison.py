@@ -48,12 +48,8 @@ def run(server_distance):
 
         Parameters
         ----------
-        max_optimize_time : float
-        The maximum amount of time allowed for each optimization process.
-        vals : dict
-        A dictionary of initial values and parameters to be passed to the simulation function.
-        path : str
-        The directory path where the results of the optimizations will be saved as a pickle file.
+        server_distance : float
+        The distance of the server node to the switch node in km.
 
         Returns
         -------
@@ -64,7 +60,7 @@ def run(server_distance):
         result = {'server_distance':[], 'Utility': [], 'Utility_std':[], 'Rate':[], 'Rate_std':[], 'Fidelity':[], 'Fidelity_std':[]}
         best_params = []
         vals['distances'] = [server_distance, 2, 2]
-        sim = Surrogate(conf.simobjective, conf.sim, values=vals, variables=vars, sample_size=conf.evaluation_sample_size, rng=conf.rng)
+        sim = Surrogate(conf.simobjective, conf.sim, values=vals, variables=vars, initial_training_size=10, ntop=10, rng=conf.rng)
         sim.optimize(limit=limit, verbose=True)
 
         get_results(result, best_params, sim)
@@ -90,7 +86,7 @@ if __name__ == '__main__':
         conf = Config()
         limit = conf.args.time
         limit_kind = 'hours' if isinstance(limit, float) else 'cycles'
-        storage_path = conf.args.folder+f'SU_{conf.name}_{limit}{limit_kind}_distance{args.serverdist}_SEED{conf.args.seed}_'\
+        storage_path = conf.args.folder+f'Vardoyan_comparison_{conf.name}_{limit}{limit_kind}_distance{args.serverdist}_SEED{conf.args.seed}_'\
                   +datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.csv'
 
         vals = {  # define fixed parameters for given simulation function

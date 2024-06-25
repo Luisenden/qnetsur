@@ -8,8 +8,6 @@ import matplotlib.pyplot as plt
 import netsquid as ns
 from netsquid.qubits import ketstates as ks
 import netsquid.qubits.qubitapi as qapi
-import inspect
-import netsquid.qubits.qstate as qstate
 import netsquid.qubits.operators as ops
 
 ns.set_qstate_formalism(ns.QFormalism.DM)  
