@@ -47,7 +47,7 @@ def get_component(node: "Node", component_type: str):
 
     raise ValueError("No component of type {} on node {}".format(component_type, node.name))
 
-def set_parameters(cavity:int, network_topo):
+def set_parameters(network_topo):
 
     routers = network_topo.get_nodes_by_type(RouterNetTopo.QUANTUM_ROUTER)
     bsm_nodes = network_topo.get_nodes_by_type(RouterNetTopo.BSM_NODE)
@@ -149,7 +149,7 @@ def run(network_topo,n):
     return df
 
 
-def simulation_rb(network_config_file, cavity, total_time, N, mem_size, seed=42):
+def simulation_rb(network_config_file, total_time, N, mem_size, seed=42):
     
     results = []
     proc = mp.current_process().ident
@@ -158,7 +158,7 @@ def simulation_rb(network_config_file, cavity, total_time, N, mem_size, seed=42)
         update_memory_config(network_config_file, mem_size, total_time, seed=seed+n)
         network_topo = RouterNetTopo(str(proc)+'.json')
         nodes = network_topo.get_nodes_by_type(RouterNetTopo.QUANTUM_ROUTER)
-        set_parameters(cavity=cavity, network_topo=network_topo)
+        set_parameters(network_topo=network_topo)
         res = np.zeros(len(nodes))
         try: # if simulation cannot run with current parameters zero requests are completed
             df = run(network_topo, seed+n)

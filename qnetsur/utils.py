@@ -138,8 +138,8 @@ class Surrogate(Simulation):
         The actual simulation function to be optimized.
     values : dict
         Fixed parameters for the simulation, passed to every simulation run.
-    sample_size : int
-        The number of samples to use for the initial surrogate model training.
+    initial_training_size : int
+        The number of points to use for the initial surrogate model training.
     variables : dict, optional
         Variable parameters for the simulation that can be optimized.
     k : int, optional
@@ -186,10 +186,10 @@ class Surrogate(Simulation):
     optimize(max_time)
         Conducts the optimization process to find optimal simulation parameters.
     """
-    def __init__(self, sim_wrapper, sim, rng, values, variables, sample_size=10, k=4):
+    def __init__(self, sim_wrapper, sim, rng, values, variables, initial_training_size, ntop, k=4):
         super().__init__(sim_wrapper, sim, rng, values, variables)
 
-        assert sample_size>=5, f"Sample size must be at least 5 (requirement for 5-fold cross validation)."
+        assert initial_training_size>=5, f"Sample size must be at least 5 (requirement for 5-fold cross validation)."
 
         # storage for time profiling
         self.sim_time = []
@@ -198,8 +198,10 @@ class Surrogate(Simulation):
         self.optimize_time = []
 
         # set multiprocessing
-        self.procs = min(mp.cpu_count(), sample_size)
-        self.sample_size = sample_size
+        self.procs = mp.cpu_count()
+        print('Available processors for parallel execution: ', self.procs)
+        self.init_size = initial_training_size
+        self.ntop = ntop
 
         # storage target value
         self.y = []
@@ -270,7 +272,7 @@ class Surrogate(Simulation):
         start = time.time()
         y_obj_vec = np.sum(self.y, axis=1)
         newx = []
-        top_selection = self.X_df.iloc[np.argsort(y_obj_vec)[-self.sample_size:]]  # select top n candidates
+        top_selection = self.X_df.iloc[np.argsort(y_obj_vec)[-self.ntop:]]  # select top n candidates
         for x in top_selection.iloc:  # get most promising neighbour according to surrogate
             neighbour = self.get_neighbour(x=x.to_dict())
             newx.append(neighbour)
@@ -358,7 +360,7 @@ class Surrogate(Simulation):
         
         # generate initial training set X
         start = time.time()
-        X = self.get_random_x(self.sample_size)
+        X = self.get_random_x(self.init_size)
         self.X_df = pd.DataFrame(X).astype(object)
         self.build_time.append(time.time() - start)
 

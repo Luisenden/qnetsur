@@ -19,8 +19,8 @@ class Config:
     """
     Configuration class for setting up and running simulations with specific parameters.
     """
-    def __init__(self, initial_model_size=5):
-        self.initial_model_size = initial_model_size
+    def __init__(self, evaluation_sample_size=10):
+        self.evaluation_sample_size = evaluation_sample_size
         self.name = 'qswitch'
         self.sim = simulation.simulation_qswitch
 

@@ -64,7 +64,7 @@ def run(server_distance):
         result = {'server_distance':[], 'Utility': [], 'Utility_std':[], 'Rate':[], 'Rate_std':[], 'Fidelity':[], 'Fidelity_std':[]}
         best_params = []
         vals['distances'] = [server_distance, 2, 2]
-        sim = Surrogate(conf.simobjective, conf.sim, values=vals, variables=vars, sample_size=conf.initial_model_size, rng=conf.rng)
+        sim = Surrogate(conf.simobjective, conf.sim, values=vals, variables=vars, sample_size=conf.evaluation_sample_size, rng=conf.rng)
         sim.optimize(limit=limit, verbose=True)
 
         get_results(result, best_params, sim)

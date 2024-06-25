@@ -91,16 +91,16 @@ if __name__ == '__main__':
 
     # performance distribution (Supplementary Notes)
     time = 1
-    folder = f'../../surdata/cd_{time}h/'
-    # distr = get_performance_distribution_per_method(folder)
-    # print(distr)
+    folder = f'../../surdata/cd_{10}h/'
+    distr = get_performance_distribution_per_method(folder)
+    print(distr)
 
     # time profiling (Supplementary Notes)
-    print('\n')
-    times, relative, cycles = get_surrogate_timeprofiling(folder)
-    print('Overall:\n', times)
-    print('\n')
-    print('Relative:\n', relative)
-    print('\n')
-    print('Mean number of cycles:', cycles)
+    # print('\n')
+    # times, relative, cycles = get_surrogate_timeprofiling(folder)
+    # print('Overall:\n', times)
+    # print('\n')
+    # print('Relative:\n', relative)
+    # print('\n')
+    # print('Mean number of cycles:', cycles)
 

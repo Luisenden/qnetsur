@@ -19,7 +19,7 @@ if __name__ == '__main__':
 
         # instatiate surrogate model
         sim = Surrogate(conf.simobjective, conf.sim, rng=conf.rng, values=conf.vals,\
-                        variables=conf.vars, sample_size=conf.evaluation_sample_size)
+                        variables=conf.vars, sample_size=conf.ntop)
         
         # run optimization
         sim.optimize(limit=limit, isscore=conf.args.score , verbose=True, issequential=False)
