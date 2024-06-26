@@ -13,7 +13,7 @@ if __name__ == '__main__':
     conf = Config()
     limit = conf.args.time
     path = conf.args.folder+f'RS_{conf.name}_{limit}hours_SEED{conf.args.seed}_'\
-                  +datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl'
+                  +datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.csv'
     evals = [] # storage for results
     times_tracked = []
     time_tracker = 0
@@ -35,4 +35,4 @@ if __name__ == '__main__':
         delta = np.mean(times_tracked)
     
     randomsearch = pd.DataFrame.from_records(evals)
-    randomsearch.to_pickle(path)
+    randomsearch.to_csv(path)

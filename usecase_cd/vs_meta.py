@@ -18,7 +18,7 @@ if __name__ == '__main__':
     conf = Config()
     limit = conf.args.time
     path = conf.args.folder+f'AX_{conf.name}_{limit}hours_SEED{conf.args.seed}_'\
-                  +datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.pkl'
+                  +datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.csv'
 
     objectives = dict()
     objectives["objective"] = ObjectiveProperties(minimize=False)
@@ -44,6 +44,6 @@ if __name__ == '__main__':
         delta = np.mean(times_tracked)
 
         df = ax_client.get_trials_data_frame()
-    df.to_pickle(path)
+    df.to_csv(path)
 
 
