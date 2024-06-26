@@ -20,11 +20,11 @@ class Config:
             'return_data':'avg', 
             'progress_bar': None,
             'total_time': 1000,
-            'N_samples' : 20,
+            'N_samples' : 1000,
             'p_cons': 0.9/4,  # consumption rate
             'qbits_per_channel': 5,
             'cutoff': 28,
-            'M': 10,
+            'M': 2,
             }
         self.sim = simulation.simulation_cd
         self.ntop = ntop # number of top configurations used to find promising neighbors
