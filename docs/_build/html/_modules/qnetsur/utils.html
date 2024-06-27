@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qnetsur.utils &mdash; qnetsur 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=d45e8c67"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            qnetsur
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">qnetsur</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">qnetsur</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qnetsur.utils</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qnetsur.utils</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Central script containing objects for surrogate optimization and helper functions.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">truncnorm</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
+<span class="kn">import</span> <span class="nn">multiprocessing</span> <span class="k">as</span> <span class="nn">mp</span>
+
+<span class="kn">from</span> <span class="nn">sklearn.model_selection</span> <span class="kn">import</span> <span class="n">cross_val_score</span>
+<span class="kn">from</span> <span class="nn">sklearn.svm</span> <span class="kn">import</span> <span class="n">SVR</span>
+<span class="kn">from</span> <span class="nn">sklearn.tree</span> <span class="kn">import</span> <span class="n">DecisionTreeRegressor</span>
+<span class="kn">from</span> <span class="nn">sklearn.multioutput</span> <span class="kn">import</span> <span class="n">MultiOutputRegressor</span>
+<span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="kn">import</span> <span class="n">mean_absolute_error</span><span class="p">,</span> <span class="n">make_scorer</span>
+
+<div class="viewcode-block" id="Simulation">
+<a class="viewcode-back" href="../../qnetsur.html#qnetsur.utils.Simulation">[docs]</a>
+<span class="k">class</span> <span class="nc">Simulation</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Object to run quantum network simulations. </span>
+<span class="sd">    It allows for the specification of both fixed and variable simulation parameters, </span>
+<span class="sd">    supports the generation of random parameter sets, and facilitates the running of simulations </span>
+<span class="sd">    through a user-defined simulation function.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sim_wrapper : function</span>
+<span class="sd">        The wrapper function that preprocesses simulation</span>
+<span class="sd">        parameters before execution and adapts outputs according to needs of use case.</span>
+<span class="sd">    sim : function</span>
+<span class="sd">        The actual simulation function to be executed.</span>
+<span class="sd">    rng : class</span>
+<span class="sd">        Random number generator object to be used.</span>
+<span class="sd">    values : dict</span>
+<span class="sd">        Fixed parameters for the simulation.</span>
+<span class="sd">    variables : dict, optional</span>
+<span class="sd">        Variable parameters for the simulation, allowing for dynamic adjustments.</span>
+
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    run_sim(x, vals=None)</span>
+<span class="sd">        Executes a single simulation run with the given parameters.</span>
+<span class="sd">    run_exhaustive(x, N=10, seed=42)</span>
+<span class="sd">        Executes `N` simulations in parallel.</span>
+<span class="sd">    get_random_x(n)</span>
+<span class="sd">        Generates `n` sets of random parameters based on the</span>
+<span class="sd">        specified variable parameters.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim_wrapper</span><span class="p">,</span> <span class="n">sim</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">variables</span><span class="p">):</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">rng</span> <span class="o">=</span> <span class="n">rng</span>
+        <span class="c1"># specify fixed parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vals</span> <span class="o">=</span> <span class="n">values</span>
+        <span class="c1"># specify variable parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vars</span> <span class="o">=</span> <span class="n">variables</span>
+
+        <span class="c1"># simulation function handler</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sim_wrapper</span> <span class="o">=</span> <span class="n">sim_wrapper</span>
+        <span class="c1"># simulation function</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sim</span> <span class="o">=</span> <span class="n">sim</span>
+
+<div class="viewcode-block" id="Simulation.run_sim">
+<a class="viewcode-back" href="../../qnetsur.html#qnetsur.utils.Simulation.run_sim">[docs]</a>
+    <span class="k">def</span> <span class="nf">run_sim</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span> <span class="p">:</span><span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Runs the quantum network simulation with the provided parameters.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            x (dict): Parameters for the simulation.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: Results of the simulation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">xrun</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">vals</span><span class="p">,</span> <span class="o">**</span><span class="n">x</span><span class="p">}</span> 
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim_wrapper</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="p">,</span> <span class="n">xrun</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">res</span></div>
+
+
+<div class="viewcode-block" id="Simulation.run_exhaustive">
+<a class="viewcode-back" href="../../qnetsur.html#qnetsur.utils.Simulation.run_exhaustive">[docs]</a>
+    <span class="k">def</span> <span class="nf">run_exhaustive</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span> <span class="p">:</span><span class="nb">dict</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Runs the quantum network simulation with the provided parameters N times in parallel.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">xrun</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">x</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">vals</span><span class="p">}</span>
+        <span class="n">task</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim_wrapper</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">mp</span><span class="o">.</span><span class="n">Pool</span><span class="p">(</span><span class="n">processes</span><span class="o">=</span><span class="n">N</span><span class="p">)</span> <span class="k">as</span> <span class="n">pool</span><span class="p">:</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">pool</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">task</span><span class="p">,</span> <span class="p">[{</span><span class="o">**</span><span class="n">xrun</span><span class="p">,</span> <span class="o">**</span><span class="p">{</span><span class="s1">&#39;seed&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">seed</span><span class="p">}}</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)])</span>
+            <span class="n">pool</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="n">pool</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">res</span></div>
+
+
+<div class="viewcode-block" id="Simulation.get_random_x">
+<a class="viewcode-back" href="../../qnetsur.html#qnetsur.utils.Simulation.get_random_x">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_random_x</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span> <span class="p">:</span><span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generates random parameters for the simulation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">vars</span><span class="p">[</span><span class="s1">&#39;range&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">())</span> <span class="ow">and</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span>\
+            <span class="sa">f</span><span class="s2">&quot;Dimension types must be a tuple (sample-list, dataype) and n must be greater zero.&quot;</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">dim</span><span class="p">,</span> <span class="n">par</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">vars</span><span class="p">[</span><span class="s1">&#39;range&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">vals</span> <span class="o">=</span> <span class="n">par</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">par</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;int&#39;</span><span class="p">:</span>
+                    <span class="n">x</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">integers</span><span class="p">(</span><span class="n">vals</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">vals</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">n</span><span class="p">)</span> <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">1</span>\
+                        <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">integers</span><span class="p">(</span><span class="n">vals</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">vals</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="k">elif</span> <span class="n">par</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;float&#39;</span><span class="p">:</span>
+                    <span class="n">x</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">vals</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">vals</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">n</span><span class="p">)</span> <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">1</span>\
+                        <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">vals</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">vals</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Datatype must be &quot;int&quot; or &quot;float&quot;.&#39;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">dim</span><span class="p">,</span> <span class="n">vals</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">vars</span><span class="p">[</span><span class="s1">&#39;ordinal&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">x</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">vals</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n</span><span class="p">)</span> <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">1</span>\
+                    <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span>
+                    
+        <span class="k">for</span> <span class="n">dim</span><span class="p">,</span> <span class="n">vals</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">vars</span><span class="p">[</span><span class="s1">&#39;choice&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">x</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">vals</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span> <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">1</span>\
+                    <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span>       
+
+        <span class="k">return</span> <span class="n">x</span></div>
+</div>
+
+    
+<div class="viewcode-block" id="Surrogate">
+<a class="viewcode-back" href="../../qnetsur.html#qnetsur.utils.Surrogate">[docs]</a>
+<span class="k">class</span> <span class="nc">Surrogate</span><span class="p">(</span><span class="n">Simulation</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Initializes the Surrogate model with a simulation wrapper,</span>
+<span class="sd">    the actual simulation function, </span>
+<span class="sd">    and a set of fixed and variable parameters. It sets up the </span>
+<span class="sd">    environment for running surrogate model-based optimizations, </span>
+<span class="sd">    including the multiprocessing setup for parallel simulations.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sim_wrapper : function</span>
+<span class="sd">        A function that wraps around the actual simulation to </span>
+<span class="sd">        perform pre-processing of simulation parameters.</span>
+<span class="sd">    sim : function</span>
+<span class="sd">        The actual simulation function to be optimized.</span>
+<span class="sd">    initial_training_size : int</span>
+<span class="sd">        The number of configurations to use for the initial surrogate model training.</span>
+<span class="sd">    ntop : int</span>
+<span class="sd">        The number of configurations to use in acquisition process</span>
+<span class="sd">    degree : int, optional</span>
+<span class="sd">        Exponent in acquisition transition function (exploitation degree).</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    X : dict</span>
+<span class="sd">        Training set parameters.</span>
+<span class="sd">    X_df : pandas.DataFrame</span>
+<span class="sd">        DataFrame version of `X` for easier manipulation and model training.</span>
+<span class="sd">    y : list</span>
+<span class="sd">        Simulation results corresponding to each set of parameters in `X`.</span>
+<span class="sd">    y_std : list</span>
+<span class="sd">        Standard deviation of simulation results,</span>
+<span class="sd">        providing insight into result variability.</span>
+<span class="sd">    model : class</span>
+<span class="sd">        Regression model used for surrogate modeling. </span>
+<span class="sd">        Default is SVR (Support Vector Regression) from scikit-learn.</span>
+<span class="sd">    mmodel : class</span>
+<span class="sd">        Multi-output wrapper for the regression model,</span>
+<span class="sd">        allowing it to output multiple predictions.</span>
+<span class="sd">    mmodel_std : class</span>
+<span class="sd">        Separate multi-output model for predicting the</span>
+<span class="sd">        standard deviation of simulation results.</span>
+<span class="sd">    build_time : list</span>
+<span class="sd">        Time taken to build or update the surrogate model.</span>
+<span class="sd">    sim_time : list</span>
+<span class="sd">        Time taken for simulation runs.</span>
+<span class="sd">    optimize_time : list</span>
+<span class="sd">        Time taken for optimization processes.</span>
+<span class="sd">    procs : int</span>
+<span class="sd">        Number of processes to use for parallel simulations,</span>
+<span class="sd">        based on CPU count.</span>
+
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    get_neighbour(max_time, current_time, x)</span>
+<span class="sd">        Generates a neighbouring set of parameters based on current optimization state.</span>
+<span class="sd">    acquisition(max_T, current_t)</span>
+<span class="sd">        Selects new parameters for evaluation by balancing exploration and exploitation.</span>
+<span class="sd">    update()</span>
+<span class="sd">        Updates the surrogate model with new data points collected from simulation runs.</span>
+<span class="sd">    optimize(max_T)</span>
+<span class="sd">        Conducts the optimization process to find optimal simulation parameters.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim_wrapper</span><span class="p">,</span> <span class="n">sim</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">initial_training_size</span><span class="p">,</span> <span class="n">ntop</span><span class="p">,</span> <span class="n">degree</span><span class="o">=</span><span class="mi">4</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">sim_wrapper</span><span class="p">,</span> <span class="n">sim</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">variables</span><span class="p">)</span>
+
+        <span class="k">assert</span> <span class="n">initial_training_size</span><span class="o">&gt;=</span><span class="mi">5</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Sample size must be at least 5 (requirement for 5-fold cross validation).&quot;</span>
+
+        <span class="c1"># storage for time profiling</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sim_time</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">build_time</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">acquisition_time</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optimize_time</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># set multiprocessing</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">procs</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">mp</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">(),</span><span class="n">ntop</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Available processors for parallel execution: &#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">procs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init_size</span> <span class="o">=</span> <span class="n">initial_training_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ntop</span> <span class="o">=</span> <span class="n">ntop</span>
+
+        <span class="c1"># storage target value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">y_std</span> <span class="o">=</span> <span class="p">[]</span>
+    
+        <span class="c1"># storage raw values</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">y_raw</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># storage model declaration</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">SVR</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_scores</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;SVR&#39;</span><span class="p">:</span> <span class="p">[],</span> <span class="s1">&#39;DecisionTree&#39;</span><span class="p">:</span> <span class="p">[]}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">degree</span> <span class="o">=</span> <span class="n">degree</span>  <span class="c1"># coefficient in neighbour selection</span>
+
+<div class="viewcode-block" id="Surrogate.get_neighbour">
+<a class="viewcode-back" href="../../qnetsur.html#qnetsur.utils.Surrogate.get_neighbour">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_neighbour</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span> <span class="p">:</span><span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generates most promising parameters in limited neighbouring region </span>
+<span class="sd">        according to current knowledge of surrogate model and depending on the time left.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">x_n</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">isscore</span><span class="p">:</span>
+             <span class="n">f_svr</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_scores</span><span class="p">[</span><span class="s1">&#39;SVR&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">model_scores</span><span class="p">[</span><span class="s1">&#39;SVR&#39;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">model_scores</span><span class="p">[</span><span class="s1">&#39;SVR&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">degree</span>
+             <span class="n">f_tree</span>  <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_scores</span><span class="p">[</span><span class="s1">&#39;DecisionTree&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">model_scores</span><span class="p">[</span><span class="s1">&#39;DecisionTree&#39;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">model_scores</span><span class="p">[</span><span class="s1">&#39;DecisionTree&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">degree</span>
+             <span class="n">f</span> <span class="o">=</span> <span class="n">f_svr</span> <span class="k">if</span> <span class="n">f_svr</span> <span class="o">&lt;</span> <span class="n">f_tree</span> <span class="k">else</span> <span class="n">f_tree</span>
+             <span class="n">size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="mi">1</span><span class="o">-</span><span class="n">f</span><span class="p">)</span><span class="o">*</span><span class="mi">10000</span> <span class="o">+</span> <span class="mi">10</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">current_time_counter</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">limit</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">degree</span>
+            <span class="n">size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_time_counter</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">limit</span><span class="o">*</span><span class="mi">10000</span> <span class="o">+</span> <span class="mi">10</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">dim</span><span class="p">,</span> <span class="n">par</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">vars</span><span class="p">[</span><span class="s1">&#39;range&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">vals</span> <span class="o">=</span> <span class="n">par</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">par</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;int&#39;</span><span class="p">:</span>
+                    <span class="n">std</span> <span class="o">=</span> <span class="n">f</span> <span class="o">*</span> <span class="p">(</span><span class="n">vals</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">vals</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">/</span><span class="mi">2</span>
+                    <span class="n">x_n</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="n">truncnorm</span><span class="o">.</span><span class="n">rvs</span><span class="p">((</span><span class="n">vals</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">x</span><span class="p">[</span><span class="n">dim</span><span class="p">])</span> <span class="o">/</span> <span class="n">std</span><span class="p">,</span> <span class="p">(</span><span class="n">vals</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">x</span><span class="p">[</span><span class="n">dim</span><span class="p">])</span> <span class="o">/</span> <span class="n">std</span><span class="p">,</span>
+                                             <span class="n">loc</span><span class="o">=</span><span class="n">x</span><span class="p">[</span><span class="n">dim</span><span class="p">],</span> <span class="n">scale</span><span class="o">=</span><span class="n">std</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">par</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;float&#39;</span><span class="p">:</span>
+                    <span class="n">std</span> <span class="o">=</span> <span class="n">f</span> <span class="o">*</span> <span class="p">(</span><span class="n">vals</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">vals</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">/</span><span class="mi">2</span>
+                    <span class="n">x_n</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="n">truncnorm</span><span class="o">.</span><span class="n">rvs</span><span class="p">((</span><span class="n">vals</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">x</span><span class="p">[</span><span class="n">dim</span><span class="p">])</span> <span class="o">/</span> <span class="n">std</span><span class="p">,</span> <span class="p">(</span><span class="n">vals</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">x</span><span class="p">[</span><span class="n">dim</span><span class="p">])</span> <span class="o">/</span> <span class="n">std</span><span class="p">,</span>
+                                             <span class="n">loc</span><span class="o">=</span><span class="n">x</span><span class="p">[</span><span class="n">dim</span><span class="p">],</span> <span class="n">scale</span><span class="o">=</span><span class="n">std</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">)</span> 
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Datatype must be &quot;int&quot; or &quot;float&quot;.&#39;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">dim</span><span class="p">,</span> <span class="n">vals</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">vars</span><span class="p">[</span><span class="s1">&#39;ordinal&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">pos</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span>  <span class="c1"># current position</span>
+                <span class="n">loc</span> <span class="o">=</span> <span class="n">vals</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span>  <span class="c1"># corresponding location between 0 and 1</span>
+                <span class="n">pval</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">vals</span><span class="p">))</span>
+                <span class="n">std</span> <span class="o">=</span> <span class="n">f</span><span class="o">/</span><span class="mi">2</span>
+                <span class="n">probs</span> <span class="o">=</span> <span class="n">truncnorm</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="n">pval</span><span class="p">,</span>
+                                      <span class="p">(</span><span class="mi">0</span><span class="o">-</span><span class="n">loc</span><span class="p">)</span><span class="o">/</span><span class="n">std</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">loc</span><span class="p">)</span><span class="o">/</span><span class="n">std</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">std</span><span class="p">,</span>
+                                      <span class="n">loc</span><span class="o">=</span><span class="n">loc</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">)</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>  <span class="c1"># corresponding weights</span>
+                <span class="n">probs</span> <span class="o">/=</span> <span class="n">probs</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>  <span class="c1"># normalize probabilities</span>
+                <span class="n">x_n</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">vals</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">size</span> <span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">probs</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">dim</span><span class="p">,</span> <span class="n">vals</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">vars</span><span class="p">[</span><span class="s1">&#39;choice&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">x_n</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">vals</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+
+        <span class="c1"># select best prediction as next neighbour</span>
+        <span class="n">samples_x</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">x_n</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">object</span><span class="p">)</span>
+        <span class="n">samples_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mmodel</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">samples_x</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+        <span class="n">fittest_neighbour_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">samples_y</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">x_fittest</span> <span class="o">=</span> <span class="n">samples_x</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">fittest_neighbour_index</span><span class="p">]</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">x_fittest</span></div>
+
+
+<div class="viewcode-block" id="Surrogate.acquisition">
+<a class="viewcode-back" href="../../qnetsur.html#qnetsur.utils.Surrogate.acquisition">[docs]</a>
+    <span class="k">def</span> <span class="nf">acquisition</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Computes n new data points according to estimated improvement </span>
+<span class="sd">        and degree of exploration and adds the data to the training sample.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="n">y_obj_vec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">newx</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">top_selection</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">X_df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">y_obj_vec</span><span class="p">)[</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">ntop</span><span class="p">:]]</span>  <span class="c1"># select top n candidates</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">top_selection</span><span class="o">.</span><span class="n">iloc</span><span class="p">:</span>  <span class="c1"># get most promising neighbour according to surrogate</span>
+            <span class="n">neighbour</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_neighbour</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span>
+            <span class="n">newx</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">neighbour</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">X_df_add</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="o">.</span><span class="n">from_records</span><span class="p">(</span><span class="n">newx</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">object</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">acquisition_time</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">start</span><span class="p">)</span>      </div>
+
+
+
+<div class="viewcode-block" id="Surrogate.run_multiple_and_add_target_values">
+<a class="viewcode-back" href="../../qnetsur.html#qnetsur.utils.Surrogate.run_multiple_and_add_target_values">[docs]</a>
+    <span class="k">def</span> <span class="nf">run_multiple_and_add_target_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">issequential</span><span class="p">:</span>
+            <span class="n">y_temp</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">X</span><span class="p">:</span>
+                <span class="n">y_temp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">run_sim</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">mp</span><span class="o">.</span><span class="n">Pool</span><span class="p">(</span><span class="n">processes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">procs</span><span class="p">)</span> <span class="k">as</span> <span class="n">pool</span><span class="p">:</span>
+                <span class="n">y_temp</span> <span class="o">=</span> <span class="n">pool</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">run_sim</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
+                <span class="n">pool</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                <span class="n">pool</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sim_time</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span>  <span class="c1"># measure simulation time</span>
+
+        <span class="c1"># add new data</span>
+        <span class="k">for</span> <span class="n">y_i</span> <span class="ow">in</span> <span class="n">y_temp</span><span class="p">:</span>
+            <span class="n">yi</span><span class="p">,</span> <span class="n">yi_std</span><span class="p">,</span> <span class="o">*</span><span class="n">yi_raw</span> <span class="o">=</span> <span class="n">y_i</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">yi</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">y_std</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">yi_std</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">y_raw</span> <span class="o">+=</span> <span class="n">yi_raw</span></div>
+
+    
+
+<div class="viewcode-block" id="Surrogate.train_models">
+<a class="viewcode-back" href="../../qnetsur.html#qnetsur.utils.Surrogate.train_models">[docs]</a>
+    <span class="k">def</span> <span class="nf">train_models</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Trains the machine lerning models on current data set</span>
+<span class="sd">        and chooses the one with smaller error to use for prediction.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># train/update surrogate models</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="n">current_min</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>  <span class="c1"># nan value handling</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan_to_num</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nan</span><span class="o">=</span><span class="n">current_min</span><span class="p">,</span>
+                               <span class="n">posinf</span><span class="o">=</span><span class="n">current_min</span><span class="p">,</span> <span class="n">neginf</span><span class="o">=</span><span class="n">current_min</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">y_std</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan_to_num</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y_std</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nan</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">posinf</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">neginf</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="n">score_svr</span> <span class="o">=</span> <span class="n">cross_val_score</span><span class="p">(</span><span class="n">MultiOutputRegressor</span><span class="p">(</span><span class="n">SVR</span><span class="p">()),</span>  <span class="c1"># get current error of models</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">X_df</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="s1">&#39;Iteration&#39;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">scoring</span><span class="o">=</span><span class="n">make_scorer</span><span class="p">(</span><span class="n">mean_absolute_error</span><span class="p">))</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+        <span class="n">score_tree</span> <span class="o">=</span> <span class="n">cross_val_score</span><span class="p">(</span><span class="n">MultiOutputRegressor</span><span class="p">(</span><span class="n">DecisionTreeRegressor</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">)),</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">X_df</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="s1">&#39;Iteration&#39;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">scoring</span><span class="o">=</span><span class="n">make_scorer</span><span class="p">(</span><span class="n">mean_absolute_error</span><span class="p">))</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">score_svr</span> <span class="o">&lt;</span> <span class="n">score_tree</span><span class="p">:</span>  <span class="c1"># set model that currently performs best (smaller error)</span>
+             <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">SVR</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+             <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">DecisionTreeRegressor</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;MAE: svr = </span><span class="si">{</span><span class="n">score_svr</span><span class="si">}</span><span class="s1"> and tree=</span><span class="si">{</span><span class="n">score_tree</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_scores</span><span class="p">[</span><span class="s1">&#39;SVR&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">score_svr</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_scores</span><span class="p">[</span><span class="s1">&#39;DecisionTree&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">score_tree</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">mmodel</span> <span class="o">=</span> <span class="n">MultiOutputRegressor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mmodel_std</span> <span class="o">=</span> <span class="n">MultiOutputRegressor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">mmodel</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X_df</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="s1">&#39;Iteration&#39;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mmodel_std</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X_df</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="s1">&#39;Iteration&#39;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_std</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">build_time</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">start</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Surrogate.update">
+<a class="viewcode-back" href="../../qnetsur.html#qnetsur.utils.Surrogate.update">[docs]</a>
+    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">counter</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Updates the model with new data. Executes simulation on most promising points found and adds </span>
+<span class="sd">        simulation results to training dataset.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># execute simulation and add target values</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">run_multiple_and_add_target_values</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">X_df_add</span><span class="o">.</span><span class="n">iloc</span><span class="p">)</span>
+
+        <span class="c1"># add parameter set</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">X_df_add</span><span class="p">[</span><span class="s1">&#39;Iteration&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">counter</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">X_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">X_df</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">X_df_add</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># train models</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">train_models</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="Surrogate.gen_initial_set">
+<a class="viewcode-back" href="../../qnetsur.html#qnetsur.utils.Surrogate.gen_initial_set">[docs]</a>
+    <span class="k">def</span> <span class="nf">gen_initial_set</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generates the initial training set.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Start optimization ...&quot;</span><span class="p">)</span>
+        <span class="n">optimize_start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        
+        <span class="c1"># generate initial training set X</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_random_x</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">init_size</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">X_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">X</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">object</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">build_time</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">run_multiple_and_add_target_values</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">X_df</span><span class="o">.</span><span class="n">iloc</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">X_df</span><span class="p">[</span><span class="s1">&#39;Iteration&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="c1"># train models</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">train_models</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">initial_optimize_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">optimize_start</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optimize_time</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">initial_optimize_time</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">limit</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Iteration 0/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">limit</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="Surrogate.optimize_with_timer">
+<a class="viewcode-back" href="../../qnetsur.html#qnetsur.utils.Surrogate.optimize_with_timer">[docs]</a>
+    <span class="k">def</span> <span class="nf">optimize_with_timer</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Optimization until a set maximum number of seconds.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">current_times</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_time_counter</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_optimize_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">limit</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_optimize_time</span>
+        <span class="n">delta</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">counter</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">while</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_time_counter</span> <span class="o">+</span> <span class="n">delta</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_optimize_time</span><span class="p">:</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">acquisition</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">counter</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">optimize_time</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">start</span><span class="p">)</span>
+            <span class="n">current_times</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">start</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">current_time_counter</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">current_times</span><span class="p">)</span>
+            <span class="n">delta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">current_times</span><span class="p">)</span>
+            <span class="n">counter</span> <span class="o">+=</span><span class="mi">1</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Time left for optimization: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_optimize_time</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">current_time_counter</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">s&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Surrogate.optimize_with_iteration">
+<a class="viewcode-back" href="../../qnetsur.html#qnetsur.utils.Surrogate.optimize_with_iteration">[docs]</a>
+    <span class="k">def</span> <span class="nf">optimize_with_iteration</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Optimization until a set maximum number of iterations.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_time_counter</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_time_counter</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">limit</span><span class="p">:</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">acquisition</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_time_counter</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">optimize_time</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">start</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Iteration </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">current_time_counter</span><span class="si">}</span><span class="s1">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">limit</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">current_time_counter</span> <span class="o">+=</span><span class="mi">1</span></div>
+
+
+
+<div class="viewcode-block" id="Surrogate.optimize">
+<a class="viewcode-back" href="../../qnetsur.html#qnetsur.utils.Surrogate.optimize">[docs]</a>
+    <span class="k">def</span> <span class="nf">optimize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">limit</span><span class="p">,</span> <span class="n">isscore</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">issequential</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Conducts the optimization process to find optimal simulation parameters.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">limit</span> <span class="o">=</span> <span class="n">limit</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">isscore</span> <span class="o">=</span> <span class="n">isscore</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">issequential</span> <span class="o">=</span> <span class="n">issequential</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">limit</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">limit</span> <span class="o">*=</span> <span class="mi">3600</span> <span class="c1"># to seconds</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Optimize with timer. LIMIT: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">limit</span><span class="si">}</span><span class="s1"> seconds.&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gen_initial_set</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">optimize_with_timer</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Optimize with iterator. LIMIT: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">limit</span><span class="si">}</span><span class="s1"> cycles.&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gen_initial_set</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">optimize_with_iteration</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Optimization finished.&#39;</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Luise Prielinger.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

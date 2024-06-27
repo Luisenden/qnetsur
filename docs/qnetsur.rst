@@ -1,5 +1,5 @@
-surrogate utils
----------------
+utils
+-----
 
 .. automodule:: qnetsur.utils
    :noindex:
@@ -15,7 +15,6 @@ datacollector
    :members:
    :undoc-members:
    :show-inheritance:
-
 
 simulatedannealing
 ------------------
