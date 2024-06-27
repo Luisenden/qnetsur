@@ -1,20 +1,3 @@
-"""
-Global optimizing method Simulated Annealing (Kirkpatrick et al., 1983)
-
-Args:
-    sim (Simulation): An instance of the Simulation class that provides methods 
-                      and properties necessary for the simulation environment.
-    limit (float): The maximum time allowed for the optimization process in seconds.
-    temp (int, optional): The initial temperature for the annealing process. Default is 10.
-    beta_schedule (int, optional): The number of iterations for each temperature level. Default is 5.
-    seed (int, optional): The seed for the random number generator to ensure reproducibility. Default is 42.
-
-Returns:
-    list: A list of dictionaries, where each dictionary represents the state of the system at each step
-          of the optimization. Each dictionary contains keys for the parameter values, their corresponding 
-          utility, and the computational time taken for that step.
-"""
-
 import time
 import numpy as np
 from scipy.stats import truncnorm
@@ -97,9 +80,22 @@ def get_neighbour(sim, x :dict, rng) -> dict:
     return x_n
 
 
-def simulated_annealing(sim, limit, temp :int = 10, beta_schedule :int =5):
-    """Performs the simulated annealing optimization algorithm.
-    Detailed parameter descriptions are provided in the function header.
+def simulated_annealing(sim, limit, temp :int = 10, beta_schedule :int =5) -> list:
+    """
+    Global optimizing method Simulated Annealing (Kirkpatrick et al., 1983)
+
+    Args:
+        sim (Simulation): An instance of the Simulation class that provides methods 
+                        and properties necessary for the simulation environment.
+        limit (float): The maximum time allowed for the optimization process in seconds.
+        temp (int, optional): The initial temperature for the annealing process. Default is 10.
+        beta_schedule (int, optional): The number of iterations for each temperature level. Default is 5.
+        seed (int, optional): The seed for the random number generator to ensure reproducibility. Default is 42.
+
+    Returns:
+        list: A list of dictionaries, where each dictionary represents the state of the system at each step
+            of the optimization. Each dictionary contains keys for the parameter values, their corresponding 
+            utility, and the computational time taken for that step.
     """
     start_initial = time.time()
     rng = sim.rng

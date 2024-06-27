@@ -7,7 +7,7 @@ from datetime import datetime
 
 
 from config import Config
-from qnetsur.utils import get_parameters
+from qnetsur.datacollector import get_parameters
 from ax.service.ax_client import AxClient, ObjectiveProperties
 
 def evaluate(parameters) -> float:

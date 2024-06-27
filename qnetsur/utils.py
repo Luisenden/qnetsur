@@ -7,14 +7,6 @@ import time
 import pandas as pd
 from scipy.stats import truncnorm
 from functools import partial
-
-# import torch.multiprocessing as mp
-# from torch.multiprocessing import Pool, set_start_method
-# try:    
-#     set_start_method('spawn')
-# except RuntimeError:
-#      pass
-
 import multiprocessing as mp
 
 from sklearn.model_selection import cross_val_score
@@ -37,16 +29,18 @@ class Simulation:
         parameters before execution and adapts outputs according to needs of use case.
     sim : function
         The actual simulation function to be executed.
-    vals : dict
+    rng : class
+        Random number generator object to be used.
+    values : dict
         Fixed parameters for the simulation.
-    vars : dict, optional
+    variables : dict, optional
         Variable parameters for the simulation, allowing for dynamic adjustments.
 
     Methods
     -------
     run_sim(x, vals=None)
         Executes a single simulation run with the given parameters.
-    run_exhaustive(x, N=10)
+    run_exhaustive(x, N=10, seed=42)
         Executes `N` simulations in parallel.
     get_random_x(n)
         Generates `n` sets of random parameters based on the
@@ -136,12 +130,10 @@ class Surrogate(Simulation):
         perform pre-processing of simulation parameters.
     sim : function
         The actual simulation function to be optimized.
-    values : dict
-        Fixed parameters for the simulation, passed to every simulation run.
     initial_training_size : int
-        The number of points to use for the initial surrogate model training.
-    variables : dict, optional
-        Variable parameters for the simulation that can be optimized.
+        The number of configurations to use for the initial surrogate model training.
+    ntop : int
+        The number of configurations to use in acquisition process
     degree : int, optional
         Exponent in acquisition transition function (exploitation degree).
 
@@ -179,11 +171,11 @@ class Surrogate(Simulation):
     -------
     get_neighbour(max_time, current_time, x)
         Generates a neighbouring set of parameters based on current optimization state.
-    acquisition(max_time, current_time)
+    acquisition(max_T, current_t)
         Selects new parameters for evaluation by balancing exploration and exploitation.
     update()
         Updates the surrogate model with new data points collected from simulation runs.
-    optimize(max_time)
+    optimize(max_T)
         Conducts the optimization process to find optimal simulation parameters.
     """
     def __init__(self, sim_wrapper, sim, rng, values, variables, initial_training_size, ntop, degree=4):
@@ -264,7 +256,7 @@ class Surrogate(Simulation):
         x_fittest = samples_x.iloc[fittest_neighbour_index].to_dict()
         return x_fittest
 
-    def acquisition(self) -> pd.DataFrame:
+    def acquisition(self) -> None:
         """
         Computes n new data points according to estimated improvement 
         and degree of exploration and adds the data to the training sample.
@@ -351,7 +343,7 @@ class Surrogate(Simulation):
         self.train_models()
 
 
-    def gen_initial_set(self):
+    def gen_initial_set(self) -> None:
         """
         Generates the initial training set.
         """
@@ -375,7 +367,7 @@ class Surrogate(Simulation):
         if self.verbose and isinstance(self.limit, int): print(f'Iteration 0/{self.limit}')
 
 
-    def optimize_with_timer(self):
+    def optimize_with_timer(self) -> None:
         """
         Optimization until a set maximum number of seconds.
         """
@@ -398,7 +390,7 @@ class Surrogate(Simulation):
             if self.verbose:
                 print(f'Time left for optimization: {self.max_optimize_time-self.current_time_counter:.2f}s')
 
-    def optimize_with_iteration(self):
+    def optimize_with_iteration(self) -> None:
         """
         Optimization until a set maximum number of iterations.
         """
@@ -432,40 +424,3 @@ class Surrogate(Simulation):
             self.gen_initial_set()
             self.optimize_with_iteration()
         if self.verbose: print('Optimization finished.')
-
-def get_parameters(variables):
-    """
-    Extracts and formats parameters from a dictionary for use in the Ax-platform optimization tool.
-
-    Parameters
-    ----------
-    variables : dict
-        A dictionary where keys correspond to parameter types (e.g., 'range', 'ordinal', 'choice')
-        and values provide the definitions of these parameters.
-
-    Returns
-    -------
-    list
-        A list of parameter definitions formatted for use in optimization routines,
-        with each parameter represented as a dictionary detailing its name,
-        type, and constraints or choices.
-    """
-    parameters = []
-    for k in variables:
-        for key,value in variables[k].items():
-            typ = 'choice' if k == 'ordinal' else k
-            if typ != 'choice':
-                parameters.append(
-                    {
-                    "name": str(key),
-                    "type": typ,
-                    "bounds": value[0],
-                    })
-            else:
-                parameters.append(
-                    {
-                    "name": str(key),
-                    "type": typ,
-                    "values": value,
-                    })
-    return parameters
