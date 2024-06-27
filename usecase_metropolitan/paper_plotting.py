@@ -71,22 +71,43 @@ def plot_from_exhaustive(folder):
 
 def get_performance_distribution_per_method(folder):
     dfs_methods = []
-    mapping = {'Surrogate':'SU',}# 'Meta':'AX', 'Simulated Annealing':'SA',} #'Random Search':'RS'}
+    mapping = {'Surrogate':'SU', 'Meta':'AX', 'Simulated Annealing':'SA','Random Search':'RS'}
     for key, value in mapping.items():
         dfs = []
-        for i,name in enumerate(glob.glob(folder + f'/{value}_*.pkl')): 
-            with open(name,'rb') as file: dfs.append(pd.read_pickle(file))
+        for i,name in enumerate(glob.glob(folder + f'/{value}_*.csv')): 
+            with open(name,'rb') as file: dfs.append(pd.read_csv(file, index_col=0))
             dfs[i]['Trial'] = i
         df = pd.concat(dfs, axis=0).reset_index()
         df['Method'] = key
-        dfs_methods.append(df[['Trial', 'Iteration', 'Method', 'objective']])
+        dfs_methods.append(df[['Trial', 'Method', 'objective']])
 
     df =pd.concat(dfs_methods, axis=0)   
     df['Utility'] = df['objective']
     max_per_trial = df.groupby(['Method', 'Trial'])['Utility'].max()
     distr = max_per_trial.groupby(level='Method').agg(['min', 'max', 'mean', 'std'])
     distr['rel_std'] = distr['std']/distr['mean']
-    return df[df.Trial == 0]
+    return distr
+
+def get_policies(folder):
+
+    policies = []
+    infos = []
+    mapping = {'Surrogate':'SU', 'Meta':'AX', 'Simulated Annealing':'SA','Random Search':'RS'}
+    for key, value in mapping.items():
+        dfs = []
+        for i,name in enumerate(glob.glob(folder + f'/{value}_*.csv')): 
+            with open(name,'rb') as file: dfs.append(pd.read_csv(file, index_col=0))
+            dfs[i]['Trial'] = i
+        df = pd.concat(dfs, axis=0).reset_index()
+        df['Method'] = key
+        df['Aggregated Memories'] = df[df.columns[df.columns.str.contains('mem_size')]].sum(axis=1)
+        best_index = df['objective'].idxmax()
+        infos.append(df.iloc[best_index])
+        policies.append(df.iloc[best_index][df.columns[df.columns.str.contains('mem_size|Method')]])
+    
+    infos = pd.DataFrame.from_records(infos)
+    policies = pd.DataFrame.from_records(policies)
+    return policies, infos
 
 def get_surrogate_timeprofiling(file):
 
@@ -114,14 +135,18 @@ def plot_policies(file):
     return df.to_latex()
 
 if __name__ == '__main__':
-    folder = '../../surdata/rb/'
+    folder = '../../surdata/rb_budget_25h/'
     
     # # best found solutions (Supplementary Notes)
     # best_solutions= pd.read_csv(folder+'Best_found_solutions.csv',index_col=0)
     # print('Best Found Solutions:\n', best_solutions)
     
-    # # exhaustive run results (main text)
-    # plot_from_exhaustive(folder)
+    # exhaustive run results (main text)
+    plot_from_exhaustive(folder)
+
+    pls, infos = get_policies(folder=folder)
+    print(pls)
+    print(infos)
 
     # performance distribution (Supplementary Notes)
     distr = get_performance_distribution_per_method(folder)

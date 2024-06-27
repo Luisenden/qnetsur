@@ -1,11 +1,12 @@
 import pandas as pd
-import pickle
-import glob
-import numpy as np
-import sys
 
 class SurrogateCollector:
-    """Collector designed for surrogate-based optimization results."""
+    """Collector designed for surrogate-based optimization results.
+    
+    Attributes:
+    sim (Simulation): An instance of the Simulation class that provides methods 
+                      and properties necessary for the simulation environment.
+    """
     def __init__(self, sim):
         self.model = sim
         
@@ -33,37 +34,3 @@ class SurrogateCollector:
         self.total = self.model_df.merge(self.timing, left_on='Iteration', right_index=True)
         self.total = self.total.merge(self.ml_model_scores, left_on='Iteration', right_index=True)
         return self.total
-    
-
-# class OtherCollector():
-#     def __init__(self, result):
-#         self.result = result
-
-# class AxCollector(OtherCollector):
-#     """Collector for optimization results from Ax platform."""
-#     def __init__(self, folder):
-#         super().__init__(folder, 'AX_')
-
-#     def get_total(self):
-#         return self.model[0]
-    
-# class SaCollector(ResultCollector):
-#     """Collector for optimization results from Simulated Annealing."""
-#     def __init__(self, folder):
-#         super().__init__(folder, 'SA_')
-
-#     def get_total(self):
-#         print(self.model)
-#         return self.model[0]
-
-
-# class RsCollector(ResultCollector):
-#     """Collector for optimization results from Random Search."""
-#     def __init__(self, folder):
-#         super().__init__(folder, 'RS_')
-
-#     def get_total(self):
-#         self.model = self.model[0]
-#         self.model['objective'] = self.model['objective'].apply(lambda x: sum(x))
-#         self.model['std'] = self.model['std'].apply(lambda x: np.sqrt(sum(x**2)))
-#         return self.model

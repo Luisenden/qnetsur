@@ -7,7 +7,6 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 import glob
-import re
 
 plt.style.use("seaborn-v0_8-paper")
 font = 14
@@ -56,8 +55,8 @@ def get_performance_distribution_per_method(folder):
     mapping = {'Surrogate':'SU', 'Meta':'AX', 'Simulated Annealing':'SA', 'Random Search':'RS'}
     for key, value in mapping.items():
         dfs = []
-        for i,name in enumerate(glob.glob(folder + f'/{value}_*.pkl')): 
-            with open(name,'rb') as file: dfs.append(pd.read_pickle(file))
+        for i,name in enumerate(glob.glob(folder + f'/{value}_*.csv')): 
+            with open(name,'rb') as file: dfs.append(pd.read_csv(file, index_col=0))
             dfs[i]['Trial'] = i
         df = pd.concat(dfs, axis=0).reset_index()
         df['Method'] = key
@@ -73,8 +72,8 @@ def get_performance_distribution_per_method(folder):
 
 def get_surrogate_timeprofiling(folder):
     dfs = []
-    for i,name in enumerate(glob.glob(folder + f'/SU_*.pkl')): 
-        with open(name,'rb') as file: dfs.append(pd.read_pickle(file))
+    for i,name in enumerate(glob.glob(folder + f'/SU_*.csv')): 
+        with open(name,'rb') as file: dfs.append(pd.read_csv(file, index_col=0))
         dfs[i]['Trial'] = i
     df = pd.concat(dfs, axis=0)
     times = df[df.columns[df.columns.astype('str').str.contains('\[s\]|Trial')]]
@@ -86,21 +85,21 @@ if __name__ == '__main__':
     
     
     # exhaustive run results (main text)
-    # folders = [f'../../surdata/cd_{i}h/' for i in [1,5,10]]
-    # plot_from_exhaustive_multiple(folders)
+    folders = [f'../../surdata/cd_{i}h/' for i in [1,5,10]]
+    plot_from_exhaustive_multiple(folders)
 
     # performance distribution (Supplementary Notes)
     time = 1
-    folder = f'../../surdata/cd_{10}h/'
+    folder = f'../../surdata/cd_{5}h/'
     distr = get_performance_distribution_per_method(folder)
     print(distr)
 
-    # time profiling (Supplementary Notes)
-    # print('\n')
-    # times, relative, cycles = get_surrogate_timeprofiling(folder)
-    # print('Overall:\n', times)
-    # print('\n')
-    # print('Relative:\n', relative)
-    # print('\n')
-    # print('Mean number of cycles:', cycles)
+    #time profiling (Supplementary Notes)
+    print('\n')
+    times, relative, cycles = get_surrogate_timeprofiling(folder)
+    print('Overall:\n', times)
+    print('\n')
+    print('Relative:\n', relative)
+    print('\n')
+    print('Mean number of cycles:', cycles)
 

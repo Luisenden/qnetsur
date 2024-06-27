@@ -1,37 +1,57 @@
-# used parameter settings and program function of https://github.com/sequence-toolbox/Chicago-metropolitan-quantum-network/blob/master/sec5.4-two-memory-distribution-policies/run.py
-
-import time
+import glob
+import argparse
 import pandas as pd
-import torch.multiprocessing as mp
+import multiprocessing as mp
+import time
 import sys
-sys.path.append('../')
-sys.path.append('../src')
-from qnetsur.utils import Simulation
-from simulation import simulation_rb
-from usecase_metropolitan.plottingtools import get_best_parameters, to_dataframe
+from paper_plotting import get_policies
+
 from config import Config
+sys.path.append('../')
+from qnetsur.utils import Simulation
 
 import warnings
 warnings.filterwarnings("ignore")
 
-# parser.add_argument("--method", type=str, default='Surrogate', 
-#                     help="Choose one of the following methods: 'Surrogate', 'Meta', 'Simulated Annealing', 'Random Search', 'Even', 'Wu et. al, 2021'")
-# args, _ = parser.parse_known_args()
-# METHOD = args.method
+def get_solution(folder):
+    dfs = []
+    for i,name in enumerate(glob.glob(folder + f'{mapping[args.method]}*.csv')): 
+        with open(name,'rb') as file: dfs.append(pd.read_csv(file, index_col=0))
+        dfs[i]['Trial'] = i
+    df = pd.concat(dfs, axis=0).reset_index()
+    cols = df.columns[df.columns.astype('str').str.contains('mem_size')]
+    df = df.iloc[df['objective'].idxmax()][cols]
+    return df
+
+def to_dataframe(res):
+    df = pd.DataFrame.from_records(res)
+    df = df[0].apply(pd.Series)
+    df = df.add_prefix('User')
+    df['Aggregated Completed Requests'] = df.sum(axis=1)
+    return df
 
 
 if __name__ == '__main__':
 
-    folder = '../../surdata/rb_budget_25h'
+    parser = argparse.ArgumentParser(description="set method")
+    parser.add_argument("--method", type=str, default='Surrogate', 
+                        help="Choose one of the following methods: 'Surrogate', 'Meta', 'Simulated Annealing', 'Random Search'")
+    parser.add_argument("--hour", type=int, default=1, 
+                    help="Choose folder.")
+    args, _ = parser.parse_known_args()
+    mapping = {'Surrogate':'SU', 'Meta':'AX', 'Simulated Annealing':'SA', 'Random Search':'RS'}
 
-    policies = pd.read_csv(folder+'/Best_found_solutions.csv', index_col=0)
+    folder = '../../surdata/rb/'
+
+    policies, _ = get_policies(folder)
 
     conf = Config()
-    nprocs = mp.cpu_count()
-
-    x = policies.loc["Random Search"].drop(['Total Number of Allocated Memories'])
     conf.vals['N'] = 1
 
+    nprocs = mp.cpu_count()
+
+    x = get_solution(folder)
+    print(x)
     dfs = []
     seed_count = 1
     while True:
@@ -41,16 +61,17 @@ if __name__ == '__main__':
         print(time.time()-start)
 
         df = to_dataframe(res)
-        df['Method'] = 'test'
+        df['Method'] = args.method
 
         dfs.append(df)
 
         seed_count += 1
-        if len(dfs)*nprocs >= 10:
+        if len(dfs)*nprocs >= 50:
             break
     
     df_exhaustive = pd.concat(dfs, axis=0)
     print(df_exhaustive)
+    print(df_exhaustive.mean())
 
 
     # result_folder = f'../../surdata/rb_budget/Results_starlight_compare{METHOD}.csv'

@@ -4,7 +4,7 @@ from datetime import datetime
 import pandas as pd
 
 from config import Config
-from qnetsur.datacollectors import SurrogateCollector
+from qnetsur.datacollector import SurrogateCollector
 from qnetsur.utils import Surrogate
 
 

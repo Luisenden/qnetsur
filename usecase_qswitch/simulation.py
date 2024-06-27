@@ -7,7 +7,7 @@ import pandas as pd
 from netsquid_qswitch.runtools import Scenario, Simulation, SimulationMultiple
 
 
-def simulation_qswitch(nnodes, total_runtime_in_seconds, connect_size, server_node_name, num_positions, 
+def simulation_qswitch(total_runtime_in_seconds, connect_size, server_node_name, num_positions, 
                        buffer_size, bright_state_population, decoherence_rate, beta, loss, T2,
                        include_classical_comm, distances, repetition_times, N, seed=42):
     """

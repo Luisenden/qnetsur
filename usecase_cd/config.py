@@ -20,11 +20,11 @@ class Config:
             'return_data':'avg', 
             'progress_bar': None,
             'total_time': 1000,
-            'N_samples' : 1000,
+            'N_samples' : 100,
             'p_cons': 0.9/4,  # consumption rate
             'qbits_per_channel': 5,
             'cutoff': 28,
-            'M': 2,
+            'M': 10,
             }
         self.sim = simulation.simulation_cd
         self.ntop = ntop # number of top configurations used to find promising neighbors
@@ -45,7 +45,7 @@ class Config:
                             help="If argument is used, the ml score is used in the acquisition process. Type:bool", default=False)
         parser.add_argument("--seed", type=int, default=42,
                             help="Global seed for random number generation for the optimizer. Type: int")
-        parser.add_argument("--folder", type=str, default='../../surdata/cd/',
+        parser.add_argument("--folder", type=str, default='../../surdata/cdtest/',
                             help="Directory to store result data. Type: str")
         self.args, _ = parser.parse_known_args()
 

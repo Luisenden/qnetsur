@@ -34,7 +34,7 @@ class Config:
         parser.add_argument("--score", action='store_true',
                             help="If argument is used, the ml score is used in the acquisition process. Type:bool", default=False)
         parser.add_argument("--seed", type=int, default=42, help="Global seed for random number generation for the optimizer")
-        parser.add_argument("--folder", type=str, default='../../surdata/qswitch_vardoyan/',
+        parser.add_argument("--folder", type=str, default='../../surdata/qswitch/',
                         help="Directory to store result data. Type: str")
         self.args, _ = parser.parse_known_args()
         self.rng = np.random.default_rng(seed=self.args.seed) # set rng for optimization 
@@ -44,8 +44,7 @@ class Config:
             if F > 0.81 else 1e-12  # yield of the so-called “hashing” protocol
     
     def set_default_values(self):
-        self.vals = {  
-            'nnodes': self.args.nleaf,
+        self.vals = { 
             'total_runtime_in_seconds': 5,  # simulation time [s]
             'connect_size': 2,
             'server_node_name': 'leaf_node_0',

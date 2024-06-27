@@ -7,7 +7,6 @@ import seaborn as sns
 import numpy as np
 import matplotlib.pyplot as plt
 import glob
-import re
 
 plt.style.use("seaborn-paper")
 font = 16
@@ -25,32 +24,21 @@ plt.rcParams.update({
 import warnings
 warnings.filterwarnings("ignore")
 
-import sys
-sys.path.append('../')
-sys.path.append('../src')
-
-import warnings
-warnings.filterwarnings("ignore")
-
-def get_exhaustive(folders):
-    dfs_total = []
+def get_exhaustive(folder):
     method_names = ['Surrogate', 'Meta', 'Simulated Annealing', 'Random Search']
-    for i, folder in enumerate(folders):
-        dfs = [None]*4
-        for name in glob.glob(f'{folder}/Results_*.csv'):
-            df_read = pd.read_csv(name, index_col=0)
-            method_index = method_names.index(df_read['Method'].unique())
-            dfs[method_index] = df_read
-        df = pd.concat(dfs, axis=0)
-        df['Time Limit [h]'] = [0.5,3][i]
-        dfs_total.append(df)
-    df_result = pd.concat(dfs_total, axis=0)
-    return df_result
+    dfs = [None]*4
+    for name in glob.glob(f'{folder}/Results_*.csv'):
+        df_read = pd.read_csv(name, index_col=0)
+        method_index = method_names.index(df_read['Method'].unique())
+        dfs[method_index] = df_read
+    df = pd.concat(dfs, axis=0)
+    df['Time Limit [h]'] = 0.5
+    return df
 
 def get_surrogate_timeprofiling(folder):
     dfs = []
-    for i,name in enumerate(glob.glob(folder + f'/SU_*.pkl')): 
-        with open(name,'rb') as file: dfs.append(pd.read_pickle(file))
+    for i,name in enumerate(glob.glob(folder + f'/SU_*.csv')): 
+        with open(name,'rb') as file: dfs.append(pd.read_csv(file, index_col=0))
         dfs[i]['Trial'] = i
     df = pd.concat(dfs, axis=0)
     times = df[df.columns[df.columns.astype('str').str.contains('\[s\]|Trial')]]
@@ -63,8 +51,8 @@ def get_performance_distribution_per_method(folder):
     mapping = {'Surrogate':'SU', 'Meta':'AX', 'Simulated Annealing':'SA', 'Random Search':'RS'}
     for key, value in mapping.items():
         dfs = []
-        for i,name in enumerate(glob.glob(folder + f'/{value}_*.pkl')): 
-            with open(name,'rb') as file: dfs.append(pd.read_pickle(file))
+        for i,name in enumerate(glob.glob(folder + f'/{value}_*.csv')): 
+            with open(name,'rb') as file: dfs.append(pd.read_csv(file))
             dfs[i]['Trial'] = i
         df = pd.concat(dfs, axis=0).reset_index()
         df['Method'] = key
@@ -84,8 +72,8 @@ def plot_progress(folder):
     mapping = {'Surrogate':'SU', 'Meta':'AX', 'Simulated Annealing':'SA', 'Random Search':'RS'}
     for key, value in mapping.items():
         dfs = []
-        for i,name in enumerate(glob.glob(folder + f'/{value}_*.pkl')): 
-            with open(name,'rb') as file: df_raw = pd.read_pickle(file)
+        for i,name in enumerate(glob.glob(folder + f'/{value}_*.csv')): 
+            with open(name,'rb') as file: df_raw = pd.read_csv(file)
             if any(df_raw.columns.str.contains('Iteration')):
                 df_raw = df_raw.merge(df_raw.groupby(['Iteration'])['objective'].max(numeric_only=True), on='Iteration', suffixes=('_x', ''))
                 df_raw = df_raw[['Iteration', 'objective']].drop_duplicates().reset_index()
@@ -112,7 +100,6 @@ def plot_from_exhaustive_multiple(folders):
     df = get_exhaustive(folders)
     markers = ['o', '^', 'v', 's']
     fig, axs = plt.subplots(1,1, figsize=(5,3))
-    #sns.pointplot(data= df, x='Time Limit [h]', y='Utility', hue='Method', ax=axs, errorbar='se', markers=markers, linestyles=['-']*4)
     sns.barplot(data= df, x='Time Limit [h]', y='Utility', hue='Method', ax=axs, errorbar='se')
     plt.ylim([10,11.5])
     plt.ylabel('Aggregated Utility')
@@ -153,25 +140,19 @@ def plot_exhaustive_per_user(folder):
 if __name__ == '__main__':
 
     # five users at varying distances
-    # folders = ['../../surdata/qswitch_30min/']
-    # plot_from_exhaustive_multiple([f'../../surdata/qswitchtest/'])
-   # plot_exhaustive_per_user(['../../surdata/qswitch_30min/'])
+    folder = '../../surdata/qswitch_30min/'
+    plot_from_exhaustive_multiple(folder)
+    plot_exhaustive_per_user(folder)
     
-
     # performance distribution (Supplementary Notes)
-    folder = f'../../surdata/qswitch_30min/'
     distr = get_performance_distribution_per_method(folder)
     print(distr)
 
-    # # time profiling (Supplementary Notes)
-    # print('\n')
-    # times, relative, cycles = get_surrogate_timeprofiling(folder)
-    # print('Overall:\n', times)
-    # print('\n')
-    # print('Relative:\n', relative)
-    # print('\n')
-    # print('Mean number of cycles:', cycles)
-
-    # plot progress
-    # df = plot_progress(f'../../surdata/qswitch_15min/')
-    # print(df.iloc[df.groupby('Method')['objective'].idxmax()][['Method','Trial']])
+    # time profiling (Supplementary Notes)
+    print('\n')
+    times, relative, cycles = get_surrogate_timeprofiling(folder)
+    print('Overall:\n', times)
+    print('\n')
+    print('Relative:\n', relative)
+    print('\n')
+    print('Mean number of cycles:', cycles)

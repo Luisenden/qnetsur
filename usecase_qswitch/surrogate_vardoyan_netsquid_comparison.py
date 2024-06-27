@@ -90,7 +90,6 @@ if __name__ == '__main__':
                   +datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.csv'
 
         vals = {  # define fixed parameters for given simulation function
-            'nnodes': conf.args.nleaf,
             'total_runtime_in_seconds': 5,  # in [s]
             'decoherence_rate': 0,
             'connect_size': 2,

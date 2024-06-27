@@ -2,7 +2,7 @@ from datetime import datetime
 import pandas as pd
 
 from config import Config
-from qnetsur.datacollectors import SurrogateCollector
+from qnetsur.datacollector import SurrogateCollector
 from qnetsur.utils import Surrogate
 
 
@@ -17,7 +17,7 @@ if __name__ == '__main__':
 
         # instatiate surrogate model
         sim = Surrogate(conf.simobjective, conf.sim, rng=conf.rng, values=conf.vals,\
-                        variables=conf.vars, initial_training_size=10, ntop=10, k=6)
+                        variables=conf.vars, initial_training_size=10, ntop=10, degree=6)
         
         # run optimization
         sim.optimize(limit=limit, verbose=True)

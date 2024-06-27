@@ -30,7 +30,7 @@ class Simulation:
     supports the generation of random parameter sets, and facilitates the running of simulations 
     through a user-defined simulation function.
 
-    Attributes
+    Parameters
     ----------
     sim_wrapper : function
         The wrapper function that preprocesses simulation
@@ -142,8 +142,8 @@ class Surrogate(Simulation):
         The number of points to use for the initial surrogate model training.
     variables : dict, optional
         Variable parameters for the simulation that can be optimized.
-    k : int, optional
-        Exponent in acquisition transition function.
+    degree : int, optional
+        Exponent in acquisition transition function (exploitation degree).
 
     Attributes
     ----------
@@ -186,7 +186,7 @@ class Surrogate(Simulation):
     optimize(max_time)
         Conducts the optimization process to find optimal simulation parameters.
     """
-    def __init__(self, sim_wrapper, sim, rng, values, variables, initial_training_size, ntop, k=4):
+    def __init__(self, sim_wrapper, sim, rng, values, variables, initial_training_size, ntop, degree=4):
         super().__init__(sim_wrapper, sim, rng, values, variables)
 
         assert initial_training_size>=5, f"Sample size must be at least 5 (requirement for 5-fold cross validation)."
@@ -213,7 +213,7 @@ class Surrogate(Simulation):
         # storage model declaration
         self.model = SVR()
         self.model_scores = {'SVR': [], 'DecisionTree': []}
-        self.k = k  # coefficient in neighbour selection
+        self.degree = degree  # coefficient in neighbour selection
 
     def get_neighbour(self, x :dict) -> dict:
         """
@@ -222,12 +222,12 @@ class Surrogate(Simulation):
         """
         x_n = {}
         if self.isscore:
-             f_svr = (1-np.log(1+(self.model_scores['SVR'][0]-self.model_scores['SVR'][-1])/self.model_scores['SVR'][0])**2)**self.k
-             f_tree  = (1-np.log(1+(self.model_scores['DecisionTree'][0]-self.model_scores['DecisionTree'][-1])/self.model_scores['DecisionTree'][0])**2)**self.k
+             f_svr = (1-np.log(1+(self.model_scores['SVR'][0]-self.model_scores['SVR'][-1])/self.model_scores['SVR'][0])**2)**self.degree
+             f_tree  = (1-np.log(1+(self.model_scores['DecisionTree'][0]-self.model_scores['DecisionTree'][-1])/self.model_scores['DecisionTree'][0])**2)**self.degree
              f = f_svr if f_svr < f_tree else f_tree
              size = int((1-f)*10000 + 10)
         else:
-            f = (1-np.log(1+self.current_time_counter/self.limit)**2)**self.k
+            f = (1-np.log(1+self.current_time_counter/self.limit)**2)**self.degree
             size = int(self.current_time_counter/self.limit*10000 + 10)
 
         for dim, par in self.vars['range'].items():

@@ -1,7 +1,7 @@
 import glob
 import argparse
 import pandas as pd
-import torch.multiprocessing as mp
+import multiprocessing as mp
 import time
 import sys
 
