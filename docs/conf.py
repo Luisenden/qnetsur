@@ -18,8 +18,7 @@ sys.path.insert(0, os.path.abspath('..'))
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.napoleon']
-#html_baseurl = 'https://luisenden.github.io/qnetsur/'
+extensions = ['sphinx.ext.autodoc', 'sphinx.ext.codeview', 'sphinx.ext.napoleon']
 
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
