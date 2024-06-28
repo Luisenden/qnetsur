@@ -1,7 +1,7 @@
-datacollector
--------------
+utils
+-----
 
-.. automodule:: qnetsur.datacollector
+.. automodule:: qnetsur.utils
    :noindex:
    :members:
    :undoc-members:
@@ -16,10 +16,10 @@ simulatedannealing
    :undoc-members:
    :show-inheritance:
 
-utils
------
+datacollector
+-------------
 
-.. automodule:: qnetsur.utils
+.. automodule:: qnetsur.datacollector
    :noindex:
    :members:
    :undoc-members:
