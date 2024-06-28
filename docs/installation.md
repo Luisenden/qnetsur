@@ -1,9 +1,9 @@
-Installation user guide
-=======================
+Installation
+============
 
 Before installation, make sure your system satisfies the following prerequisites
 * Python version 3.7 or higher.
-* Linux and MacOS operating systems.
+* Linux or MacOS operating system.
 * We recommend using virtual environemnts e.g., [miniconda](https://github.com/conda-forge/miniforge#unix-like-platforms-mac-os--linux>).
 * The python package installer [pip](https://pip.pypa.io/en/stable/). To upgrade your current pip version run `pip install --upgrade pip`.
 
