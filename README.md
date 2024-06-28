@@ -14,6 +14,8 @@ extensive function evaluations – impractical.
 * Python 3.7+
 * scipy
 * scikit-learn==1.3.1
+* numpy
+* pandas
 
 ## Getting started
 ```python

@@ -8,7 +8,14 @@ Welcome to qnetsur's documentation!
 
 .. toctree::
    :maxdepth: 4
-   :caption: Contents:
+   :caption: Getting started
+
+   installation
+   tutorial
+
+.. toctree::
+   :maxdepth: 4
+   :caption: Package
 
    modules
 
