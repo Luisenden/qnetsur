@@ -52,6 +52,7 @@ if __name__ == '__main__':
 
     x = get_solution(folder)
     print(x)
+
     dfs = []
     seed_count = 1
     while True:
@@ -66,12 +67,12 @@ if __name__ == '__main__':
         dfs.append(df)
 
         seed_count += 1
-        if len(dfs)*nprocs >= 50:
+        if len(dfs)*nprocs >= 100:
             break
     
     df_exhaustive = pd.concat(dfs, axis=0)
     print(df_exhaustive)
-    print(df_exhaustive.mean())
+    print(df_exhaustive['Aggregated Completed Requests'].mean())
 
 
     # result_folder = f'../../surdata/rb_budget/Results_starlight_compare{METHOD}.csv'

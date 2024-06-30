@@ -135,18 +135,18 @@ def plot_policies(file):
     return df.to_latex()
 
 if __name__ == '__main__':
-    folder = '../../surdata/rb_budget_25h/'
+    folder = '../../surdata/rb/'
     
     # # best found solutions (Supplementary Notes)
     # best_solutions= pd.read_csv(folder+'Best_found_solutions.csv',index_col=0)
     # print('Best Found Solutions:\n', best_solutions)
     
     # exhaustive run results (main text)
-    plot_from_exhaustive(folder)
+    # plot_from_exhaustive(folder)
 
     pls, infos = get_policies(folder=folder)
     print(pls)
-    print(infos)
+    print(infos['Aggregated Memories'])
 
     # performance distribution (Supplementary Notes)
     distr = get_performance_distribution_per_method(folder)

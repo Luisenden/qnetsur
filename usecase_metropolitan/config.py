@@ -14,7 +14,7 @@ class Config:
     def __init__(self):
         self.vals = {
         'network_config_file': 'starlight.json', # network configuration file
-        'N': 5, # simulation sample size
+        'N': 10, # simulation sample size
         'total_time': 2e13, # simulation time
         }
         self.name = 'starlight'
