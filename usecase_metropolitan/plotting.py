@@ -1,5 +1,5 @@
 """
-Plotting tools to reproduce figures and tables of usecase "
+Plotting tools to reproduce figures and tables."
 """
 
 import pandas as pd
@@ -7,6 +7,7 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 import glob
+import argparse
 
 plt.style.use("seaborn-v0_8-paper")
 font = 14
@@ -174,7 +175,17 @@ def print_policies(file)->None:
 
 if __name__ == '__main__':
     
-    folder = '../../surdata/QENTSUR-DATA/metropolitan_network/rb_25h/'
+    parser = argparse.ArgumentParser(description="set directory to output data")
+    
+    parser.add_argument(
+        "--folder",
+        type=str,
+        help="Set path/to/QNETSUR-DATA. Type: str"
+    )
+
+    # Parse 
+    args, _ = parser.parse_known_args()
+    folder = args.folder
 
     # best found solutions (Supplementary Notes)
     best_solutions= pd.read_csv(folder+'Best_found_solutions.csv',index_col=0)

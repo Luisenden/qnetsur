@@ -1,7 +1,7 @@
-"""Central config file for all executables (surrogate.py, vs_*.py)."""
+"""Central config file used in `surrogate.py`, `vs_*.py`."""
 import sys
-sys.path.append('../')
-
+# Include parent directory to use qnetsur package
+sys.path.append('..')
 import numpy as np
 import argparse
 import re
@@ -31,8 +31,8 @@ class Config:
 
         # parse global params
         parser = argparse.ArgumentParser(description="Import globals")
-        parser.add_argument("--topo", type=str, default='tree-2-3', help="Network topology; \
-                            Use 'tree-i-j' or 'randtree-i' or 'square-i', where i,j are integers. Type: str")
+        parser.add_argument("--topo", type=str, default='tree-2-1', help="Network topology; \
+                            Use 'tree-i-j' (=tree-#children-#levels) or 'randtree-i' (=rantree-#nodes) or 'square-i' (=square-ixilattice), where i,j are integers. Type: str")
         parser.add_argument('--level', action='store_true', help="If tree-i-j is used for topology \
                          level assigns the same swap probability per tree level.", default=False)
         parser.add_argument('--user', action='store_true', help="Specifies if only user nodes \

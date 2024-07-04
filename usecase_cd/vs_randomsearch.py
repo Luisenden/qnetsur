@@ -2,7 +2,6 @@ import time
 import numpy as np
 import pandas as pd
 from datetime import datetime
-
 from config import Config
 from qnetsur.utils import Simulation
  

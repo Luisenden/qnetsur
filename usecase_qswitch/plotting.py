@@ -7,8 +7,9 @@ import seaborn as sns
 import numpy as np
 import matplotlib.pyplot as plt
 import glob
+import argparse
 
-plt.style.use("seaborn-paper")
+plt.style.use("seaborn-v0_8-paper")
 font = 16
 plt.rcParams.update({
     'text.usetex': False,
@@ -111,6 +112,7 @@ def plot_from_exhaustive_multiple(folders):
 def plot_exhaustive_per_user(folder):
     df = get_exhaustive(folder)
 
+    df = df.drop('Utility', axis=1)
     columns_utility = df.columns.str.fullmatch('\d+')
     df_utility = df.melt(id_vars='Method', value_vars=df.columns[columns_utility], value_name='Utility', var_name='User')
     fig, axs = plt.subplots(3,1)
@@ -134,13 +136,22 @@ def plot_exhaustive_per_user(folder):
     plt.show()
 
 
-    
-
-
 if __name__ == '__main__':
 
+
+    parser = argparse.ArgumentParser(description="set directory to output data")
+    
+    parser.add_argument(
+        "--folder",
+        type=str,
+        help="Set path/to/QNETSUR-DATA/qswitch_30min/. Type: str"
+    )
+
+    # Parse 
+    args, _ = parser.parse_known_args()
+    folder = args.folder
+
     # five users at varying distances
-    folder = '../../surdata/qswitch_30min/'
     plot_from_exhaustive_multiple(folder)
     plot_exhaustive_per_user(folder)
     

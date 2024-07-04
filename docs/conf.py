@@ -27,7 +27,7 @@ extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode', 'sphinx.ext.napoleon'
     'sphinx.ext.ifconfig',
     'sphinx.ext.githubpages',
     'sphinx.ext.extlinks',  # for external links
-    'myst_parser'
+    'myst_parser', 'sphinx.ext.autosectionlabel'
 ]
 
 templates_path = ['_templates']

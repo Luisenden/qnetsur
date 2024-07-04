@@ -1,17 +1,10 @@
+
+"""Adapted simulation of `RandomRequestApp` of original `sequence-toolbox script <https://github.com/sequence-toolbox/Chicago-metropolitan-quantum-network/blob/master/sec5.4-two-memory-distribution-policies/run.py>`_."""
 import numpy as np
-from datetime import datetime
 import json, os
 import random
-
-import torch.multiprocessing as mp
-from torch.multiprocessing import set_start_method
-try:    
-    set_start_method('spawn')
-except RuntimeError:
-     pass
-
+import multiprocessing as mp
 from typing import TYPE_CHECKING
-
 if TYPE_CHECKING:
     from sequence.topology import Node
 

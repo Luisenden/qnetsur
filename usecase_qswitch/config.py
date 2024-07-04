@@ -48,7 +48,7 @@ class Config:
             'total_runtime_in_seconds': 5,  # simulation time [s]
             'connect_size': 2,
             'server_node_name': 'leaf_node_0',
-            'distances': np.array([5, 10, 20, 30, 40, 50, 60, 70, 80, 90])[:self.args.nleaf], # set up to five leaf nodes
+            'distances': np.array([5, 10, 20, 30, 40, 50, 60, 70, 80, 90])[:self.args.nleaf], 
             'repetition_times': [10 ** -3] * self.args.nleaf,  # time between generation attempts
             'beta': 0.2, # link efficiency coefficient
             'loss': 1, # loss parameter

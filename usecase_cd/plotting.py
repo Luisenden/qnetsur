@@ -7,6 +7,8 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 import glob
+import argparse
+import re
 
 plt.style.use("seaborn-v0_8-paper")
 font = 14
@@ -84,22 +86,36 @@ def get_surrogate_timeprofiling(folder):
 if __name__ == '__main__':
     
     
+    parser = argparse.ArgumentParser(description="set directory to output data")
+    
+    parser.add_argument(
+        "--folder",
+        type=str,
+        help="Set path/to/QNETSUR-DATA/continuous_distribution_protocols/. Type: str"
+    )
+
+    # Parse 
+    args, _ = parser.parse_known_args()
+    folder = args.folder
+    Ts = [1,5,10]
+    folders = [re.sub(r'_\d+h', f'_{i}h', folder) for i in Ts]
+
     # exhaustive run results (main text)
-    folders = [f'../../surdata/cd_{i}h/' for i in [1,5,10]]
+    print(folders)
     plot_from_exhaustive_multiple(folders)
 
     # performance distribution (Supplementary Notes)
-    time = 1
-    folder = f'../../surdata/cd_{5}h/'
-    distr = get_performance_distribution_per_method(folder)
-    print(distr)
+    for i, folder in enumerate(folders):
+        distr = get_performance_distribution_per_method(folder)
+        print(f'\nPerformance distribution with T={Ts[i]} hour:')
+        print(distr)
 
-    #time profiling (Supplementary Notes)
-    print('\n')
-    times, relative, cycles = get_surrogate_timeprofiling(folder)
-    print('Overall:\n', times)
-    print('\n')
-    print('Relative:\n', relative)
-    print('\n')
-    print('Mean number of cycles:', cycles)
+        #time profiling (Supplementary Notes)
+        print('\n')
+        times, relative, cycles = get_surrogate_timeprofiling(folder)
+        print('Overall:\n', times)
+        print('\n')
+        print('Relative:\n', relative)
+        print('\n')
+        print('Mean number of cycles:', cycles)
 
