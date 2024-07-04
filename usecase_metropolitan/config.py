@@ -14,7 +14,7 @@ class Config:
     def __init__(self):
         self.vals = {
         'network_config_file': 'starlight.json', # network configuration file
-        'N': 10, # simulation sample size
+        'N': 5, # simulation sample size
         'total_time': 2e13, # simulation time
         }
         self.name = 'starlight'
@@ -29,7 +29,7 @@ class Config:
         parser.add_argument("--iterator", type=int, dest='time',
                             help="Maximum optimization cycles allowed; overwrites arg 'time'. Type: int")
         parser.add_argument("--seed", type=int, default=42, help="Global seed for random number generation for the optimizer")
-        parser.add_argument("--folder", type=str, default='../../surdata/rb/',
+        parser.add_argument("--folder", type=str, default='../../surdata/rbtest/',
                         help="Directory to store result data. Type: str")
         self.args, _ = parser.parse_known_args()
         self.rng = np.random.default_rng(seed=self.args.seed) # set rng for optimization 

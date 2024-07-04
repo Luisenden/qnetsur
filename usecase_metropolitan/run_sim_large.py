@@ -1,10 +1,12 @@
+"""Script to execute simulation n=1000 times using different policies."""
+
 import glob
 import argparse
 import pandas as pd
 import multiprocessing as mp
 import time
 import sys
-from paper_plotting import get_policies
+from usecase_metropolitan.plotting import get_policies
 
 from config import Config
 sys.path.append('../')
@@ -67,13 +69,10 @@ if __name__ == '__main__':
         dfs.append(df)
 
         seed_count += 1
-        if len(dfs)*nprocs >= 100:
+        if len(dfs)*nprocs >= 1000:
             break
     
     df_exhaustive = pd.concat(dfs, axis=0)
-    print(df_exhaustive)
-    print(df_exhaustive['Aggregated Completed Requests'].mean())
 
-
-    # result_folder = f'../../surdata/rb_budget/Results_starlight_compare{METHOD}.csv'
-    # df_exhaustive.to_csv(result_folder) 
+    result_folder = f'../../Results_starlight_compare{args.method}.csv'
+    df_exhaustive.to_csv(result_folder) 

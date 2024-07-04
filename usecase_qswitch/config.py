@@ -34,7 +34,7 @@ class Config:
         parser.add_argument("--score", action='store_true',
                             help="If argument is used, the ml score is used in the acquisition process. Type:bool", default=False)
         parser.add_argument("--seed", type=int, default=42, help="Global seed for random number generation for the optimizer")
-        parser.add_argument("--folder", type=str, default='../../surdata/qswitch/',
+        parser.add_argument("--folder", type=str, default='../../surdata/qswitchtest/',
                         help="Directory to store result data. Type: str")
         self.args, _ = parser.parse_known_args()
         self.rng = np.random.default_rng(seed=self.args.seed) # set rng for optimization 

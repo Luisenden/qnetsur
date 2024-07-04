@@ -22,7 +22,7 @@ if __name__ == '__main__':
         # run optimization
         sim.optimize(limit=limit, verbose=True)
 
-        # store fixed parameter values 
+        # store simulation parameter values 
         pd.DataFrame.from_dict(sim.vals, 'index').to_csv(conf.args.folder+'SIMULATION_INPUT_VALUES.csv')
         
         # collect and store results
