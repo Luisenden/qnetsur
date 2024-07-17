@@ -32,6 +32,21 @@ extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode', 'sphinx.ext.napoleon'
 
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+myst_enable_extensions = [
+    "amsmath",
+    "dollarmath",
+]
+# MathJax configuration
+mathjax3_config = {
+    'TeX': {
+        'extensions': ['AMSmath.js', 'AMSsymbols.js', 'color.js'],
+        'Macros': {
+            'Bar': ['\overline{#1}', 1],
+            'dots': '\ldots',
+            'mathbf': ['\mathbf{#1}', 1]
+        }
+    }
+}
 
 
 

@@ -17,7 +17,6 @@ Welcome to qnetsur's documentation!
    :caption: Getting started
 
    installation
-   tutorial
 
 .. toctree::
    :maxdepth: 4

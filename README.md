@@ -18,6 +18,9 @@ extensive function evaluations – impractical.
 * pandas
 
 ## Getting started
+
+This [tutorial](https://drive.google.com/file/d/1L5JqMcPL0rKUI3ROri21oK287ozlNUQA/view?usp=sharing) (google colab account required) introduces basic usage of qnetsur. It features the optimization of parameters of a quantum network protocol that is based on continuous-entanglement distribution. Check it out!
+
 ```python
 pip install git+https://github.com/Luisenden/qnetsur
 ```
