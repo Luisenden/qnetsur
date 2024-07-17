@@ -26,7 +26,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 def get_exhaustive(folder):
-    method_names = ['Surrogate', 'Meta', 'Simulated Annealing', 'Random Search']
+    method_names = list(mapping.keys())
     dfs = [None]*4
     for name in glob.glob(f'{folder}/Results_*.csv'):
         df_read = pd.read_csv(name, index_col=0)
@@ -42,14 +42,13 @@ def get_surrogate_timeprofiling(folder):
         with open(name,'rb') as file: dfs.append(pd.read_csv(file, index_col=0))
         dfs[i]['Trial'] = i
     df = pd.concat(dfs, axis=0)
-    times = df[df.columns[df.columns.astype('str').str.contains('\[s\]|Trial')]]
+    times = df[df.columns[df.columns.astype('str').str.contains(r'\[s\]|Trial')]]
     times = times.drop_duplicates(ignore_index=True)
     relative = times.drop('Trial', axis=1).agg('mean')/times.drop('Trial', axis=1).agg('mean')['Total [s]']
     return times, relative, np.mean(np.mean(times.groupby('Trial').count()))
 
 def get_performance_distribution_per_method(folder):
     dfs_methods = []
-    mapping = {'Surrogate':'SU', 'Meta':'AX', 'Simulated Annealing':'SA', 'Random Search':'RS'}
     for key, value in mapping.items():
         dfs = []
         for i,name in enumerate(glob.glob(folder + f'/{value}_*.csv')): 
@@ -70,7 +69,6 @@ def get_performance_distribution_per_method(folder):
 def plot_progress(folder):
     dfs_methods = []
     columns = ['Trial', 'Method', 'objective']
-    mapping = {'Surrogate':'SU', 'Meta':'AX', 'Simulated Annealing':'SA', 'Random Search':'RS'}
     for key, value in mapping.items():
         dfs = []
         for i,name in enumerate(glob.glob(folder + f'/{value}_*.csv')): 
@@ -87,8 +85,6 @@ def plot_progress(folder):
     df =pd.concat(dfs_methods, axis=0).rename_axis('Iteration').reset_index()
     best_trial = df.iloc[df.groupby('Method')['objective'].idxmax()][['Method','Trial']]
     df = pd.merge(df, best_trial, on=['Method', 'Trial'], how='inner')
-
-
     sns.lineplot(df, x='Iteration', y='objective', hue='Method', legend=True) #units='Trial', estimator=None
     plt.ylabel('Utility')
     plt.grid()
@@ -113,7 +109,7 @@ def plot_exhaustive_per_user(folder):
     df = get_exhaustive(folder)
 
     df = df.drop('Utility', axis=1)
-    columns_utility = df.columns.str.fullmatch('\d+')
+    columns_utility = df.columns.str.fullmatch(r'\d+')
     df_utility = df.melt(id_vars='Method', value_vars=df.columns[columns_utility], value_name='Utility', var_name='User')
     fig, axs = plt.subplots(3,1)
 
@@ -150,6 +146,7 @@ if __name__ == '__main__':
     # Parse 
     args, _ = parser.parse_known_args()
     folder = args.folder
+    mapping = {'Surrogate':'SU', 'Meta':'AX', 'Simulated Annealing':'SA', 'Random Search':'RS'}
 
     # five users at varying distances
     plot_from_exhaustive_multiple(folder)

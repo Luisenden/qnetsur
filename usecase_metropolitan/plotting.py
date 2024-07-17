@@ -1,7 +1,7 @@
 """
 Plotting tools to reproduce figures and tables."
 """
-
+import os
 import pandas as pd
 import numpy as np
 import seaborn as sns
@@ -147,7 +147,7 @@ def get_surrogate_timeprofiling(file)->tuple:
         - mean_phase_count (float): The average number of phases per trial.
     """
     times = pd.read_csv(file)
-    times = times[times.columns[times.columns.str.contains('\[s\]|Trial')]]
+    times = times[times.columns[times.columns.str.contains(r'\[s\]|Trial')]]
     times = times.drop_duplicates(ignore_index=True)
     relative = times.drop('Trial', axis=1).agg('mean')/times.drop('Trial', axis=1).agg('mean')['Total [s]']
     return times, relative, np.mean(np.mean(times.groupby('Trial').count()))
@@ -186,9 +186,11 @@ if __name__ == '__main__':
     # Parse 
     args, _ = parser.parse_known_args()
     folder = args.folder
+    base_dir = os.path.expanduser("~")
 
     # best found solutions (Supplementary Notes)
-    best_solutions= pd.read_csv(folder+'Best_found_solutions.csv',index_col=0)
+    file_path = os.path.join(base_dir, folder, 'Best_found_solutions.csv')
+    best_solutions= pd.read_csv(file_path, index_col=0)
     print('Best Found Solutions:\n', best_solutions)
     
     # exhaustive run results (main text)
@@ -200,12 +202,14 @@ if __name__ == '__main__':
     print('\n', distr)
 
     # time profiling (Supplementary Notes)
-    times, relative, cycles = get_surrogate_timeprofiling(folder+'SU_rb_starlight_budget_25h.csv')
+    file_path_timing = os.path.join(folder, 'SU_rb_starlight_budget_25h.csv')
+    times, relative, cycles = get_surrogate_timeprofiling(file_path_timing)
     print('\nOverall:\n', times)
     print('Relative:\n', relative)
     print('Mean number of cycles:', cycles)
     print('\n')
 
     # overview found policies (Supplementary Notes)
+    file_path_pol = os.path.join(folder, 'Best_found_solutions.csv')
     print('Overview policies:')
-    print_policies(folder+'Best_found_solutions.csv')
+    print_policies(file_path_pol)

@@ -78,7 +78,7 @@ def get_surrogate_timeprofiling(folder):
         with open(name,'rb') as file: dfs.append(pd.read_csv(file, index_col=0))
         dfs[i]['Trial'] = i
     df = pd.concat(dfs, axis=0)
-    times = df[df.columns[df.columns.astype('str').str.contains('\[s\]|Trial')]]
+    times = df[df.columns[df.columns.astype('str').str.contains(r'\[s\]|Trial')]]
     times = times.drop_duplicates(ignore_index=True)
     relative = times.drop('Trial', axis=1).agg('mean')/times.drop('Trial', axis=1).agg('mean')['Total [s]']
     return times, relative, np.mean(np.mean(times.groupby('Trial').count()))
@@ -118,4 +118,3 @@ if __name__ == '__main__':
         print('Relative:\n', relative)
         print('\n')
         print('Mean number of cycles:', cycles)
-

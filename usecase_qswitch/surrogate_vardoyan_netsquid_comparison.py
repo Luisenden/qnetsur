@@ -101,7 +101,7 @@ if __name__ == '__main__':
             'include_classical_comm': False,
             'num_positions': 200,
             'repetition_times': [10 ** -3] * conf.args.nleaf, # repetition time in [s]
-            'N': 100 # sample size 
+            'N': 10 # sample size 
         }
 
         vars = {

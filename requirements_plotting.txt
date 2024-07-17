@@ -1,2 +1,8 @@
 pandas
 seaborn
+nbformat
+networkx
+paretoset
+plotly
+pydot
+scipy
