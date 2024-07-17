@@ -8,5 +8,6 @@ To bring quantum networks closer to real-world use, it's important to deeply und
 
 The Challenge
 -------------
-Quantum network simulations are computationally intense. Global optimization methods like simulated annealing or genetic algorithms require many function evaluations, which is impractical for such heavy computations. `qnetsur` addresses this by using smart machine learning models to make the optimization process more efficient and feasible.
+Quantum network simulations are computationally intense. Global optimization methods like simulated annealing or genetic algorithms require many function evaluations, which is impractical for such heavy computations. `qnetsur` addresses this by using machine learning models to make the optimization process more efficient and feasible.
+
 

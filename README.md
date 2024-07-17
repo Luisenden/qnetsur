@@ -9,15 +9,15 @@ about the function’s continuity, differentiability, or convexity are thus inap
 are computationally demanding, rendering global approaches like simulated annealing or genetic algorithms – which require
 extensive function evaluations – impractical.
 
-
-## Requirements 
+## 🧩 Requirements 
 * Python 3.7+
 * scipy
 * scikit-learn==1.3.1
 * numpy
 * pandas
 
-## Getting started
+## 🚀 Getting started
+Find the official documentation at https://qnetsur.readthedocs.io/
 
 This [tutorial](https://drive.google.com/file/d/1L5JqMcPL0rKUI3ROri21oK287ozlNUQA/view?usp=sharing) (google colab account required) introduces basic usage of qnetsur. It features the optimization of parameters of a quantum network protocol that is based on continuous-entanglement distribution. Check it out!
 
