@@ -10,7 +10,7 @@ are computationally demanding, rendering global approaches like simulated anneal
 extensive function evaluations – impractical.
 
 ## 🧩 Requirements 
-* Python 3.7+
+* Python 3.9+
 * scipy
 * scikit-learn==1.3.1
 * numpy
