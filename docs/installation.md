@@ -16,7 +16,7 @@ pip install -r requirements.txt
 Tutorial
 ========
 
-This [notebook](https://drive.google.com/file/d/1L5JqMcPL0rKUI3ROri21oK287ozlNUQA/view?usp=sharing) (google colab account required) will help you get up to speed with `qnetsur`. 
+This [notebook](https://colab.research.google.com/drive/1L5JqMcPL0rKUI3ROri21oK287ozlNUQA) (google colab account required) will help you get up to speed with `qnetsur`. 
 It features the optimization of parameters of a quantum network protocol that is based on continuous-entanglement distribution. Check it out!
 
 About the performance of a quantum network

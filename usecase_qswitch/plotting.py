@@ -111,25 +111,34 @@ def plot_exhaustive_per_user(folder):
     df = df.drop('Utility', axis=1)
     columns_utility = df.columns.str.fullmatch(r'\d+')
     df_utility = df.melt(id_vars='Method', value_vars=df.columns[columns_utility], value_name='Utility', var_name='User')
-    fig, axs = plt.subplots(3,1)
+    fig, axs = plt.subplots(2,2)
+
 
     columns_rates = df.columns.astype('str').str.contains('Rate')
     df_rates = df.melt(id_vars='Method', value_vars=df.columns[columns_rates][1:], value_name='Rate [Hz]', var_name='User')
-    sns.lineplot(df_rates, x='User', y='Rate [Hz]', hue='Method', style='Method', markers=['o', '^', 'v', 's'], ax=axs[0], legend=False)
-    axs[0].grid()
-    axs[0].set_xticklabels([i for i in range(5)])
+    sns.lineplot(df_rates, x='User', y='Rate [Hz]', hue='Method', style='Method', markers=['o', '^', 'v', 's'], ax=axs[0,0], legend=False)
+    axs[0,0].grid()
+    axs[0,0].set_xlabel('')
+    axs[0,0].set_xticklabels([i for i in range(5)])
 
     columns_fidel = df.columns.astype('str').str.contains('Fidelity')
     df_rates = df.melt(id_vars='Method', value_vars=df.columns[columns_fidel][1:], value_name='Fidelity', var_name='User')
-    sns.lineplot(df_rates, x='User', y='Fidelity', hue='Method', style='Method', markers=['o', '^', 'v', 's'], ax=axs[1], legend=True)
-    axs[1].grid()
-    axs[1].set_xticklabels([i for i in range(5)])
-    axs[1].legend(loc='upper left', bbox_to_anchor=(1, 1))
+    sns.lineplot(df_rates, x='User', y='Fidelity', hue='Method', style='Method', markers=['o', '^', 'v', 's'], ax=axs[1,0], legend=False)
+    axs[1,0].grid()
+    axs[1,0].set_xticklabels([i for i in range(5)])
+    axs[1,0].legend(loc='upper left', bbox_to_anchor=(1, 1))
 
-    sns.lineplot(df_utility, x='User', y='Utility', hue='Method', style='Method', markers=['o', '^', 'v', 's'], ax=axs[2], legend=False)
-    axs[2].grid()
+    sns.lineplot(df_utility, x='User', y='Utility', hue='Method', style='Method', markers=['o', '^', 'v', 's'], ax=axs[0,1], legend=True)
+    axs[0,1].grid()
+    
+    #Adjust the legend
+    handles, labels = axs[0, 1].get_legend_handles_labels()
+    fig.legend(handles, labels, loc='lower right',  bbox_to_anchor=(0.85, 0.1))
+
+    axs[1, 1].axis('off')
     plt.tight_layout(pad=0.1)
     plt.show()
+
 
 
 if __name__ == '__main__':

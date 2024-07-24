@@ -3,12 +3,16 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to qnetsur's documentation!
-===================================
+qnetsur - optimization for quantum networks
+===========================================
+
+.. image:: Figures/overview.pdf
+  :width: 600
+  :alt: Overview
 
 .. toctree::
    :maxdepth: 4
-   :caption: About
+   :caption: What is qnetsur?
 
    whatis
 
