@@ -49,10 +49,10 @@ class Config:
             'repetition_times': [10 ** -4] + [10 ** -3]*(self.args.nleaf-1),  # time between generation attempts
             'beta': 0.2, # link efficiency coefficient
             'loss': 1, # loss parameter
-            'buffer_size': 20,
+            'buffer_size': 1,
             'T2': 0,
             'include_classical_comm': False,
-            'num_positions': 500,
+            'num_positions': 200,
             'decoherence_rate': 0,
             'N': 5, # batch size
         }
