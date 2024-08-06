@@ -52,7 +52,7 @@ class Config:
             'buffer_size': 20,
             'T2': 0,
             'include_classical_comm': False,
-            'num_positions': 200,
+            'num_positions': 500,
             'decoherence_rate': 0,
             'N': 5, # batch size
         }
