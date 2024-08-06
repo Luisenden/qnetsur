@@ -1,8 +1,5 @@
 """
 Configuration script to run qswitch simulations (builds on `simulation.py`)
-* optimziation of two-user-one-server scenario of [Vadoyan et al., 2023](https://ieeexplore.ieee.org/abstract/document/10313675) with 'sur_vardoyan_netsquid_comparison.py'
-* optimization for more complex scenarios with scripts 'surrogate.py' and comparison with 'vs_xx.py'
-
 The goal is to find the optimal bright-state population (alpha=1-Fidelity) for all links to maximize
 the given utility function (based on Distillable Entanglement) as defined in the paper.
 """
@@ -48,8 +45,8 @@ class Config:
             'total_runtime_in_seconds': 5,  # simulation time [s]
             'connect_size': 2,
             'server_node_name': 'leaf_node_0',
-            'distances': np.array([5, 10, 20, 30, 40, 50, 60, 70, 80, 90])[:self.args.nleaf], 
-            'repetition_times': [10 ** -3] * self.args.nleaf,  # time between generation attempts
+            'distances': np.arange(1,100,2)[:self.args.nleaf], 
+            'repetition_times': [10 ** -4] + [10 ** -3]*(self.args.nleaf-1),  # time between generation attempts
             'beta': 0.2, # link efficiency coefficient
             'loss': 1, # loss parameter
             'buffer_size': 20,
@@ -57,7 +54,7 @@ class Config:
             'include_classical_comm': False,
             'num_positions': 200,
             'decoherence_rate': 0,
-            'N': 20, # batch size
+            'N': 5, # batch size
         }
         vars = {
             'range': {},
