@@ -116,10 +116,11 @@ class Config:
                             index=rates.index).applymap(np.log) # Utility as defined in Vardoyan et al.,2023
 
         # Set NaN for nodes that are not involved
+        print(any(U_Ds.columns.str.contains(str(node))) for node in range(self.args.leaf))
         bool_involved = np.array([any(U_Ds.columns.str.contains(str(node))) for node in range(self.args.nleaf)])
+        print('INVOLVED:', np.array(range(self.args.nleaf))[~bool_involved])
         for node_not_involved in np.array(range(self.args.nleaf))[~bool_involved]:
             U_Ds[f'leaf_node_{node_not_involved}'] = np.nan
-
 
         U_Ds = U_Ds.drop(kwargs['server_node_name'], axis=1)
         U_D = U_Ds.mean(axis=0).values
