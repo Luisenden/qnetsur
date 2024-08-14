@@ -20,7 +20,7 @@ class Config:
             'return_data':'avg', 
             'progress_bar': None,
             'total_time': 1000,
-            'N_samples' : 100,
+            'N_samples' : 20,
             'p_cons': 0.9/4,  # consumption rate
             'qbits_per_channel': 5,
             'cutoff': 28,
@@ -45,7 +45,7 @@ class Config:
                             help="If argument is used, the ml score is used in the acquisition process. Type:bool", default=False)
         parser.add_argument("--seed", type=int, default=42,
                             help="Global seed for random number generation for the optimizer. Type: int")
-        parser.add_argument("--folder", type=str, default='../../surdata/cdtest/',
+        parser.add_argument("--folder", type=str, default='../../surdata/cd20/',
                             help="Directory to store result data. Type: str")
         self.args, _ = parser.parse_known_args()
 
@@ -53,6 +53,7 @@ class Config:
         self.name = self.args.topo   
         self.topo_input = self.name.split('-')
         self.kind = self.topo_input[0]
+        self.folder = self.args.folder
         if self.args.level == True:
             assert self.kind == 'tree', 'If "level" is used, topology must be "tree".'
         
