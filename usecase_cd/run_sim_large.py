@@ -11,25 +11,17 @@ from qnetsur.utils import Simulation
 
 def get_solution(folder):
     dfs = []
-    for i,name in enumerate(glob.glob(folder + f'{mapping[args.method]}_randtree-100_{args.hour}.0hours_*.pkl')): 
-        with open(name,'rb') as file: dfs.append(pd.read_pickle(file))
+    for i,name in enumerate(glob.glob(folder + f'{mapping[args.method]}_randtree-100_{args.hour}.0hours_*.csv')): 
+        dfs.append(pd.read_csv(name, index_col=0))
         dfs[i]['Trial'] = i
     df = pd.concat(dfs, axis=0).reset_index()
     cols = df.columns[df.columns.astype('str').str.contains('q_swap')]
-    df = df.iloc[df['objective'].idxmax()][cols]
-    return df
+    sol = df.iloc[df['objective'].idxmax()][cols]
+    return sol
 
-def get_values(folder):
-    filename = glob.glob(folder+'*_INPUT_VALUES.pkl')[0]
-    vals = pd.read_pickle(filename).to_dict()[0]
-    users = vals.pop('user')
-    vals['N_samples'] = 1
-    return vals, users[0]
-
-def to_dataframe(res, users):
+def to_dataframe(res):
     df = pd.DataFrame.from_records(res)
     df = df[0].apply(pd.Series)
-    df.columns = users
     df = df.add_prefix('User')
     df['Aggregated Number of Virtual Neighbors'] = df.sum(axis=1)
     return df
@@ -44,11 +36,12 @@ if __name__ == '__main__':
     args, _ = parser.parse_known_args()
     mapping = {'Surrogate':'SU', 'Meta':'AX', 'Simulated Annealing':'SA', 'Random Search':'RS'}
 
-    folder = f'../../surdata/cd_{args.hour}h/'
-    vals, users = get_values(folder)
+    folder = f'../../surdata/cd/cd_{args.hour}h/'
     x = get_solution(folder)
 
     conf = Config()
+    vals = conf.vals
+    vals['N_samples'] = 1
     nprocs = mp.cpu_count()
     print('Number of processes: ', nprocs)
 
@@ -60,12 +53,12 @@ if __name__ == '__main__':
         res = sim.run_exhaustive(x=x, N=nprocs, seed=seed_count)
         print(time.time()-start)
 
-        df = to_dataframe(res, users=users)
+        df = to_dataframe(res)
         df['Method'] = args.method
         dfs.append(df)
 
         seed_count += 1
-        if len(dfs)*nprocs >= 1000:
+        if len(dfs)*nprocs >= 10:
             break
     
     df_exhaustive = pd.concat(dfs, axis=0)
