@@ -4,6 +4,7 @@ import pandas as pd
 import multiprocessing as mp
 import time
 import sys
+import numpy as np
 
 from config import Config
 sys.path.append('../')
@@ -36,11 +37,19 @@ if __name__ == '__main__':
     args, _ = parser.parse_known_args()
     mapping = {'Surrogate':'SU', 'Meta':'AX', 'Simulated Annealing':'SA', 'Random Search':'RS'}
 
-    folder = f'../../surdata/cd/cd_{args.hour}h/'
-    x = get_solution(folder)
+    folder = f'../../surdata/'#cd/cd_{args.hour}h/'
+    #x = get_solution(folder)
 
     conf = Config()
     vals = conf.vals
+
+    user_indices = np.where(vals['A'].sum(axis=1) == 1)
+    x_vals = np.random.random_sample(len(vals['A']))
+    #x_vals[user_indices] = 0
+    x = {}
+    for i,val in enumerate(x_vals):
+        x[f'q_swap{i}'] = val
+    
     vals['N_samples'] = 1
     nprocs = mp.cpu_count()
     print('Number of processes: ', nprocs)
@@ -62,5 +71,5 @@ if __name__ == '__main__':
             break
     
     df_exhaustive = pd.concat(dfs, axis=0)
-    result_folder = folder+f'Results_cd_compare_{args.method}_{args.hour}.csv'
+    result_folder = folder+f'Results_cd_compare_allrandom.csv'
     df_exhaustive.to_csv(result_folder) 
