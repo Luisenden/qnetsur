@@ -11,7 +11,7 @@ import argparse
 import re
 
 plt.style.use("seaborn-v0_8-paper")
-font = 14
+font = 18
 plt.rcParams.update({
     'text.usetex': False,
     'font.family': 'arial',
@@ -46,7 +46,7 @@ def plot_from_exhaustive_multiple(folders, show=True):
     
     basic_sols_files = glob.glob(f"{folder}/*.csv")
     dfs_basic_sols = []
-    names = [r'$q_{swap}=0$', r'$q_{swap}=1$', r'$q_{swap}$ ~ Uniform(0,1)', r'$q_{swap,v=1}=1$']
+    names = [r'$q_{swap}=0$', r'$q_{swap}=1$', r'$q_{swap}$ ~ Uniform(0,1)', r'$q_{swap,v=1}=0$']
     for i, file in enumerate(basic_sols_files):
         dfs_basic_sols.append(pd.read_csv(file, index_col=0))
         dfs_basic_sols[i]['Basic solution'] = names[i]
@@ -54,15 +54,16 @@ def plot_from_exhaustive_multiple(folders, show=True):
 
     if show: 
         markers = ['o', '^', 'v', 's']
-        fig, axs = plt.subplots(1,2, figsize=(10,10), sharey=True, gridspec_kw={'width_ratios': [2, 1]})
-        sns.pointplot(data= df, x='Time Limit [h]', y='Aggregated Number of Virtual Neighbors', hue='Method', ax=axs[0], errorbar='se', markers=markers, legend=True, linestyles=['-']*4, native_scale=True)
-        axs[0].grid()
-        g = sns.pointplot(data=df_basic_sols, y='Aggregated Number of Virtual Neighbors', hue='Basic solution', ax=axs[1], errorbar='se', color='grey', linestyles=['']*4, markers=['+', 'x', '1', '2'], markersize=10)
-        axs[1].grid()
-        sns.move_legend(g, loc='lower right')
-        axs[1].legend().set_title('')
-        axs[1].set_xlabel('Basic solutions')
-        plt.tight_layout()
+        fig, axs = plt.subplots(1,1, figsize=(10,10))#, sharey=True, gridspec_kw={'width_ratios': [2, 1]})
+        sns.pointplot(data= df, x='Time Limit [h]', y='Aggregated Number of Virtual Neighbors', hue='Method', ax=axs, errorbar='se', markers=markers, legend=True, linestyles=['-']*4, native_scale=True)
+        axs.grid()
+        plt.hlines(np.mean(dfs_basic_sols[3]['Aggregated Number of Virtual Neighbors']), xmin=1, xmax=10, linestyles='dashed', colors='black', label=r"Best basic solution (4)")
+        plt.legend(loc='lower right', bbox_to_anchor=(1, 0.05))
+        # axs[1].grid()
+        # sns.move_legend(g, loc='lower right')
+        # axs[1].legend().set_title('')
+        # axs[1].set_xlabel('Basic solutions')
+        # plt.tight_layout()
         plt.show()
     return df
 

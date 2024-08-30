@@ -23,10 +23,10 @@ if __name__ == '__main__':
                 'cutoff': 28,
                 'M': 10,
                 'qbits_per_channel': 5,
-                'N_samples' : 1,
+                'N_samples' : 1000,
                 'total_time': 1000,
                 }
     sim_result = simulation.simulation_cd(**vals)
 
-    with open(f'../../surdata/TEST_sim_random_N=1000_T=1000_seed{args.seed}.pkl', 'wb') as file:
+    with open(f'../../surdata/sim_random_N=1000_T=1000_seed{args.seed}.pkl', 'wb') as file:
         pickle.dump(sim_result, file)
