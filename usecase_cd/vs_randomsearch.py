@@ -33,5 +33,4 @@ if __name__ == '__main__':
         delta = np.mean(times_tracked)
     
     randomsearch = pd.DataFrame.from_records(evals)
-    #randomsearch.to_csv(path)
-    print(randomsearch)
+    randomsearch.to_csv(path)

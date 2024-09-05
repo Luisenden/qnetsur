@@ -93,7 +93,7 @@ def get_performance_distribution_per_method(folder):
     df =pd.concat(dfs_methods, axis=0)   
     columns = ['Trial', 'Method', 'objective']
     df['Utility'] = df['objective']
-    max_per_trial = df.groupby(['Method', 'Trial'])['Utility'].max()
+    max_per_trial = df.groupby(['Method', 'Trial'], sort=False)['Utility'].max()
     distr = max_per_trial.groupby(level='Method').agg(['min', 'max', 'mean', 'std'])
     distr['rel_std'] = distr['std']/distr['mean']
     return distr, max_per_trial
