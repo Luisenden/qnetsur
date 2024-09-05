@@ -11,7 +11,7 @@ import argparse
 import re
 
 plt.style.use("seaborn-v0_8-paper")
-font = 18
+font = 16
 plt.rcParams.update({
     'text.usetex': False,
     'font.family': 'arial',
@@ -23,6 +23,7 @@ plt.rcParams.update({
     'legend.title_fontsize': font,
     'axes.titlesize': font
 })
+plt.rcParams.update({'lines.markeredgewidth': 0.1})
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -52,18 +53,28 @@ def plot_from_exhaustive_multiple(folders, show=True):
         dfs_basic_sols[i]['Basic solution'] = names[i]
     df_basic_sols = pd.concat(dfs_basic_sols, axis=0)
 
+    distr_max = []
+    for i,f in enumerate(folders):
+        _, max_per_trial = get_performance_distribution_per_method(f)
+        max_per_trial = max_per_trial.reset_index()
+        max_per_trial['Time Limit [h]'] = [1,5,10][i]
+        max_per_trial['Aggregated Number of Virtual Neighbors'] = max_per_trial['Utility']
+        distr_max.append(max_per_trial)
+    df_distr_max = pd.concat(distr_max, axis=0)
+
     if show: 
         markers = ['o', '^', 'v', 's']
-        fig, axs = plt.subplots(1,1, figsize=(10,10))#, sharey=True, gridspec_kw={'width_ratios': [2, 1]})
-        sns.pointplot(data= df, x='Time Limit [h]', y='Aggregated Number of Virtual Neighbors', hue='Method', ax=axs, errorbar='se', markers=markers, legend=True, linestyles=['-']*4, native_scale=True)
+        fig, axs = plt.subplots(1,1, figsize=(5,5))#, sharey=True, gridspec_kw={'width_ratios': [2, 1]})
+        sns.pointplot(data= df_distr_max, x='Time Limit [h]', y='Aggregated Number of Virtual Neighbors', hue='Method', ax=axs, errorbar=('pi', 100), capsize=.1, markers=markers, legend=False, linestyles=[':']*4, native_scale=True, markersize=0)
+        sns.pointplot(data= df, x='Time Limit [h]', y='Aggregated Number of Virtual Neighbors', hue='Method', ax=axs, errorbar='se', markers=markers, legend=True, linestyles=['']*4, native_scale=True, markersize=6)
         axs.grid()
         plt.hlines(np.mean(dfs_basic_sols[3]['Aggregated Number of Virtual Neighbors']), xmin=1, xmax=10, linestyles='dashed', colors='black', label=r"Best basic solution (4)")
-        plt.legend(loc='lower right', bbox_to_anchor=(1, 0.05))
         # axs[1].grid()
-        # sns.move_legend(g, loc='lower right')
         # axs[1].legend().set_title('')
         # axs[1].set_xlabel('Basic solutions')
         # plt.tight_layout()
+        plt.legend(loc='lower right', bbox_to_anchor=[1,0.05])
+        plt.tight_layout()
         plt.show()
     return df
 
@@ -85,7 +96,7 @@ def get_performance_distribution_per_method(folder):
     max_per_trial = df.groupby(['Method', 'Trial'])['Utility'].max()
     distr = max_per_trial.groupby(level='Method').agg(['min', 'max', 'mean', 'std'])
     distr['rel_std'] = distr['std']/distr['mean']
-    return distr
+    return distr, max_per_trial
 
 def get_surrogate_timeprofiling(folder):
     dfs = []
@@ -121,7 +132,7 @@ if __name__ == '__main__':
 
     # performance distribution (Supplementary Notes)
     for i, folder in enumerate(folders):
-        distr = get_performance_distribution_per_method(folder)
+        distr, _ = get_performance_distribution_per_method(folder)
         print(f'\nPerformance distribution with T={Ts[i]} hour:')
         print(distr)
 

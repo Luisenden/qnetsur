@@ -23,7 +23,6 @@ if __name__ == '__main__':
     while time_tracker + delta < limit * 3600:
         start = time.time()
         x = sim.get_random_x(1)
-        print(x)
         eval = sim.run_sim(x)
         evalset = x.copy()
         evalset['objective'] = np.sum(eval[0])
@@ -34,4 +33,5 @@ if __name__ == '__main__':
         delta = np.mean(times_tracked)
     
     randomsearch = pd.DataFrame.from_records(evals)
-    randomsearch.to_csv(path)
+    #randomsearch.to_csv(path)
+    print(randomsearch)
