@@ -37,18 +37,16 @@ if __name__ == '__main__':
     args, _ = parser.parse_known_args()
     mapping = {'Surrogate':'SU', 'Meta':'AX', 'Simulated Annealing':'SA', 'Random Search':'RS'}
 
-    folder = f'../../surdata/'#cd/cd_{args.hour}h/'
-    #x = get_solution(folder)
-
     conf = Config()
     vals = conf.vals
+    x = get_solution(conf.folder)
 
-    user_indices = np.where(vals['A'].sum(axis=1) == 1)
-    x_vals = np.random.random_sample(len(vals['A']))
+    #user_indices = np.where(vals['A'].sum(axis=1) == 1)
+    #x_vals = np.random.random_sample(len(vals['A']))
     #x_vals[user_indices] = 0
-    x = {}
-    for i,val in enumerate(x_vals):
-        x[f'q_swap{i}'] = val
+    # x = {}
+    # for i,val in enumerate(x_vals):
+    #     x[f'q_swap{i}'] = val
     
     vals['N_samples'] = 1
     nprocs = mp.cpu_count()
@@ -67,9 +65,9 @@ if __name__ == '__main__':
         dfs.append(df)
 
         seed_count += 1
-        if len(dfs)*nprocs >= 1000:
+        if len(dfs)*nprocs >= 10:
             break
     
     df_exhaustive = pd.concat(dfs, axis=0)
-    result_folder = folder+f'Results_cd_compare_allrandom.csv'
-    df_exhaustive.to_csv(result_folder) 
+    result_file = conf.folder+f'Results_cd_compare_{args.method}_{args.hour}.csv'
+    df_exhaustive.to_csv(result_file) 
