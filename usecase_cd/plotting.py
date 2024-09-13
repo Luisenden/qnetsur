@@ -55,28 +55,54 @@ def plot_from_exhaustive_multiple(folders, show=True):
 
     distr_max = []
     for i,f in enumerate(folders):
-        _, max_per_trial = get_performance_distribution_per_method(f)
-        max_per_trial = max_per_trial.reset_index()
-        max_per_trial['Time Limit [h]'] = [1,5,10][i]
-        max_per_trial['Aggregated Number of Virtual Neighbors'] = max_per_trial['Utility']
-        distr_max.append(max_per_trial)
-    df_distr_max = pd.concat(distr_max, axis=0)
+        _, max_per_method = get_performance_distribution_per_method(f)
+        max_per_method = max_per_method.reset_index()
+        max_per_method['Time Limit [h]'] = [1,5,10][i]
+        max_per_method['Aggregated Number of Virtual Neighbors'] = max_per_method['Utility']
+        distr_max.append(max_per_method)
+    df_max = pd.concat(distr_max, axis=0)
+    df_max['standard error'] = 1.9 # estimated mean standard deviation of n=20 (see associated notebook)
 
     if show: 
-        markers = ['o', '^', 'v', 's']
-        fig, axs = plt.subplots(1,1, figsize=(5,5))#, sharey=True, gridspec_kw={'width_ratios': [2, 1]})
-        sns.pointplot(data= df_distr_max, x='Time Limit [h]', y='Aggregated Number of Virtual Neighbors', hue='Method', ax=axs, errorbar=('pi', 100), capsize=.1, markers=markers, legend=False, linestyles=[':']*4, native_scale=True, markersize=0)
-        sns.pointplot(data= df, x='Time Limit [h]', y='Aggregated Number of Virtual Neighbors', hue='Method', ax=axs, errorbar='se', markers=markers, legend=True, linestyles=['']*4, native_scale=True, markersize=6)
-        axs.grid()
-        plt.hlines(np.mean(dfs_basic_sols[3]['Aggregated Number of Virtual Neighbors']), xmin=1, xmax=10, linestyles='dashed', colors='black', label=r"Best basic solution (4)")
-        # axs[1].grid()
-        # axs[1].legend().set_title('')
-        # axs[1].set_xlabel('Basic solutions')
-        # plt.tight_layout()
-        plt.legend(loc='lower right', bbox_to_anchor=[1,0.05])
+
+        markers = ['o', '^', 's', 'v']
+        fig, (ax_top, ax_bottom) = plt.subplots(ncols=1, nrows=2, sharex=True, gridspec_kw={'hspace':0.05})
+        method_names = ['Surrogate', 'Meta', 'Simulated Annealing', 'Random Search']
+        for i,method in enumerate(method_names):
+            ax_top.errorbar(x=df_max[df_max['Method']==method]['Time Limit [h]'], y= df_max[df_max['Method']==method]['Aggregated Number of Virtual Neighbors'], 
+                         yerr=df_max[df_max['Method']==method]['standard error'], linestyle='dashed', marker=markers[i], capsize=0, markersize=6 , capthick=1, alpha=0.5)
+        sns.pointplot(data= df, x='Time Limit [h]', y='Aggregated Number of Virtual Neighbors', hue='Method', ax=ax_top, errorbar='se', err_kws={'alpha':1}, markers=markers, legend=True, linestyles=['']*4, native_scale=True, markersize=6)
+        sns.pointplot(data= df, x='Time Limit [h]', y='Aggregated Number of Virtual Neighbors', hue='Method', ax=ax_bottom, errorbar='se', err_kws={'alpha':1}, markers=markers, legend=True, linestyles=['']*4, native_scale=True, markersize=6)
+        
+        ax_top.grid()
+        ax_bottom.grid()
+        ax_bottom.hlines(np.mean(dfs_basic_sols[1]['Aggregated Number of Virtual Neighbors']), xmin=1, xmax=10, linestyles='dashed', colors='black', label=r"$U_{(1)}$ baseline quantity")
+        ax_top.set_ylim(250,300)   
+        ax_bottom.set_ylim(150,200)
+
+        sns.despine(ax=ax_bottom)
+        sns.despine(ax=ax_top, bottom=True)
+
+        ax = ax_top
+        d = .015  # how big to make the diagonal lines in axes coordinates
+        # arguments to pass to plot, just so we don't keep repeating them
+        kwargs = dict(transform=ax.transAxes, color='k', clip_on=False)
+        ax.plot((-d, +d), (-d, +d), **kwargs)        # top-left diagonal
+
+        ax2 = ax_bottom
+        kwargs.update(transform=ax2.transAxes)  # switch to the bottom axes
+        ax2.plot((-d, +d), (1 - d, 1 + d), **kwargs)  # bottom-left diagonal
+
+        #remove one of the legend
+        ax_top.legend_.remove()
+        ax_bottom.legend(loc='lower right', bbox_to_anchor=[0.9,0.01])
+        ax_top.set_ylabel('')
+        ax_bottom.set_ylabel('Aggregated Number of Virtual Neighbors', loc='bottom')
+        plt.xlabel(r'Time Limit $T$ [h]')
         plt.tight_layout()
         plt.show()
     return df
+
 
 def get_performance_distribution_per_method(folder):
     dfs_methods = []
@@ -96,7 +122,9 @@ def get_performance_distribution_per_method(folder):
     max_per_trial = df.groupby(['Method', 'Trial'], sort=False)['Utility'].max()
     distr = max_per_trial.groupby(level='Method').agg(['min', 'max', 'mean', 'std'])
     distr['rel_std'] = distr['std']/distr['mean']
-    return distr, max_per_trial
+
+    max_per_method = df.groupby(['Method'], sort=False)['Utility'].max()
+    return distr, max_per_method
 
 def get_surrogate_timeprofiling(folder):
     dfs = []
@@ -112,7 +140,7 @@ def get_surrogate_timeprofiling(folder):
 if __name__ == '__main__':
     
     
-    parser = argparse.ArgumentParser(description="set directory to output data")
+    parser = argparse.ArgumentParser(description="set directory to data to be plotted")
     
     parser.add_argument(
         "--folder",
@@ -130,13 +158,13 @@ if __name__ == '__main__':
     print(folders)
     plot_from_exhaustive_multiple(folders)
 
-    # performance distribution (Supplementary Notes)
+    # performance distribution (supplementary notes)
     for i, folder in enumerate(folders):
         distr, _ = get_performance_distribution_per_method(folder)
         print(f'\nPerformance distribution with T={Ts[i]} hour:')
         print(distr)
 
-        #time profiling (Supplementary Notes)
+        #time profiling (supplementary notes)
         print('\n')
         times, relative, cycles = get_surrogate_timeprofiling(folder)
         print('Overall:\n', times)
