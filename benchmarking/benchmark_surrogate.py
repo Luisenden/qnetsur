@@ -50,7 +50,6 @@ if __name__ == '__main__':
         print(time.time() - start)
         
         count += 1
-        if count>1:
-            break
+        print(count)
 
 
