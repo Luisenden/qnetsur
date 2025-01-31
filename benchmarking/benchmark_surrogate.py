@@ -22,7 +22,7 @@ def sur_optimize(objective, lower, upper):
         }
     for i in range(n):
         configurables['range'][f'x{i}'] = ([lower[i], upper[i]], 'float')
-    print(configurables)
+
     sur = Surrogate(wrapper, objective, values={}, variables=configurables, initial_training_size=1000000, ntop=1000, rng=np.random.default_rng(7))
     sur.optimize(limit=15, verbose=False, issequential=True)
 
