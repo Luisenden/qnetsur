@@ -63,8 +63,8 @@ if __name__ == '__main__':
         time_tracker = np.sum(times_tracked)
         delta = np.mean(times_tracked)
 
-        # Save the results to a DataFrame
-        df = ax_client.get_trials_data_frame()
+    # Save the results to a DataFrame
+    df = ax_client.get_trials_data_frame()
     df.to_csv(path)
     
     # Uncomment the line below to print the maximum number of parallel trials

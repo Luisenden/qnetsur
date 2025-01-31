@@ -1,0 +1,5 @@
+coco-experiment==2.6.101
+cocopp==2.7.0
+ax-platform==0.2.10
+scikit-learn==1.6.1
+numpy==1.26.4

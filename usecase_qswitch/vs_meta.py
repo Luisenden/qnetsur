@@ -49,6 +49,6 @@ if __name__ == '__main__':
         times_tracked.append(time.time()-start)
         time_tracker = np.sum(times_tracked)
         delta = np.mean(times_tracked)
-        df = ax_client.get_trials_data_frame()
-
+    
+    df = ax_client.get_trials_data_frame()
     df.to_csv(path)

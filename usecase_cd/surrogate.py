@@ -16,7 +16,7 @@ if __name__ == '__main__':
         storage_path = conf.args.folder+f'SU_{conf.name}_{limit}{limit_kind}_SEED{conf.args.seed}_'\
                   +datetime.now().strftime("%m-%d-%Y_%H:%M:%S")+'.csv'
 
-        # instatiate surrogate model
+        # instantiate surrogate model
         sim = Surrogate(conf.simobjective, conf.sim, rng=conf.rng, values=conf.vals,\
                         variables=conf.vars, initial_training_size=conf.ntop, ntop=conf.ntop)
         

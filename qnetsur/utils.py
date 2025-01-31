@@ -178,10 +178,11 @@ class Surrogate(Simulation):
     optimize(max_T)
         Conducts the optimization process to find optimal simulation parameters.
     """
-    def __init__(self, sim_wrapper, sim, rng, values, variables, initial_training_size, ntop, degree=4):
+    def __init__(self, sim_wrapper, sim, rng, values, variables, initial_training_size, ntop, degree=4, max_data_size=100000):
         super().__init__(sim_wrapper, sim, rng, values, variables)
 
         assert initial_training_size>=5, f"Sample size must be at least 5 (requirement for 5-fold cross validation)."
+        assert max_data_size>=100, f"Less than 100 values in the dataset does not allow for meaningful optimization."
 
         # storage for time profiling
         self.sim_time = []
@@ -206,22 +207,28 @@ class Surrogate(Simulation):
         self.model = SVR()
         self.model_scores = {'SVR': [], 'DecisionTree': []}
         self.degree = degree  # coefficient in neighbour selection
+        self.max_data_size = max_data_size
 
     def get_neighbour(self, x :dict) -> dict:
         """
         Generates most promising parameters in limited neighbouring region 
         according to current knowledge of surrogate model and depending on the time left.
         """
-        x_n = {}
+        
         if self.isscore:
              f_svr = (1-np.log(1+(self.model_scores['SVR'][0]-self.model_scores['SVR'][-1])/self.model_scores['SVR'][0])**2)**self.degree
              f_tree  = (1-np.log(1+(self.model_scores['DecisionTree'][0]-self.model_scores['DecisionTree'][-1])/self.model_scores['DecisionTree'][0])**2)**self.degree
              f = f_svr if f_svr < f_tree else f_tree
              size = int((1-f)*10000 + 10)
+        elif self.ntop > 50:
+            f = 1-np.log(1+self.current_time_counter/self.limit)**2
+            size = int(self.current_time_counter/self.limit*100 + 10)
         else:
             f = (1-np.log(1+self.current_time_counter/self.limit)**2)**self.degree
             size = int(self.current_time_counter/self.limit*10000 + 10)
 
+        
+        x_n = {}
         for dim, par in self.vars['range'].items():
                 vals = par[0]
                 if par[1] == 'int':
@@ -249,6 +256,7 @@ class Surrogate(Simulation):
         for dim, vals in self.vars['choice'].items():
                 x_n[dim] = self.rng.random.choice(vals, size)
 
+
         # select best prediction as next neighbour
         samples_x = pd.DataFrame(x_n).astype(object)
         samples_y = self.mmodel.predict(samples_x.values)
@@ -264,10 +272,13 @@ class Surrogate(Simulation):
         start = time.time()
         y_obj_vec = np.sum(self.y, axis=1)
         newx = []
+        if self.verbose: print('Start sort ...')
         top_selection = self.X_df.iloc[np.argsort(y_obj_vec)[-self.ntop:]]  # select top n candidates
+        if self.verbose: print('Sort done. Retrieve promising neighbours ...')
         for x in top_selection.iloc:  # get most promising neighbour according to surrogate
             neighbour = self.get_neighbour(x=x.to_dict())
             newx.append(neighbour)
+        if self.verbose: print('Neighbours retrieved.')
         self.X_df_add = pd.DataFrame.from_records(newx).astype(object)
         self.acquisition_time.append(time.time()-start)      
 
@@ -304,26 +315,44 @@ class Surrogate(Simulation):
         self.y = np.nan_to_num(self.y, copy=True, nan=current_min,
                                posinf=current_min, neginf=current_min).tolist()
         self.y_std = np.nan_to_num(self.y_std, copy=True, nan=0, posinf=0, neginf=0).tolist()
+
+
+        if self.X_df.shape[0] > 1000:
+            X_df_cv = self.X_df.iloc[:1000].drop('Iteration', axis=1).values
+            y_cv = self.y[:1000]
+        else:
+            X_df_cv = self.X_df.drop('Iteration', axis=1).values
+            y_cv = self.y
+
         score_svr = cross_val_score(MultiOutputRegressor(SVR()),  # get current error of models
-                                    self.X_df.drop('Iteration', axis=1).values,
-                                    self.y, scoring=make_scorer(mean_absolute_error)).mean()
+                                    X_df_cv,
+                                    y_cv, scoring=make_scorer(mean_absolute_error)).mean()
         score_tree = cross_val_score(MultiOutputRegressor(DecisionTreeRegressor(random_state=42)),
-                                    self.X_df.drop('Iteration', axis=1).values,
-                                    self.y, scoring=make_scorer(mean_absolute_error)).mean()
+                                    X_df_cv,
+                                    y_cv, scoring=make_scorer(mean_absolute_error)).mean()
 
         if score_svr < score_tree:  # set model that currently performs best (smaller error)
              self.model = SVR()
         else:
              self.model = DecisionTreeRegressor(random_state=42)
-        print(f'MAE: svr = {score_svr} and tree={score_tree}')
+        if self.verbose:
+            print(f'MAE: svr = {score_svr} and tree={score_tree}')
         self.model_scores['SVR'].append(score_svr)
         self.model_scores['DecisionTree'].append(score_tree)
 
         self.mmodel = MultiOutputRegressor(self.model)
-        self.mmodel_std = MultiOutputRegressor(self.model)
+        #self.mmodel_std = MultiOutputRegressor(self.model)
+
+        if self.init_size > 10000:
+            # train models on top 1000
+            y_obj = np.sum(self.y, axis=1)
+            top_indices = np.argsort(y_obj)[-10000:]
+            self.X_df = self.X_df.iloc[top_indices]
+            self.y = list(np.array(self.y)[top_indices])
+
 
         self.mmodel.fit(self.X_df.drop('Iteration', axis=1).values, self.y)
-        self.mmodel_std.fit(self.X_df.drop('Iteration', axis=1).values, self.y_std)
+        #self.mmodel_std.fit(self.X_df.drop('Iteration', axis=1).values, self.y_std)
         self.build_time.append(time.time()-start)
 
     def update(self, counter) -> None:
@@ -337,7 +366,12 @@ class Surrogate(Simulation):
 
         # add parameter set
         self.X_df_add['Iteration'] = counter
-        self.X_df = pd.concat([self.X_df, self.X_df_add], axis=0, ignore_index=True)
+        if self.max_data_size < len(self.X_df):
+            self.X_df = pd.concat([self.X_df.iloc[:self.max_data_size], self.X_df_add], axis=0, ignore_index=True)
+            self.y = self.y[:self.max_data_size]
+            self.y_std = self.y_std[:self.max_data_size]
+        else:
+            self.X_df = pd.concat([self.X_df, self.X_df_add], axis=0, ignore_index=True)
 
         # train models
         self.train_models()
@@ -398,11 +432,12 @@ class Surrogate(Simulation):
         while self.current_time_counter <= self.limit:
             start = time.time()
 
+
             self.acquisition()
             self.update(self.current_time_counter)
 
             self.optimize_time.append(time.time()-start)
-            if self.verbose: print(f'Iteration {self.current_time_counter}/{self.limit}')
+            if self.verbose: print(f'Iteration {self.current_time_counter}/{self.limit} done.')
             self.current_time_counter +=1
 
 
