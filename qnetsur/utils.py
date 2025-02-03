@@ -319,7 +319,6 @@ class Surrogate(Simulation):
                                posinf=current_min, neginf=current_min).tolist()
         self.y_std = np.nan_to_num(self.y_std, copy=True, nan=0, posinf=0, neginf=0).tolist()
 
-        print('data size', len(self.X_df))
         if len(self.X_df) > self.max_data_size:
             # train models on top max_data_size samples (these are simple models best used with small to medium data set sizes)
             y_obj = np.sum(self.y, axis=1)
