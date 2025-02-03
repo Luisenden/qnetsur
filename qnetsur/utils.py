@@ -220,9 +220,12 @@ class Surrogate(Simulation):
              f_tree  = (1-np.log(1+(self.model_scores['DecisionTree'][0]-self.model_scores['DecisionTree'][-1])/self.model_scores['DecisionTree'][0])**2)**self.degree
              f = f_svr if f_svr < f_tree else f_tree
              size = int((1-f)*10000 + 10)
-        elif self.ntop > 50:
+        elif self.ntop > 500:
             f = 1-np.log(1+self.current_time_counter/self.limit)**2
-            size = int(self.current_time_counter/self.limit*100 + 10)
+            size = int(self.current_time_counter/self.limit*250 + 10)
+        elif self.ntop > 100:
+            f = 1-np.log(1+self.current_time_counter/self.limit)**2
+            size = int(self.current_time_counter/self.limit*500 + 10)
         else:
             f = (1-np.log(1+self.current_time_counter/self.limit)**2)**self.degree
             size = int(self.current_time_counter/self.limit*10000 + 10)
@@ -316,13 +319,17 @@ class Surrogate(Simulation):
                                posinf=current_min, neginf=current_min).tolist()
         self.y_std = np.nan_to_num(self.y_std, copy=True, nan=0, posinf=0, neginf=0).tolist()
 
+        print('data size', len(self.X_df))
+        if len(self.X_df) > self.max_data_size:
+            # train models on top max_data_size samples (these are simple models best used with small to medium data set sizes)
+            y_obj = np.sum(self.y, axis=1)
+            top_indices = np.argsort(y_obj)[-self.max_data_size:]
+            self.X_df = self.X_df.iloc[top_indices]
+            self.y = list(np.array(self.y)[top_indices])
 
-        if self.X_df.shape[0] > 1000:
-            X_df_cv = self.X_df.iloc[:1000].drop('Iteration', axis=1).values
-            y_cv = self.y[:1000]
-        else:
-            X_df_cv = self.X_df.drop('Iteration', axis=1).values
-            y_cv = self.y
+        # Test which model performs better in this iterations
+        X_df_cv = self.X_df.drop('Iteration', axis=1).values
+        y_cv = self.y
 
         score_svr = cross_val_score(MultiOutputRegressor(SVR()),  # get current error of models
                                     X_df_cv,
@@ -343,13 +350,6 @@ class Surrogate(Simulation):
         self.mmodel = MultiOutputRegressor(self.model)
         #self.mmodel_std = MultiOutputRegressor(self.model)
 
-        if self.init_size > 10000:
-            # train models on top 1000
-            y_obj = np.sum(self.y, axis=1)
-            top_indices = np.argsort(y_obj)[-10000:]
-            self.X_df = self.X_df.iloc[top_indices]
-            self.y = list(np.array(self.y)[top_indices])
-
 
         self.mmodel.fit(self.X_df.drop('Iteration', axis=1).values, self.y)
         #self.mmodel_std.fit(self.X_df.drop('Iteration', axis=1).values, self.y_std)
@@ -366,12 +366,7 @@ class Surrogate(Simulation):
 
         # add parameter set
         self.X_df_add['Iteration'] = counter
-        if self.max_data_size < len(self.X_df):
-            self.X_df = pd.concat([self.X_df.iloc[:self.max_data_size], self.X_df_add], axis=0, ignore_index=True)
-            self.y = self.y[:self.max_data_size]
-            self.y_std = self.y_std[:self.max_data_size]
-        else:
-            self.X_df = pd.concat([self.X_df, self.X_df_add], axis=0, ignore_index=True)
+        self.X_df = pd.concat([self.X_df, self.X_df_add], axis=0, ignore_index=True)
 
         # train models
         self.train_models()
