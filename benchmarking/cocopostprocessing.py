@@ -1,5 +1,13 @@
 import cocopp  
 
-cocopp.genericsettings.xlimit_pprldmany = 1e3 # set to 1e3 for quick tests
-result_folder = "/Users/localadmin/Library/CloudStorage/OneDrive-DelftUniversityofTechnology/1_backup_project_surrogate/benchmark_output/exdata_02-03-25/sur_optimize_on_bbob2009-0004"
-cocopp.main(result_folder + ' 13/cga-grid100!' + ' 23/m-sdwoa!' + ' 12/cmaes!' + ' 19/nelder-mead-scipy!');  # re-run folders look like "...-001" etc
+cocopp.compall.pprldmany.divide_by_dimension = False
+cocopp.compall.pprldmany.display_best = False
+cocopp.genericsettings.xlimit_pprldmany = 1e4
+
+# clean
+result_folder = "exdata/sur_optimize_on_bbob2009-d10 midaco/exdata/midaco_optimize_on_bbob2009"
+cocopp.main(result_folder + ' bbob/2009/ga!' + ' bbob/2009/eda!' + ' bbob/2009/poems!');  # re-run folders look like "...-001" etc
+
+# noisy
+result_folder = "exdata/sur_optimize_on_bbob2009-d10-noisy midaco/exdata/midaco_optimize_on_bbob2009-noisy"
+cocopp.main(result_folder + ' bbob-noisy/2009/dasa!' + ' bbob-noisy/2009/bfgs!' + ' bbob-noisy/2009/eda!');  # re-run folders look like "...-001" etc

@@ -18,6 +18,10 @@ venv/
 env/
 .env/
 
+# output data
+benchmarking/exdata/
+benchmarking/midaco/exdata/
+
 # Compiled Python files
 __pycache__/
 .ipynb_checkpoints
