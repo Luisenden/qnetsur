@@ -1,4 +1,4 @@
-In order to run the network simulation, the python module [SeQUeNCe](https://github.com/sequence-toolbox/SeQUeNCe), where we used a Python 3.9 environment.
+In order to run the network simulation, you require the python module [SeQUeNCe](https://github.com/sequence-toolbox/SeQUeNCe). We used a Python 3.9 environment.
 Installation e.g., with `pip install git+https://github.com/sequence-toolbox/SeQUeNCe.git`. This time we executed what follows from `usecase_metropolitan`.
 
 **rb_25h**
