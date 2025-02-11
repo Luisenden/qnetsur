@@ -1,4 +1,4 @@
-In order to run the qswitch simulation in [NetSquid](https://netsquid.org) `netsquid==0.10.3` and the [qswitch snippet](https://github.com/Luisenden/netsquid-qswitch), `version 1.1.1` are required, using Python 3.7. In the cloned git repository https://github.com/Luisenden/qnetsur navigate to `usecase_qswitch` and execute what follows from this directory.
+In order to run the qswitch simulation in [NetSquid](https://netsquid.org) `netsquid==0.10.3` and the [qswitch snippet](https://github.com/Luisenden/netsquid-qswitch), `version 1.1.1` are required, using Python 3.7. Clone this repository and navigate to `usecase_qswitch` and execute what follows from this directory.
 
 **notebook_qswitch_vardoyan**
 Execute `python surrogate_vardoyan_netsquid_comparison.py --serverdist <distance> --iterator 100` (~3-10h runtime per distance) for distances [1, 12, 23, 34, 45, 56, 67, 78, 89, 100].
