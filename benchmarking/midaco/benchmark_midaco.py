@@ -23,7 +23,7 @@ def problem_function(x):
 
 def midaco_optimize(problem, lb, ub, D):
     
-  key = b'Luise_Prielinger___[TRIAL-LICENSE-valid-until-1-August-2025]'
+  key = b'... your personal MIDACO passkey here ...' # 32 characters
   problem = {} # Initialize dictionary containing problem specifications
   option  = {} # Initialize dictionary containing MIDACO options
 
@@ -68,7 +68,7 @@ def midaco_optimize(problem, lb, ub, D):
 if __name__ == '__main__': 
 
 
-  suite = Suite("bbob", "year: 2009", f"dimensions: 2,3,5,10,20,40")
+  suite = Suite("bbob-noisy", "year: 2009", f"dimensions: 20")
 
   observer = Observer("bbob", "result_folder: %s_on_%s" % (midaco_optimize.__name__, "bbob2009"))
   solver = midaco_optimize
